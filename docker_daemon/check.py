@@ -1,7 +1,3 @@
-# (C) Datadog, Inc. 2010-2016
-# All rights reserved
-# Licensed under Simplified BSD License (see LICENSE)
-
 # stdlib
 import os
 import re
@@ -223,7 +219,6 @@ class DockerDaemon(AgentCheck):
         """Run the Docker check for one instance."""
         if not self.init_success:
             # Initialization can fail if cgroups are not ready. So we retry if needed
-            # https://github.com/DataDog/dd-agent/issues/1896
             self.init()
             if not self.init_success:
                 # Initialization failed, will try later

@@ -144,7 +144,7 @@ class AgentMetrics(AgentCheck):
             try:
                 cpu_used_pct = 100.0 * float(cpu_time)/float(collection_time)
                 if cpu_used_pct > MAX_CPU_PCT:
-                    self.gauge('datadog.agent.collector.cpu.used', cpu_used_pct)
+                    self.gauge('stackstate.agent.collector.cpu.used', cpu_used_pct)
                     self.log.info("CPU consumed (%%) is high: %.1f, metrics count: %d, events count: %d",
                                   cpu_used_pct, len(payload['metrics']), len(payload['events']))
             except Exception as e:

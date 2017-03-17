@@ -327,7 +327,7 @@ class SQLServer(AgentCheck):
                     try:
                         metric.fetch_metric(cursor, custom_tags)
                     except Exception as e:
-                        self.log.warning("Could not fetch metric %s: %s" % (metric.datadog_name, e))
+                        self.log.warning("Could not fetch metric %s: %s" % (metric.stackstate_name, e))
 
     def close_cursor(self, cursor):
         """

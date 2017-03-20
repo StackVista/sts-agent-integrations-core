@@ -39,7 +39,7 @@ LOG_INFO = {
 
 with mock.patch('config.get_logging_config', return_value=LOG_INFO):
     from jmxfetch import JMXFetch
-    from dogstatsd import Server
+    from stsstatsd import Server
 
 class DummyReporter(threading.Thread):
     def __init__(self, metrics_aggregator):

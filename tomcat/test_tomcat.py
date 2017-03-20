@@ -35,7 +35,7 @@ LOG_INFO = {
 
 with mock.patch('config.get_logging_config', return_value=LOG_INFO):
     from jmxfetch import JMXFetch
-    from dogstatsd import Server
+    from stsstatsd import Server
 
 STATSD_PORT = 8126
 

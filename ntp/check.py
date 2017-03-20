@@ -24,6 +24,7 @@ class NtpCheck(AgentCheck):
         req_args = NTPUtil().args
 
         self.log.debug("Using ntp host: {0}".format(req_args['host']))
+        self.log.debug("Using ntp port: {0}".format(req_args['port']))
 
         try:
             ntp_stats = ntplib.NTPClient().request(**req_args)

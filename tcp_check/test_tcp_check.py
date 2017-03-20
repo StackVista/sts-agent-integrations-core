@@ -76,7 +76,7 @@ class TCPCheckTest(AgentCheckTest):
         self.assertWarning(
             "Using events for service checks is deprecated in "
             "favor of monitors and will be removed in future versions of the "
-            "Datadog Agent.",
+            "StackState Agent.",
             count=len(CONFIG['instances'])
         )
 

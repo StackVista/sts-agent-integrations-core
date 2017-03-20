@@ -57,7 +57,7 @@ class TestNtp(AgentCheckTest):
         except Exception:
             pass
 
-        self.assertTrue(ntp_util.args["host"].endswith("datadog.pool.ntp.org"))
+        self.assertTrue(ntp_util.args["host"].endswith("pool.ntp.org"))
         self.assertEqual(ntp_util.args["port"], "ntp")
         self.assertEqual(ntp_util.args["version"], 3)
         self.assertEqual(ntp_util.args["timeout"], 1.0)

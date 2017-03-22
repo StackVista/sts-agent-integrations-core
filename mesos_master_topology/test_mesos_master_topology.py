@@ -1,5 +1,6 @@
 # stdlib
 import json
+import os
 
 # 3p
 # project
@@ -31,13 +32,10 @@ class TestMesosNoTopology(AgentCheckTest):
         self.assertEqual(instances[0]['relations'], [])
         self.assertEqual(instances[0]['components'], [])
 
-def _mocked_get_task_topology_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('task_state.json'))
-    return state
-
 # Test all data we recognize from mesos
 class TestMesosTaskTopology(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -51,7 +49,7 @@ class TestMesosTaskTopology(AgentCheckTest):
                 }
             ]
         }
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_task_topology_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_task_topology_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -81,15 +79,16 @@ class TestMesosTaskTopology(AgentCheckTest):
         self.assertEqual(relation["targetId"], "fc998b77-e2d1-4be5-b15c-1af7cddabfed-S0")
         self.assertEqual(relation["data"], {"tags": ['mytag', 'mytag2']})
 
+    def _mocked_get_task_topology_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('task_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
 
-def _mocked_get_topology_minimal_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('task_minimal_state.json'))
-    return state
 
 
 # Test whether we create a sane response for the minimal amount of mesos data available
 class TestMesosTaskTopologyMinimal(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         config = {
@@ -101,7 +100,7 @@ class TestMesosTaskTopologyMinimal(AgentCheckTest):
             ]
         }
 
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_topology_minimal_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_topology_minimal_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -115,14 +114,15 @@ class TestMesosTaskTopologyMinimal(AgentCheckTest):
         self.assertEqual(component["type"], {"name": "SOMETYPE"})
         self.assertEqual(component["data"], {})
 
+    def _mocked_get_topology_minimal_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('task_minimal_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
 
-def _mocked_get_topology_incomplete_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('task_incomplete_state.json'))
-    return state
 
 # Make sure that when data is incomplete, we create 'unknown' fields instead of crashing
 class TestMesosTaskTopologyIncomplete(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         config = {
@@ -134,7 +134,7 @@ class TestMesosTaskTopologyIncomplete(AgentCheckTest):
             ]
         }
 
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_topology_incomplete_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_topology_incomplete_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -148,14 +148,15 @@ class TestMesosTaskTopologyIncomplete(AgentCheckTest):
         self.assertEqual(component["type"], {"name": "unknown"})
         self.assertEqual(component["data"], {})
 
+    def _mocked_get_topology_incomplete_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('task_incomplete_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
 
-def _mocked_get_slave_topology_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('slave_state.json'))
-    return state
 
 # Test all data we recognize from mesos
 class TestMesosSlaveTopology(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -169,7 +170,7 @@ class TestMesosSlaveTopology(AgentCheckTest):
                 }
             ]
         }
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_slave_topology_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_slave_topology_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -184,13 +185,14 @@ class TestMesosSlaveTopology(AgentCheckTest):
                           "hostname": u"b5656884ed75"
                           })
 
-def _mocked_get_slave_minimal_topology_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('slave_minimal_state.json'))
-    return state
+    def _mocked_get_slave_topology_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('slave_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
 
 # Test all data we recognize from mesos
 class TestMesosSlaveMinimalTopology(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -204,7 +206,7 @@ class TestMesosSlaveMinimalTopology(AgentCheckTest):
                 }
             ]
         }
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_slave_minimal_topology_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_slave_minimal_topology_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -217,13 +219,14 @@ class TestMesosSlaveMinimalTopology(AgentCheckTest):
                          {"tags": ['mytag', 'mytag2'],
                           })
 
-def _mocked_get_slave_incomplete_topology_state(*args, **kwargs):
-    state = json.loads(Fixtures.read_file('slave_incomplete_state.json'))
-    return state
+    def _mocked_get_slave_minimal_topology_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('slave_minimal_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
 
 # Test all data we recognize from mesos
 class TestMesosSlaveIncompleteTopology(AgentCheckTest):
     CHECK_NAME = 'mesos_master_topology'
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -237,7 +240,7 @@ class TestMesosSlaveIncompleteTopology(AgentCheckTest):
                 }
             ]
         }
-        self.run_check(config, mocks={'_get_master_state': _mocked_get_slave_incomplete_topology_state})
+        self.run_check(config, mocks={'_get_master_state': self._mocked_get_slave_incomplete_topology_state})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"mesos","url":"http://localhost:5050"})
@@ -249,3 +252,8 @@ class TestMesosSlaveIncompleteTopology(AgentCheckTest):
         self.assertEqual(component["data"],
                          {"tags": ['mytag', 'mytag2'],
                           })
+
+    def _mocked_get_slave_incomplete_topology_state(self, *args, **kwargs):
+        state = json.loads(Fixtures.read_file('slave_incomplete_state.json', sdk_dir=self.FIXTURE_DIR))
+        return state
+

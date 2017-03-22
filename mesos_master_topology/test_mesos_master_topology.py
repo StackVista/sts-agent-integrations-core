@@ -256,4 +256,3 @@ class TestMesosSlaveIncompleteTopology(AgentCheckTest):
     def _mocked_get_slave_incomplete_topology_state(self, *args, **kwargs):
         state = json.loads(Fixtures.read_file('slave_incomplete_state.json', sdk_dir=self.FIXTURE_DIR))
         return state
-

@@ -1,0 +1,16 @@
+{
+  "maintainer": "help@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "mesos_master_topology",
+  "short_description": "Retrieve topology from mesos.",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os",
+    "windows"
+  ],
+  "version": "1.0.0",
+  "guid": "67064b88-58c1-4bcf-9dd9-76acf0d0571a"
+}

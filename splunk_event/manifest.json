@@ -1,0 +1,16 @@
+{
+  "maintainer": "help@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "splunk_event",
+  "short_description": "Retrieve events from splunk saved searches.",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os",
+    "windows"
+  ],
+  "version": "1.0.0",
+  "guid": "c4f640a4-1d2e-436b-8577-33a48325ad56"
+}

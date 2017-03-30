@@ -5,6 +5,7 @@ Testing:
 Setup:
 
     bundle install
+    # When this fails, check whether the python2 executable is available (solvable with symlink)
     rake setup_env
     source venv/bin/activate
 

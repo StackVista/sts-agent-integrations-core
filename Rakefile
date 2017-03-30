@@ -12,6 +12,8 @@ unless ENV['CI']
   ENV['NOSE_FILTER'] = ENV['NOSE_FILTER'] || 'not windows'
   ENV['RUN_VENV'] = 'true'
   ENV['SDK_TESTING'] = 'true'
+  ENV['DD_AGENT_REPO'] = 'https://github.com/StackVista/sts-agent.git'
+  ENV['DD_AGENT_BRANCH'] = 'updateTo5.12'
 end
 
 ENV['SDK_HOME'] = File.dirname(__FILE__)

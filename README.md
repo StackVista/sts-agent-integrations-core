@@ -18,3 +18,10 @@ Run a single test:
     rake ci:run\[haproxy\]
 
 For more details on how the rake infrastructure is set up see the Rakefile and /var/lib/gems/2.3.0/gems/datadog-sdk-testing-0.5.1/lib/sdk.rake
+
+Switching dd-agent branches:
+
+    Update the branch in .travis-ci
+    Update the branch in Rakefile
+    rm -rf embedded/dd-agent
+    Rerun setup_env

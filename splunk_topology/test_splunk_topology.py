@@ -1,6 +1,5 @@
 # stdlib
 import json
-import os
 
 from checks import CheckException
 from tests.checks.common import AgentCheckTest, Fixtures
@@ -13,7 +12,6 @@ class TestSplunkNoTopology(AgentCheckTest):
     Splunk check should work in absence of topology
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -37,7 +35,16 @@ class TestSplunkNoTopology(AgentCheckTest):
 
 # Sid is equal to search name
 def _mocked_dispatch_saved_search(*args, **kwargs):
+    name = args[1].name
+    if name == "dispatch_error":
+        raise Exception("BOOM")
     return args[1].name
+
+
+def _mocked_search(*args, **kwargs):
+    # sid is set to saved search name
+    sid = args[0]
+    return [json.loads(Fixtures.read_file("%s.json" % sid))]
 
 
 class TestSplunkTopology(AgentCheckTest):
@@ -45,7 +52,6 @@ class TestSplunkTopology(AgentCheckTest):
     Splunk check should work with component and relation data
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -72,7 +78,7 @@ class TestSplunkTopology(AgentCheckTest):
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': self._mocked_search,
+            '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
         })
 
@@ -116,10 +122,11 @@ class TestSplunkTopology(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
-    def _mocked_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
+
+def _mocked_minimal_search(*args, **kwargs):
+    # sid is set to saved search name
+    sid = args[0]
+    return [json.loads(Fixtures.read_file("minimal_%s.json" % sid))]
 
 
 class TestSplunkMinimalTopology(AgentCheckTest):
@@ -127,7 +134,6 @@ class TestSplunkMinimalTopology(AgentCheckTest):
     Splunk check should work with minimal component and relation data
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -156,7 +162,7 @@ class TestSplunkMinimalTopology(AgentCheckTest):
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': self._mocked_minimal_search,
+            '_search': _mocked_minimal_search,
             '_saved_searches': _mocked_saved_searches
         })
 
@@ -192,15 +198,11 @@ class TestSplunkMinimalTopology(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
-    def _mocked_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
 
-    def _mocked_minimal_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("minimal_%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
+def _mocked_incomplete_search(*args, **kwargs):
+    # sid is set to saved search name
+    sid = args[0]
+    return [json.loads(Fixtures.read_file("incomplete_%s.json" % sid))]
 
 
 class TestSplunkIncompleteTopology(AgentCheckTest):
@@ -208,7 +210,6 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
     Splunk check should crash on incomplete data
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -239,27 +240,21 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
         try:
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': self._mocked_incomplete_search,
+                '_search': _mocked_incomplete_search,
                 '_saved_searches': _mocked_saved_searches
             })
         except CheckException:
             thrown = True
+
         self.assertTrue(thrown, "Retrieving incomplete data from splunk should throw")
 
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
-
-    def _mocked_incomplete_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("incomplete_%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
-
 
 class TestSplunkTopologyPollingInterval(AgentCheckTest):
     """
     Test whether the splunk check properly implements the polling intervals
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -319,7 +314,7 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
 
             sid = args[0]
             self.assertTrue(sid in test_data["expected_searches"])
-            return [json.loads(Fixtures.read_file("empty.json", sdk_dir=self.FIXTURE_DIR))]
+            return [json.loads(Fixtures.read_file("empty.json"))]
 
         test_mocks = {
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
@@ -400,7 +395,7 @@ class TestSplunkTopologyErrorResponse(AgentCheckTest):
         try:
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': self._mocked_search,
+                '_search': _mocked_search,
                 '_saved_searches': _mocked_saved_searches
             })
         except CheckException:
@@ -409,10 +404,6 @@ class TestSplunkTopologyErrorResponse(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
-    def _mocked_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
 
 class TestSplunkSavedSearchesError(AgentCheckTest):
     """
@@ -456,12 +447,70 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
 
 
 
+class TestTopologyDataIsClearedOnFailure(AgentCheckTest):
+    """
+    Splunk topology check should clear all topology data when one or more saves searches fail.
+    """
+    CHECK_NAME = 'splunk_topology'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches_parallel': 1,
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "element_type": "component",
+                        "parameters": {}
+                    },{
+                        "name": "components",
+                        "element_type": "component",
+                        "parameters": {}
+                    },{
+                        "name": "dispatch_error",
+                        "element_type": "component",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches
+            })
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown, "Retrieving FATAL message from Splunk should throw.")
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        instance = instances[0]
+
+        self.assertEqual(instance['instance'], {"type":"splunk","url":"http://localhost:8089"})
+        self.assertEqual(len(instance['components']), 0)
+        self.assertEqual(len(instance['relations']), 0)
+
+
 class TestSplunkWildcardTopology(AgentCheckTest):
     """
     Splunk check should work with component and relation data
     """
     CHECK_NAME = 'splunk_topology'
-    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
     def test_checks(self):
         self.maxDiff = None
@@ -498,7 +547,7 @@ class TestSplunkWildcardTopology(AgentCheckTest):
         data['saved_searches'] = ["components", "relations"]
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': self._mocked_search,
+            '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
         })
         instances = self.check.get_topology_instances()
@@ -513,7 +562,7 @@ class TestSplunkWildcardTopology(AgentCheckTest):
         data['saved_searches'] = []
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': self._mocked_search,
+            '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
         })
         instances = self.check.get_topology_instances()
@@ -524,10 +573,6 @@ class TestSplunkWildcardTopology(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
-    def _mocked_search(self, *args, **kwargs):
-        # sid is set to saved search name
-        sid = args[0]
-        return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=self.FIXTURE_DIR))]
 
 class TestSplunkTopologyRespectParallelDispatches(AgentCheckTest):
     CHECK_NAME = 'splunk_topology'

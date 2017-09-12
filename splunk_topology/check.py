@@ -8,7 +8,8 @@ import time
 from urllib import quote
 
 from checks import AgentCheck, CheckException
-from utils.splunk import SplunkInstanceConfig, SplunkSavedSearch, SplunkHelper, take_required_field, SavedSearches, chunks
+from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_required_field
+from utils.splunk.splunk_helper import SplunkHelper
 
 
 class SavedSearch(SplunkSavedSearch):
@@ -100,12 +101,12 @@ class SplunkTopology(AgentCheck):
             # If everything was successful, update the timestamp
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK)
             instance.last_successful_poll_epoch_seconds = current_time_epoch_seconds
+            self.stop_snapshot(instance_key)
         except Exception as e:
+            self._clear_topology(instance_key, clear_in_snapshot=True)
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))
             self.log.exception("Splunk topology exception: %s" % str(e))
             raise CheckException("Cannot connect to Splunk, please check your configuration. Message: " + str(e))
-        finally:
-            self.stop_snapshot(instance_key)
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()

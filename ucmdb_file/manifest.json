@@ -1,0 +1,15 @@
+{
+  "maintainer": "info@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "ucmdb_file",
+  "short_description": "Extract topology for UCMDB file eport.",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os"
+  ],
+  "version": "1.0.0",
+  "guid": "8229c624-b0f2-4e44-9edb-0f6d99291079"
+}

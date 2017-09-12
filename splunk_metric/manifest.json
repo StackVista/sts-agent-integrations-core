@@ -1,0 +1,16 @@
+{
+  "maintainer": "info@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "splunk_metric",
+  "short_description": "Retrieve metrics from splunk saved searches.",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os",
+    "windows"
+  ],
+  "version": "1.0.0",
+  "guid": "c51f6eb3-9a3c-4188-a7c2-b20790028510"
+}

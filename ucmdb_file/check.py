@@ -3,7 +3,7 @@ from utils.ucmdb.ucmdb_file_dump import UcmdbDumpStructure, UcmdbFileDump
 from utils.ucmdb.ucmdb_component_groups import UcmdbComponentGroups
 from utils.ucmdb.ucmdb_component_trees import UcmdbComponentTrees
 from utils.persistable_store import PersistableStore
-from utils.timer import Timer
+from utils.timer import StsTimer
 
 
 class UcmdbTopologyFileInstance(object):
@@ -39,7 +39,7 @@ class UcmdbTopologyFileInstance(object):
         self.instance_key = {"type": self.INSTANCE_TYPE, "url":  self.location}
 
         self._persistable_store = PersistableStore(self.PERSISTENCE_CHECK_NAME, self.location)
-        self.timer = Timer("last_poll_time", self.polling_interval)
+        self.timer = StsTimer("last_poll_time", self.polling_interval)
         self.timer.load(self._persistable_store)
         self.dump_structure = UcmdbDumpStructure.load(self.location)
         self.previous_structure = self._persistable_store['ucmdb_dump_structure']

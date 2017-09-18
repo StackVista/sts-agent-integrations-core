@@ -1,32 +1,29 @@
 require 'ci/common'
 
-def docker_version
+def kube_dns_version
   ENV['FLAVOR_VERSION'] || 'latest'
 end
 
-def docker_rootdir
-  "#{ENV['INTEGRATIONS_DIR']}/docker_#{docker_version}"
+def kube_dns_rootdir
+  "#{ENV['INTEGRATIONS_DIR']}/kube_dns_#{kube_dns_version}"
 end
 
 namespace :ci do
-  namespace :docker do |flavor|
+  namespace :kube_dns do |flavor|
     task before_install: ['ci:common:before_install']
 
-    task install: ['ci:common:install'] do
-      use_venv = in_venv
-      install_requirements('docker/requirements.txt',
-                           "--cache-dir #{ENV['PIP_CACHE']}",
-                           "#{ENV['VOLATILE_DIR']}/ci.log", use_venv)
+    task :install do
+      Rake::Task['ci:common:install'].invoke('kube_dns')
       # sample docker usage
-      # sh %(docker create -p XXX:YYY --name docker source/docker:docker_version)
-      # sh %(docker start docker)
+      # sh %(docker create -p XXX:YYY --name kube_dns source/kube_dns:kube_dns_version)
+      # sh %(docker start kube_dns)
     end
 
     task before_script: ['ci:common:before_script']
 
     task script: ['ci:common:script'] do
       this_provides = [
-        'docker'
+        'kube_dns'
       ]
       Rake::Task['ci:common:run_tests'].invoke(this_provides)
     end
@@ -36,8 +33,8 @@ namespace :ci do
     task cleanup: ['ci:common:cleanup']
     # sample cleanup task
     # task cleanup: ['ci:common:cleanup'] do
-    #   sh %(docker stop docker)
-    #   sh %(docker rm docker)
+    #   sh %(docker stop kube_dns)
+    #   sh %(docker rm kube_dns)
     # end
 
     task :execute do

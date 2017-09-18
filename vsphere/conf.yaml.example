@@ -31,12 +31,12 @@ instances:
     # to fetch metrics for these ESXi hosts and the VMs
     # running on it
     # optional
-    # host_include_only_regex: ".*\.prod.stackstate.com"
+    # host_include_only_regex: .*\.prod.stackstate.com
 
     # Use a regex to include only the VMs that are
     # matching this pattern.
     # optional
-    # vm_include_only_regex: ".*\.sql\.stackstate\.com"
+    # vm_include_only_regex: .*\.sql\.stackstate\.com
 
     # Set to true if you'd like to only collect metrics on vSphere VMs which
     # are marked by a custom field with the value 'StackStateMonitored'

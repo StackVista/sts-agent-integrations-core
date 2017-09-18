@@ -19,11 +19,8 @@ namespace :ci do
       sh %(docker rm #{container_name} 2>/dev/null || true)
     end
 
-    task install: ['ci:common:install'] do
-      use_venv = in_venv
-      install_requirements('rabbitmq/requirements.txt',
-                           "--cache-dir #{ENV['PIP_CACHE']}",
-                           "#{ENV['VOLATILE_DIR']}/ci.log", use_venv)
+    task :install do
+      Rake::Task['ci:common:install'].invoke('rabbitmq')
       sh %(docker run -d --name #{container_name} \
            -p #{container_port1}:#{container_port1} \
            -p #{container_port2}:#{container_port2} \
@@ -52,6 +49,9 @@ namespace :ci do
         sh %(curl localhost:15672/cli/rabbitmqadmin | python - publish exchange=amq.default routing_key=#{q} payload="hello, world")
       end
       sh %(curl localhost:15672/cli/rabbitmqadmin | python - list queues)
+
+      # leave time for rabbitmq to update the management information
+      sleep_for 2
     end
 
     task script: ['ci:common:script'] do

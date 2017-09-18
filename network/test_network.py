@@ -1,26 +1,33 @@
+# (C) Datadog, Inc. 2010-2016
+# All rights reserved
+# Licensed under Simplified BSD License (see LICENSE)
+
+# stdlib
 from collections import namedtuple
 import socket
+import os
 
 # 3p
 import mock
+from nose.plugins.attrib import attr
 
 # project
 from tests.checks.common import AgentCheckTest, Fixtures
 
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
 def ss_subprocess_mock(*args, **kwargs):
     if args[0][-1] == '-4':
-        return (Fixtures.read_file('ss_ipv4'), "", 0)
+        return (Fixtures.read_file('ss_ipv4', sdk_dir=FIXTURE_DIR), "", 0)
     elif args[0][-1] == '-6':
-        return (Fixtures.read_file('ss_ipv6'), "", 0)
+        return (Fixtures.read_file('ss_ipv6', sdk_dir=FIXTURE_DIR), "", 0)
 
 
 def netstat_subprocess_mock(*args, **kwargs):
     if args[0][0] == 'ss':
         raise OSError
     elif args[0][0] == 'netstat':
-        return (Fixtures.read_file('netstat'), "", 0)
-
+        return (Fixtures.read_file('netstat', sdk_dir=FIXTURE_DIR), "", 0)
 
 class TestCheckNetwork(AgentCheckTest):
     CHECK_NAME = 'network'
@@ -34,6 +41,7 @@ class TestCheckNetwork(AgentCheckTest):
             ]
         }
         self.load_check(self.config)
+        self.check._setup_metrics(self.config["instances"][0])
 
     CX_STATE_GAUGES_VALUES = {
         'system.net.udp4.connections': 2,
@@ -50,8 +58,9 @@ class TestCheckNetwork(AgentCheckTest):
         'system.net.tcp6.time_wait': 1,
     }
 
-    @mock.patch('network.get_subprocess_output', side_effect=ss_subprocess_mock)
-    @mock.patch('network.Platform.is_linux', return_value=True)
+    @attr('unix')
+    @mock.patch('_network.get_subprocess_output', side_effect=ss_subprocess_mock)
+    @mock.patch('_network.Platform.is_linux', return_value=True)
     def test_cx_state_linux_ss(self, mock_subprocess, mock_platform):
         self.run_check({})
 
@@ -59,8 +68,9 @@ class TestCheckNetwork(AgentCheckTest):
         for metric, value in self.CX_STATE_GAUGES_VALUES.iteritems():
             self.assertMetric(metric, value=value)
 
-    @mock.patch('network.get_subprocess_output', side_effect=netstat_subprocess_mock)
-    @mock.patch('network.Platform.is_linux', return_value=True)
+    @attr('unix')
+    @mock.patch('_network.get_subprocess_output', side_effect=netstat_subprocess_mock)
+    @mock.patch('_network.Platform.is_linux', return_value=True)
     def test_cx_state_linux_netstat(self, mock_subprocess, mock_platform):
         self.run_check({})
 
@@ -68,17 +78,17 @@ class TestCheckNetwork(AgentCheckTest):
         for metric, value in self.CX_STATE_GAUGES_VALUES.iteritems():
             self.assertMetric(metric, value=value)
 
-    @mock.patch('network.Platform.is_linux', return_value=False)
-    @mock.patch('network.Platform.is_bsd', return_value=False)
-    @mock.patch('network.Platform.is_solaris', return_value=False)
-    @mock.patch('network.Platform.is_windows', return_value=True)
+    @mock.patch('_network.Platform.is_linux', return_value=False)
+    @mock.patch('_network.Platform.is_bsd', return_value=False)
+    @mock.patch('_network.Platform.is_solaris', return_value=False)
+    @mock.patch('_network.Platform.is_windows', return_value=True)
     def test_win_uses_psutil(self, *args):
         self.check._check_psutil = mock.MagicMock()
         self.run_check({})
         self.check._check_psutil.assert_called_once_with()
 
-    @mock.patch('network.Network._cx_state_psutil')
-    @mock.patch('network.Network._cx_counters_psutil')
+    @mock.patch('_network.Network._cx_state_psutil')
+    @mock.patch('_network.Network._cx_counters_psutil')
     def test_check_psutil(self, state, counters):
         self.check._cx_state_psutil = state
         self.check._cx_counters_psutil = counters
@@ -103,9 +113,9 @@ class TestCheckNetwork(AgentCheckTest):
             sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::', 50482), raddr=('::',2638), status='ESTABLISHED', pid=42),
             sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::', 49163), raddr=(), status='LISTEN', pid=1416),
             sconn(fd=-1, family=socket.AF_INET, type=socket.SOCK_STREAM, laddr=('0.0.0.0', 445), raddr=(), status='LISTEN', pid=4),
-            sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::1', 56521), raddr=('::1', 18123), status='TIME_WAIT', pid=0),
+            sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::1', 56521), raddr=('::1', 17123), status='TIME_WAIT', pid=0),
             sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_DGRAM, laddr=('::', 500), raddr=(), status='NONE', pid=892),
-            sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::1', 56493), raddr=('::1', 18123), status='TIME_WAIT', pid=0),
+            sconn(fd=-1, family=socket.AF_INET6, type=socket.SOCK_STREAM, laddr=('::1', 56493), raddr=('::1', 17123), status='TIME_WAIT', pid=0),
             sconn(fd=-1, family=socket.AF_INET, type=socket.SOCK_STREAM, laddr=('127.0.0.1', 54541), raddr=('127.0.0.1', 54542), status='ESTABLISHED', pid=20500),
         ]
 
@@ -124,7 +134,7 @@ class TestCheckNetwork(AgentCheckTest):
             'system.net.tcp6.opening': 0,
         }
 
-        with mock.patch('network.psutil') as mock_psutil:
+        with mock.patch('_network.psutil') as mock_psutil:
             mock_psutil.net_connections.return_value = conn
             self.check._cx_state_psutil()
             for _, m in self.check.aggregator.metrics.iteritems():
@@ -136,7 +146,7 @@ class TestCheckNetwork(AgentCheckTest):
             'Ethernet': snetio(bytes_sent=3096403230L, bytes_recv=3280598526L, packets_sent=6777924, packets_recv=32888147, errin=0, errout=0, dropin=0, dropout=0),
             'Loopback Pseudo-Interface 1': snetio(bytes_sent=0, bytes_recv=0, packets_sent=0, packets_recv=0, errin=0, errout=0, dropin=0, dropout=0),
         }
-        with mock.patch('network.psutil') as mock_psutil:
+        with mock.patch('_network.psutil') as mock_psutil:
             mock_psutil.net_io_counters.return_value = counters
             self.check._excluded_ifaces = ['Loopback Pseudo-Interface 1']
             self.check._exclude_iface_re = ''

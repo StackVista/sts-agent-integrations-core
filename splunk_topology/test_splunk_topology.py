@@ -1,8 +1,11 @@
 # stdlib
 import json
+import os
 
 from checks import CheckException
 from tests.checks.common import AgentCheckTest, Fixtures
+
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
 def _mocked_saved_searches(*args, **kwargs):
     return []
@@ -44,7 +47,7 @@ def _mocked_dispatch_saved_search(*args, **kwargs):
 def _mocked_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
-    return [json.loads(Fixtures.read_file("%s.json" % sid))]
+    return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
 
 class TestSplunkTopology(AgentCheckTest):
@@ -126,7 +129,7 @@ class TestSplunkTopology(AgentCheckTest):
 def _mocked_minimal_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
-    return [json.loads(Fixtures.read_file("minimal_%s.json" % sid))]
+    return [json.loads(Fixtures.read_file("minimal_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
 
 class TestSplunkMinimalTopology(AgentCheckTest):
@@ -202,7 +205,7 @@ class TestSplunkMinimalTopology(AgentCheckTest):
 def _mocked_incomplete_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
-    return [json.loads(Fixtures.read_file("incomplete_%s.json" % sid))]
+    return [json.loads(Fixtures.read_file("incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
 
 class TestSplunkIncompleteTopology(AgentCheckTest):
@@ -314,7 +317,7 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
 
             sid = args[0]
             self.assertTrue(sid in test_data["expected_searches"])
-            return [json.loads(Fixtures.read_file("empty.json"))]
+            return [json.loads(Fixtures.read_file("empty.json", sdk_dir=FIXTURE_DIR))]
 
         test_mocks = {
             '_dispatch_saved_search': _mocked_dispatch_saved_search,

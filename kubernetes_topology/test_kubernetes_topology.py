@@ -1,3 +1,5 @@
+import os
+
 # 3rd party
 import simplejson as json
 import requests
@@ -9,30 +11,38 @@ from tests.checks.common import Fixtures, AgentCheckTest
 
 import mock
 
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
+
 class TestKubernetesTopologyMocks:
 
     json_auth_urls = []
+    json_kubelet_urls = []
 
     @staticmethod
-    def assure_retrieve_json_auth_called(_self, url, auth_token, timeout):
+    def assure_retrieve_json_auth_called(_self, url, timeout=10, verify=None, params=None):
         TestKubernetesTopologyMocks.json_auth_urls.append(url)
-        assert auth_token == "DummyToken"
 
         if url.endswith(KubeUtil.NODES_LIST_PATH):
-            return json.loads(Fixtures.read_file("nodes_list.json", string_escape=False))
-        elif url.endswith(KubeUtil.PODS_LIST_PATH):
-            return json.loads(Fixtures.read_file("pods_list.json", string_escape=False))
+            return json.loads(Fixtures.read_file("nodes_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
         elif url.endswith(KubeUtil.SERVICES_LIST_PATH):
-            return json.loads(Fixtures.read_file("services_list.json", string_escape=False))
+            return json.loads(Fixtures.read_file("services_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
         elif url.endswith(KubeUtil.ENDPOINTS_LIST_PATH):
-            return json.loads(Fixtures.read_file("endpoints_list.json", string_escape=False))
+            return json.loads(Fixtures.read_file("endpoints_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
         elif url.endswith(KubeUtil.DEPLOYMENTS_LIST_PATH):
-            return json.loads(Fixtures.read_file("deployments_list.json", string_escape=False))
+            return json.loads(Fixtures.read_file("deployments_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
         elif KubeUtil.REPLICASETS_LIST_PATH in url:
-            return json.loads(Fixtures.read_file("replicaset_list.json", string_escape=False))
+            return json.loads(Fixtures.read_file("replicaset_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
         else:
             raise Exception("No matching mock data for URL: %s" % url)
 
+    @staticmethod
+    def assure_retrieve_kubelet_json_auth_called(_self, url, timeout=10, verify=None):
+        TestKubernetesTopologyMocks.json_kubelet_urls.append(url)
+
+        if url.endswith(KubeUtil.PODS_LIST_PATH):
+            return json.loads(Fixtures.read_file("pods_list.json", sdk_dir=FIXTURE_DIR, string_escape=False))
+        else:
+            raise Exception("No matching mock data for URL: %s" % url)
 
 class TestKubernetesTopology(AgentCheckTest):
 
@@ -41,17 +51,18 @@ class TestKubernetesTopology(AgentCheckTest):
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_json_auth')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_machine_info')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_nodes_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("nodes_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("nodes_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_services_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("services_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("services_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_pods_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("pods_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("pods_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil._retrieve_replicaset_list',
-                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("replicaset_list.json", string_escape=False)))
+                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("replicaset_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_endpoints_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("endpoints_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("endpoints_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_deployments_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("deployments_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("deployments_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubernetes')
     def test_kube_topo(self, *args):
         self.maxDiff = None
         self.run_check({'instances': [{'host': 'foo'}]})
@@ -185,6 +196,7 @@ class TestKubernetesTopology(AgentCheckTest):
 
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_services_list',
                 side_effect=requests.exceptions.ReadTimeout())
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubernetes')
     def test_kube_timeout_exception(self, *args):
         self.run_check({'instances': [{'host': 'foo'}]})
 
@@ -201,6 +213,7 @@ class TestKubernetesTopology(AgentCheckTest):
 
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_services_list',
                 side_effect=Exception("generic error"))
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubernetes')
     def test_kube_generic_exception(self, *args):
         self.run_check({'instances': [{'host': 'foo'}]})
 
@@ -218,17 +231,18 @@ class TestKubernetesTopology(AgentCheckTest):
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_json_auth')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_machine_info')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_nodes_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("nodes_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("nodes_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_services_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("services_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("services_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_deployments_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("deployments_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("deployments_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil._retrieve_replicaset_list',
-                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("replicaset_list.json", string_escape=False)))
+                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("replicaset_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_pods_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("pods_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("pods_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_endpoints_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("endpoints_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("endpoints_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubernetes')
     def test_kube_multiple_instances(self, *args):
         self.run_check({'instances': [{'host': 'foo', 'url':'http://foo'},{'host': 'bar', 'url':'http://bar'}]})
 
@@ -250,17 +264,22 @@ class TestKubernetesTopology(AgentCheckTest):
         self.assertEqual(len(instances[1]['components']), 72)
 
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_json_auth',side_effect=TestKubernetesTopologyMocks.assure_retrieve_json_auth_called,autospec=True)
-    @mock.patch('utils.kubernetes.KubeUtil.get_auth_token',side_effect=lambda: "DummyToken")
+    @mock.patch('utils.kubernetes.KubeUtil.retrieve_kubelet_json_auth',side_effect=TestKubernetesTopologyMocks.assure_retrieve_kubelet_json_auth_called, autospec=True)
+    @mock.patch('utils.kubernetes.KubeUtil.get_auth_token', side_effect="DummyToken")
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='https://kubernetes:443')
     def test_kube_retrieve_json(self, *args):
 
         # Set configuration to true
         self.run_check({'instances': [{'use_kube_auth': True, 'host': 'foo'}]})
 
+        self.assertEqual(TestKubernetesTopologyMocks.json_kubelet_urls, [
+            "https://kubernetes:443/pods/"
+        ])
+
         self.assertEqual(TestKubernetesTopologyMocks.json_auth_urls, [
-            "https://kubernetes:443/api/v1/services/",
-            "https://kubernetes:443/api/v1/nodes/",
-            "https://kubernetes:443/api/v1/pods/",
-            "https://kubernetes:443/api/v1/endpoints/",
+            "https://kubernetes:443/services/",
+            "https://kubernetes:443/nodes/",
+            "https://kubernetes:443/endpoints/",
             "https://kubernetes:443/apis/extensions/v1beta1/deployments/",
             "https://kubernetes:443/apis/extensions/v1beta1/namespaces/default/replicasets/?labelSelector=app%3Dnginxapp",
             "https://kubernetes:443/apis/extensions/v1beta1/namespaces/kube-system/replicasets/?labelSelector=k8s-app%3Dheapster,version%3Dv1.2.0",
@@ -273,17 +292,18 @@ class TestKubernetesTopology(AgentCheckTest):
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_json_auth')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_machine_info')
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_nodes_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("min.node_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("min.node_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_services_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("min.service_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("min.service_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_pods_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("min.pod_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("min.pod_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil._retrieve_replicaset_list',
-                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("min.replicaset_list.json", string_escape=False)))
+                side_effect=lambda fetch_url: json.loads(Fixtures.read_file("min.replicaset_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_endpoints_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("min.endpoint_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("min.endpoint_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_deployments_list',
-                side_effect=lambda: json.loads(Fixtures.read_file("min.deployment_list.json", string_escape=False)))
+                side_effect=lambda: json.loads(Fixtures.read_file("min.deployment_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubernetes')
     def test_kube_topology_minimal(self, *args):
         self.run_check({'instances': [{'host': 'foo'}]})
 

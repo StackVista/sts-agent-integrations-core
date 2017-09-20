@@ -574,20 +574,20 @@ class TestKubeutil(unittest.TestCase):
         labels = set(inn for out in res.values() for inn in out)
         self.assertEqual(len(labels), 3 + 1)
 
-    @mock.patch('utils.kubernetes.kubeutil.KubeUtil.perform_kubelet_query')
-    def test_retrieve_pods_list(self, retrieve_pods):
+    @mock.patch('utils.kubernetes.kubeutil.KubeUtil.retrieve_kubelet_json_with_optional_auth')
+    def test_retrieve_pods_list(self, retrieve_kubelet_json_with_optional_auth):
         self.kubeutil.retrieve_pods_list()
-        self.assertTrue(retrieve_pods.call_args_list[0].endswith('/pods/'))
+        self.assertTrue(retrieve_kubelet_json_with_optional_auth.call_args_list[0].endswith('/pods/'))
 
-    @mock.patch('utils.kubernetes.kubeutil.retrieve_json')
-    def test_retrieve_machine_info(self, retrieve_json):
+    @mock.patch('utils.kubernetes.kubeutil.KubeUtil.retrieve_json_with_optional_auth')
+    def test_retrieve_machine_info(self, retrieve_json_with_optional_auth):
         self.kubeutil.retrieve_machine_info()
-        retrieve_json.assert_called_once_with(self.kubeutil.machine_info_url)
+        retrieve_json_with_optional_auth.assert_called_once_with(url=self.kubeutil.machine_info_url)
 
-    @mock.patch('utils.kubernetes.kubeutil.retrieve_json')
-    def test_retrieve_metrics(self, retrieve_json):
+    @mock.patch('utils.kubernetes.kubeutil.KubeUtil.retrieve_json_with_optional_auth')
+    def test_retrieve_metrics(self, retrieve_json_with_optional_auth):
         self.kubeutil.retrieve_metrics()
-        retrieve_json.assert_called_once_with(self.kubeutil.metrics_url)
+        retrieve_json_with_optional_auth.assert_called_once_with(url=self.kubeutil.metrics_url)
 
     @mock.patch('utils.kubernetes.kubeutil.requests')
     def test_perform_kubelet_query(self, req):
@@ -686,7 +686,9 @@ class TestKubeutil(unittest.TestCase):
         os.environ['KUBERNETES_PORT'] = '999'
         self.assertTrue(detect_is_k8s())
 
-    def test_extract_event_tags(self):
+    @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://172.17.0.1:10255')
+    @mock.patch('utils.kubernetes.kubeutil.KubeUtil.get_auth_token', return_value='tkn')
+    def test_extract_event_tags(self, *args):
         events = json.loads(Fixtures.read_file("events.json", sdk_dir=FIXTURE_DIR, string_escape=False))['items']
         for ev in events:
             tags = KubeUtil().extract_event_tags(ev)

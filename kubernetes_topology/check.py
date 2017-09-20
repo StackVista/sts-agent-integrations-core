@@ -26,8 +26,8 @@ class KubernetesTopology(AgentCheck):
         status = None
 
         kubeutil = KubeUtil(instance=instance)
-        if not kubeutil.host:
-            raise Exception('Unable to retrieve Docker hostname and host parameter is not set')
+        if not kubeutil.kubelet_api_url:
+            raise Exception('Unable to reach kubelet. Try setting the host parameter.')
 
         self.start_snapshot(instance_key)
         try:
@@ -37,6 +37,7 @@ class KubernetesTopology(AgentCheck):
             msg = "%s seconds timeout when hitting %s" % (kubeutil.timeoutSeconds, url)
             status = AgentCheck.CRITICAL
         except Exception as e:
+            self.log.warning('kubernetes topology check %s failed: %s' % (url, str(e)))
             msg = str(e)
             status = AgentCheck.CRITICAL
         finally:
@@ -58,7 +59,7 @@ class KubernetesTopology(AgentCheck):
             data['type'] = service['spec']['type']
             data['namespace'] = service['metadata']['namespace']
             data['ports'] = service['spec'].get('ports', [])
-            data['labels'] = self._make_labels(kubeutil, service['metadata'])
+            data['labels'] = self._make_labels(service['metadata'])
             if 'clusterIP' in service['spec'].keys():
                 data['cluster_ip'] = service['spec']['clusterIP']
             self.component(instance_key, service['metadata']['name'], {'name': 'KUBERNETES_SERVICE'}, data)
@@ -69,7 +70,7 @@ class KubernetesTopology(AgentCheck):
             addresses = {item['type']: item['address'] for item in status_addresses}
 
             data = dict()
-            data['labels'] = self._make_labels(kubeutil, node['metadata'])
+            data['labels'] = self._make_labels(node['metadata'])
             data['internal_ip'] = addresses.get('InternalIP', None)
             data['legacy_host_ip'] = addresses.get('LegacyHostIP', None)
             data['hostname'] = addresses.get('Hostname', None)
@@ -83,11 +84,11 @@ class KubernetesTopology(AgentCheck):
             externalId = "deployment: %s" % deployment['metadata']['name']
             data['namespace'] = deployment['metadata']['namespace']
             data['name'] = deployment['metadata']['name']
-            data['labels'] = self._make_labels(kubeutil, deployment['metadata'])
+            data['labels'] = self._make_labels(deployment['metadata'])
 
             deployment_template = deployment['spec']['template']
             if deployment_template and deployment_template['metadata']['labels'] and len(deployment_template['metadata']['labels']) > 0:
-                data['template_labels'] = self._make_labels(kubeutil, deployment_template['metadata'])
+                data['template_labels'] = self._make_labels(deployment_template['metadata'])
                 replicasets = kubeutil.retrieve_replicaset_filtered_list(deployment['metadata']['namespace'], deployment_template['metadata']['labels'])
                 if replicasets['items']:
                     for replicaset in replicasets['items']:
@@ -103,7 +104,7 @@ class KubernetesTopology(AgentCheck):
             pod_name = pod['metadata']['name']
             data['uid'] = pod['metadata']['uid']
             data['namespace'] = pod['metadata']['namespace']
-            data['labels'] = self._make_labels(kubeutil, pod['metadata'])
+            data['labels'] = self._make_labels(pod['metadata'])
 
             self.component(instance_key, pod_name, {'name': 'KUBERNETES_POD'}, data)
 
@@ -135,7 +136,7 @@ class KubernetesTopology(AgentCheck):
                         replicasets_to_pods[reference['name']].append(data)
                         if reference['name'] not in replicaset_to_data:
                             replicaset_data = dict()
-                            replicaset_data['labels'] = self._make_labels(kubeutil, pod['metadata'])
+                            replicaset_data['labels'] = self._make_labels(pod['metadata'])
                             replicaset_data['namespace'] = pod['metadata']['namespace']
                             replicaset_to_data[reference['name']] = replicaset_data
 
@@ -174,8 +175,28 @@ class KubernetesTopology(AgentCheck):
                                 pod_name = address['targetRef']['name']
                                 self.relation(instance_key, service_name, pod_name, {'name': 'EXPOSES'}, data)
 
-    def _make_labels(self, kubeutil, metadata):
-        original_labels = self._flatten_dict(kubeutil.extract_metadata_labels(metadata=metadata, add_kube_prefix=False))
+    @staticmethod
+    def extract_metadata_labels(metadata):
+        """
+        Extract labels from metadata section coming from the kubelet API.
+        """
+        kube_labels = defaultdict(list)
+        name = metadata.get("name")
+        namespace = metadata.get("namespace")
+        labels = metadata.get("labels")
+        if name and labels:
+            if namespace:
+                key = "%s/%s" % (namespace, name)
+            else:
+                key = name
+
+            for k, v in labels.iteritems():
+                kube_labels[key].append(u"%s:%s" % (k, v))
+
+        return kube_labels
+
+    def _make_labels(self, metadata):
+        original_labels = self._flatten_dict(KubernetesTopology.extract_metadata_labels(metadata=metadata))
         if 'namespace' in metadata:
             original_labels.append("namespace:%s" % metadata['namespace'])
         return original_labels

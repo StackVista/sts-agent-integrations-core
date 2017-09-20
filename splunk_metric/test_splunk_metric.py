@@ -1,9 +1,12 @@
 # stdlib
 import json
+import os
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
 from checks import CheckException
+
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
 def _mocked_saved_searches(*args, **kwargs):
     return []
@@ -15,7 +18,7 @@ def _mocked_dispatch_saved_search(*args, **kwargs):
 def _mocked_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
-    return [json.loads(Fixtures.read_file("%s.json" % sid))]
+    return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
 class TestSplunkErrorResponse(AgentCheckTest):
     """
@@ -395,7 +398,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
         def _mocked_polling_search(*args, **kwargs):
             sid = args[0]
             count = args[1].batch_size
-            return json.loads(Fixtures.read_file("batch_%s_seq_%s.json" % (sid, count)))
+            return json.loads(Fixtures.read_file("batch_%s_seq_%s.json" % (sid, count), sdk_dir=FIXTURE_DIR))
 
         def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
             if test_data["throw"]:

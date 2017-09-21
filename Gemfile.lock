@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/StackVista/datadog-sdk-testing.git
-  revision: 573f74911bfc1b097e62ac0ff0b4e7e62832f78f
+  revision: 0698b29499926dfbbe482b22a5a4c762bf063874
   specs:
     datadog-sdk-testing (0.7.4)
       colorize (~> 0.8)

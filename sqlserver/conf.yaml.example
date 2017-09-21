@@ -39,7 +39,7 @@ init_config:
     # stored_procedure: ProcedureToExecute
     #
     # The proc should return this table
-    # CREATE TABLE #Datadog
+    # CREATE TABLE #StackState
     # (
     # 	[metric] varchar(255) not null,
     # 	[type] varchar(50) not null,
@@ -84,7 +84,7 @@ instances:
   #   database: MyDB
   #   username: my_username
   #   password: my_password
-  #   stored_procedure: GetDatadogMetrics
+  #   stored_procedure: GetStackStateMetrics
   #   proc_only_if: SELECT CASE CONVERT(sysname,DatabasePropertyEx('MyDB','Updateability')) WHEN 'READ_WRITE' THEN 1 ELSE 0 END
   #   proc_only_if_database: master
   #   ignore_missing_database: True 

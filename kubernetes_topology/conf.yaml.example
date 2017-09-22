@@ -10,9 +10,10 @@ instances:
   #
   # To override, e.g. in the case of a standalone instance, use the following:
   #
- - master_method: https
+ - # Decide whether to use kubernetes authentication. This is useful when accessing the kubernetes master through a non-auth proxy
+   master_use_kube_auth: true
    master_name: kubernetes
    master_port: 443
-   use_kube_auth: true
+
 
    

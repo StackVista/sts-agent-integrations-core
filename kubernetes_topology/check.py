@@ -25,9 +25,9 @@ class KubernetesTopology(AgentCheck):
         msg = None
         status = None
 
-        kubeutil = KubeUtil(instance=instance)
-        if not kubeutil.kubelet_api_url:
-            raise Exception('Unable to reach kubelet. Try setting the host parameter.')
+        kubeutil = KubeUtil(instance=instance, use_kubelet=False)
+        if not kubeutil.kubernetes_api_url:
+            raise Exception('Unable to reach kubernetes. Try setting the master_name and master_port parameter.')
 
         self.start_snapshot(instance_key)
         try:
@@ -99,7 +99,7 @@ class KubernetesTopology(AgentCheck):
     def _extract_pods(self, kubeutil, instance_key):
         replicasets_to_pods = defaultdict(list)
         replicaset_to_data = dict()
-        for pod in kubeutil.retrieve_pods_list()['items']:
+        for pod in kubeutil.retrieve_master_pods_list()['items']:
             data = dict()
             pod_name = pod['metadata']['name']
             data['uid'] = pod['metadata']['uid']

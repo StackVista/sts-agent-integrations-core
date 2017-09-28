@@ -16,7 +16,6 @@ git:
 branches:
   only:
     - master
-    - fix-shadowing
 
 services:
   - docker

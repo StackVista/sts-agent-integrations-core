@@ -8,7 +8,7 @@ instances:
   # By default we will assume we're running under docker and will use the address
   # of the default router to reach the kubernetes api.
   #
-  # To override, e.g. in the case of a standalone instance, use the following:
+  # To change, e.g. in the case of a standalalone instance, you can change the below configuration options
   #
  - # Decide whether to use kubernetes authentication. This is useful when accessing the kubernetes master through a non-auth proxy
    master_use_kube_auth: true

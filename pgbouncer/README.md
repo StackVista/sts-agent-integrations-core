@@ -63,3 +63,5 @@ The PGboucer check does not include any event at this time.
 `pgbouncer.can_connect`:
 
 Returns CRITICAL if the Agent cannot connect to PgBouncer to collect metrics, otherwise OK.
+
+## Further Reading

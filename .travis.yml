@@ -32,9 +32,9 @@ env:
     - PIP_CACHE=$HOME/.cache/pip
     - SDK_TESTING=true
     - BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache
-    - DD_AGENT_BRANCH=updateTo5.16
+    - DD_AGENT_BRANCH=updateTo5.17.2
     - EXTRAS_BRANCH=master
-    - JMXFETCH_URL="file://$HOME/dd-agent/binaries"
+    - JMXFETCH_URL="https://s3-eu-west-1.amazonaws.com/sts-jmxfetch"
     - REQ_LOCALS="$TRAVIS_BUILD_DIR,$HOME/dd-agent,$HOME/integrations-extras"
   matrix:
     - TRAVIS_FLAVOR=default
@@ -43,6 +43,9 @@ env:
     - TRAVIS_FLAVOR=cassandra FLAVOR_VERSION=2.0.17
     - TRAVIS_FLAVOR=cassandra FLAVOR_VERSION=2.1.14
     - TRAVIS_FLAVOR=cassandra FLAVOR_VERSION=2.2.10
+    - TRAVIS_FLAVOR=cassandra_nodetool FLAVOR_VERSION=2.0.17
+    - TRAVIS_FLAVOR=cassandra_nodetool FLAVOR_VERSION=2.1.14
+    - TRAVIS_FLAVOR=cassandra_nodetool FLAVOR_VERSION=2.2.10
     - TRAVIS_FLAVOR=couch FLAVOR_VERSION=1.6.1
     - TRAVIS_FLAVOR=consul FLAVOR_VERSION=v0.6.4
     - TRAVIS_FLAVOR=consul FLAVOR_VERSION=0.7.2

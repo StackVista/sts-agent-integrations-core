@@ -103,8 +103,6 @@ class KafkaCheck(AgentCheck):
             self.gauge('kafka.consumer_lag', broker_offset - consumer_offset,
                        tags=tags)
 
-    # Private config validation/marshalling functions
-
     def _validate_consumer_groups(self, val):
         try:
             consumer_group, topic_partitions = val.items()[0]

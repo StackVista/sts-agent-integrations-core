@@ -1,6 +1,22 @@
 # CHANGELOG - kubernetes
 
-1.2.0 / Unreleased
+1.4.0 / UNRELEASED
+==================
+### Changes
+
+* [FEATURE] Add an option to retry kubelet connection if it's not up at start time. See [#722][]
+* [BUGFIX] fix container_image names reported as sha checksums [#731][]
+
+1.3.0 / 2017-08-28
+==================
+### Changes
+
+* [FEATURE] add an option to collect node labels as host tags. See [#614][]
+* [IMPROVEMENT] add custom tags to service checks [#642][]
+* [FEATURE] skip cAdvisor metrics if port is set to 0. See [#655][]
+* [FEATURE] enable event collection according to agent leader status. See [#687][]
+
+1.2.0 / 2017-07-18
 ==================
 ### Changes
 
@@ -20,7 +36,7 @@
 * [IMPROVEMENT] Add custom tags to events. See [#449][]
 * [BUGFIX] Fix missing docker.net metrics in Kubernetes. See [#418][]
 
-1.0.0 / 02-23-2017
+1.0.0 / 2017-02-23
 ==================
 
 ### Changes

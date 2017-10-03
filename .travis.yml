@@ -16,7 +16,6 @@ git:
 branches:
   only:
     - master
-    - updateTo5.17.2
 
 services:
   - docker

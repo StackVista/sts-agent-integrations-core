@@ -13,6 +13,8 @@ conf_dir=embedded/dd-agent/conf.d/ checks_dir=embedded/dd-agent/checks.d rake co
 
 pushd embedded/dd-agent
 
-python agent.py $1
+if [ "$1" != "install" ]; then
+    python agent.py $1
+fi
 
 popd

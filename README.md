@@ -24,7 +24,7 @@ Once the required Ruby gems have been installed by Bundler, you can easily creat
 This is a quick setup but from that point you should be able to run the default test suit `rake ci:run`.
 To go beyond we advise you to read the full documentation [here](http://docs.datadoghq.com/guides/integration_sdk/).
 
-# Installing the Integrations
+# Installing the Integration tests
 
     bundle install
     # When this fails, check whether the python2 executable is available (solvable with symlink)
@@ -50,3 +50,11 @@ Switching dd-agent branches:
     Update the branch in Rakefile
     rm -rf embedded/dd-agent
     Rerun setup_env
+
+# Running the agent from the dev environment
+
+First do the setup of running integration tests
+
+Run `./run.sh install` to install all checks and config files in embedded/dd-agent.
+Edit the config file in embedded/dd-agent and embedded/dd-agent/conf.d for the checks you want to run.
+Run `./run.sh start` to start and `./run.sh stop` to stop.

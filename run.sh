@@ -2,8 +2,8 @@
 
 set -e
 
-if [ $@ -ne 1 ]; then
-    echo "Usage: run.sh <start|stop>"
+if [ $# -ne 1 ]; then
+    echo "Usage: run.sh <start|stop|install>"
     exit 1
 fi
 

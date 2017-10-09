@@ -234,25 +234,9 @@ class TestKubernetesTopology(AgentCheckTest):
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_endpoints_list',
                 side_effect=lambda: json.loads(Fixtures.read_file("endpoints_list.json", sdk_dir=FIXTURE_DIR, string_escape=False)))
     @mock.patch('utils.kubernetes.KubeUtil._locate_kubelet', return_value='http://kubelet_ip')
-    def test_kube_multiple_instances(self, *args):
-        self.run_check({'instances': [{'host': 'foo', 'url':'http://foo'},{'host': 'bar', 'url':'http://bar'}]})
-
-        instances = self.check.get_topology_instances()
-        self.assertEqual(len(instances), 2)
-        self.assertEqual(instances[0]['instance'], {
-            'type': 'kubernetes',
-            'url': 'http://foo'
-        })
-
-        self.assertEqual(instances[1]['instance'], {
-            'type': 'kubernetes',
-            'url': 'http://bar'
-        })
-
-        self.assertEqual(len(instances[0]['relations']), 99)
-        self.assertEqual(len(instances[0]['components']), 72)
-        self.assertEqual(len(instances[1]['relations']), 99)
-        self.assertEqual(len(instances[1]['components']), 72)
+    def test_kube_no_multiple_instances(self, *args):
+        with self.assertRaisesRegexp(Exception, 'Kubernetes check only supports one configured instance.'):
+            self.run_check({'instances': [{'host': 'foo', 'url':'http://foo'},{'host': 'bar', 'url':'http://bar'}]})
 
     @mock.patch('utils.kubernetes.KubeUtil.retrieve_json_auth',side_effect=TestKubernetesTopologyMocks.assure_retrieve_json_auth_called,autospec=True)
     @mock.patch('utils.kubernetes.KubeUtil.get_auth_token', side_effect="DummyToken")

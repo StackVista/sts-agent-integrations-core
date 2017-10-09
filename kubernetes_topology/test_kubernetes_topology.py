@@ -63,7 +63,7 @@ class TestKubernetesTopology(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {
             'type': 'kubernetes',
-            'url': 'http://kubernetes'
+            'url': 'https://kubernetes:443'
         })
 
         self.assertEqual(len(instances[0]['relations']), 99)
@@ -196,7 +196,7 @@ class TestKubernetesTopology(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {
             'type': 'kubernetes',
-            'url': 'http://kubernetes'
+            'url': 'https://kubernetes:443'
         })
         print self.service_checks
         self.assertEqual(len(instances[0]['relations']), 0)
@@ -213,7 +213,7 @@ class TestKubernetesTopology(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {
             'type': 'kubernetes',
-            'url': 'http://kubernetes'
+            'url': 'https://kubernetes:443'
         })
         print self.service_checks
         self.assertEqual(len(instances[0]['relations']), 0)
@@ -299,7 +299,7 @@ class TestKubernetesTopology(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {
             'type': 'kubernetes',
-            'url': 'http://kubernetes'
+            'url': 'https://kubernetes:443'
         })
 
         self.assertEqual(len(instances[0]['relations']), 6)

@@ -17,7 +17,6 @@ from utils.kubernetes import KubeUtil
 class KubernetesTopology(AgentCheck):
     INSTANCE_TYPE = "kubernetes"
     SERVICE_CHECK_NAME = "kubernetes.topology_information"
-    DEFAULT_KUBERNETES_URL = "http://kubernetes"
 
     def __init__(self, name, init_config, agentConfig, instances=None):
         if instances is not None and len(instances) > 1:

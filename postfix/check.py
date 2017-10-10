@@ -13,7 +13,9 @@ class PostfixCheck(AgentCheck):
              sudo access is not required when running sts-agent as root (not recommended)
 
     example /etc/sudoers entry:
-             sts-agent ALL=(ALL) NOPASSWD:/usr/bin/find /var/spool/postfix* -type f
+             sts-agent ALL=(postfix) NOPASSWD:/usr/bin/find /var/spool/postfix/incoming -type f
+        dd-agentALL=(postfix) NOPASSWD:/usr/bin/find /var/spool/postfix/active -type f
+        dd-agent ALL=(postfix) NOPASSWD:/usr/bin/find /var/spool/postfix/deferred -type f
 
     YAML config options:
         "directory" - the value of 'postconf -h queue_directory'
@@ -57,7 +59,9 @@ class PostfixCheck(AgentCheck):
                 # can dd-agent user run sudo?
                 test_sudo = os.system('setsid sudo -l < /dev/null')
                 if test_sudo == 0:
-                    output, _, _ = get_subprocess_output(['sudo', 'find', queue_path, '-type', 'f'], self.log, False)
+                    # default to `root` for backward compatibility
+                    postfix_user = self.init_config.get('postfix_user', 'root')
+                    output, _, _ = get_subprocess_output(['sudo', '-u', postfix_user, 'find', queue_path, '-type', 'f'], self.log, False)
                     count = len(output.splitlines())
                 else:
                     raise Exception('The sts-agent user does not have sudo access')

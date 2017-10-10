@@ -32,7 +32,7 @@ env:
     - PIP_CACHE=$HOME/.cache/pip
     - SDK_TESTING=true
     - BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache
-    - DD_AGENT_BRANCH=updateTo5.17.2
+    - DD_AGENT_BRANCH=master
     - EXTRAS_BRANCH=master
     - JMXFETCH_URL="https://s3-eu-west-1.amazonaws.com/sts-jmxfetch"
     - REQ_LOCALS="$TRAVIS_BUILD_DIR,$HOME/dd-agent,$HOME/integrations-extras"
@@ -104,7 +104,6 @@ env:
     - TRAVIS_FLAVOR=ssh_check
     - TRAVIS_FLAVOR=snmp
     - TRAVIS_FLAVOR=solr FLAVOR_VERSION=6.2
-    - TRAVIS_FLAVOR=sqlserver FLAVOR_VERSION=latest
     - TRAVIS_FLAVOR=statsd
     - TRAVIS_FLAVOR=supervisord FLAVOR_VERSION=3.3.0
     - TRAVIS_FLAVOR=tcp_check    

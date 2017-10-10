@@ -7,7 +7,7 @@ The PgBouncer check tracks connection pool metrics and lets you monitor traffic 
 ## Setup
 ### Installation
 
-The PgBouncer check is packaged with the Agent, so simply install the Agent) on your PgBouncer nodes.
+The PgBouncer check is packaged with the Agent, so simply install the Agent on your PgBouncer nodes.
 
 ### Configuration
 

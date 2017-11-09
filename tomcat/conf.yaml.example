@@ -16,6 +16,10 @@ instances:
   #     newTag: test
 
 # List of metrics to be collected by the integration
+
+# Note: Be very careful with tomcat.servlet.* jmx metrics, as they will provide metrics per jsp.
+# This easily leads to an huge amount of data points being send to StackState.
+
 init_config:
   conf:
     - include:
@@ -50,18 +54,6 @@ init_config:
             metric_type: gauge
           processingTime:
             alias: tomcat.processing_time
-            metric_type: counter
-    - include:
-        j2eeType: Servlet
-        attribute:
-          processingTime:
-            alias: tomcat.servlet.processing_time
-            metric_type: counter
-          errorCount:
-            alias: tomcat.servlet.error_count
-            metric_type: counter
-          requestCount:
-            alias: tomcat.servlet.request_count
             metric_type: counter
     - include:
         type: Cache

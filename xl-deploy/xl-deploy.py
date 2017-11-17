@@ -6,6 +6,8 @@ import datetime
 import pytz
 import urllib
 import re
+import dateutil.parser
+import time
 
 INSTANCE_TYPE = "xl-deploy"
 SERVICE_CHECK_NAME = "xl-deploy.topology_information"
@@ -62,7 +64,7 @@ class XlDeploy(AgentCheck):
 
     def collect_data(self, container, data):
         for ci in container.children:
-            if (ci._name == 'password'):
+            if (ci._name == 'password' or ci._name == 'tags' or ci._name == 'contextRoot'):
                 continue
 
             data[ci._name] = self.get_child_value(container, ci._name)
@@ -77,10 +79,12 @@ class XlDeploy(AgentCheck):
 
         data = dict()
         self.collect_data(cont, data)
+        data["ci_type"] = cont._name
         if (environment is not None):
             data["environment"] = environment
 
-        self.component(instance_key, cont["id"], {'name': cont._name}, data)
+        ci_type = {'name': cont._name }
+        self.component(instance_key, cont["id"], ci_type, data)
 
         # Link the container to it's direct parent
         parts = cont["id"].split('/')
@@ -127,11 +131,6 @@ class XlDeploy(AgentCheck):
         title = 'Deployment of {} {}'.format(application_name, version_number)
         msg_body = title
 
-        affects_tag = '"affects": "{}"'.format(deployed_id)
-        app_tag = '"application": "{}"'.format(application_name)
-        version_tag = '"version": "{}"'.format(version_number)
-        env_tag = '"environment": "{}"'.format(environment_name)
-
         dd_event = {
             'timestamp': event_ts,
             'host': '10.0.0.1', # TODO change to instance host
@@ -139,8 +138,16 @@ class XlDeploy(AgentCheck):
             'msg_title': title,
             'msg_text': msg_body,
             'source_type_name': EVENT_TYPE,
-            'tags': '{{ {}, {}, {}, {} }}'.format(app_tag, version_tag, affects_tag, env_tag)
+            'api_key': '',
+            'aggregation_key': EVENT_TYPE,
+            'tags': [
+                'affects-' + deployed_id,
+                'application-' + application_name,
+                'version-' + version_number,
+                'environment-' + environment_name
+            ]
         }
+
         self.event(dd_event)
 
     def handle_deployed(self, instance_key, deployment, deployed_id):
@@ -156,8 +163,11 @@ class XlDeploy(AgentCheck):
         match = re.search('\/([^\/]+)$', self.get_child_attribute(deployment, "version", "ref"))
         version_number = match.group(1)
 
+        # timestamp = str(int(dateutil.parser.parse(deployment["last-modified-at"]).strftime('%s')) * 1000)
+        timestamp = int(round(time.time() * 1000))
+
         self.topology_from_ci(instance_key, deployed_id, environment_name)
-        self.deployment_event(deployed_id, environment_name, application_name, version_number, deployment["last-modified-at"])
+        self.deployment_event(deployed_id, environment_name, application_name, version_number, timestamp)
 
     def get_deployments(self, instance_key, most_recent_check):
         o = self.xld_client.deployment_query(most_recent_check)

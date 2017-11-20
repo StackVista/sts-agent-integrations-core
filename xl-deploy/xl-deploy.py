@@ -133,12 +133,12 @@ class XlDeploy(AgentCheck):
 
         dd_event = {
             'timestamp': event_ts,
-            'host': '10.0.0.1', # TODO change to instance host
+            'host': self.hostname,
             'event_type': EVENT_TYPE,
             'msg_title': title,
             'msg_text': msg_body,
             'source_type_name': EVENT_TYPE,
-            'api_key': '',
+            'api_key': self.agentConfig['api_key'],
             'aggregation_key': EVENT_TYPE,
             'tags': [
                 'affects-' + deployed_id,
@@ -164,7 +164,7 @@ class XlDeploy(AgentCheck):
         version_number = match.group(1)
 
         # timestamp = str(int(dateutil.parser.parse(deployment["last-modified-at"]).strftime('%s')) * 1000)
-        timestamp = int(round(time.time() * 1000))
+        timestamp = int(time.time())
 
         self.topology_from_ci(instance_key, deployed_id, environment_name)
         self.deployment_event(deployed_id, environment_name, application_name, version_number, timestamp)

@@ -19,11 +19,12 @@ PERSISTENCE_CHECK_NAME = "xl-deploy"
 
 class XlDeployClient:
 
-    def __init__(self, url, un, pw):
+    def __init__(self, url, un, pw, logger):
         self._url = url
         self._un = un
         self._pw = pw
-        print "Accessing XL Deploy at {} with user {}".format(self._url, self._un)
+        self.log = logger
+        self.log.debug("Accessing XL Deploy at {} with user {}".format(self._url, self._un))
 
     def get(self, url):
         response = requests.get(url, auth=(self._un, self._pw))
@@ -198,7 +199,7 @@ class XlDeploy(AgentCheck):
         password = instance['pass']
         instance_key = {'type': INSTANCE_TYPE, 'url': url}
 
-        self.xld_client = XlDeployClient(url, user, password)
+        self.xld_client = XlDeployClient(url, user, password, self.log)
 
         self._persistable_store = PersistableStore(PERSISTENCE_CHECK_NAME, url)
         self.load_status()

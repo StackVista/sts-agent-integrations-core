@@ -32,7 +32,7 @@ class XlDeployClient:
         return o
 
     def query(self, url, most_recent_check):
-        if (most_recent_check == None):
+        if most_recent_check is None:
             return self.get(url)
         else:
             return self.get(url + '&lastModifiedAfter=' + urllib.quote(most_recent_check))
@@ -45,6 +45,7 @@ class XlDeployClient:
 
     def ci_query(self, ci, most_recent_check = None):
         return self.query(self._url + '/ci/' + ci, most_recent_check)
+
 
 class XlDeploy(AgentCheck):
 
@@ -67,23 +68,23 @@ class XlDeploy(AgentCheck):
 
     def collect_data(self, container, data):
         for ci in container.children:
-            if (ci._name == 'password' or ci._name == 'tags' or ci._name == 'contextRoot'):
+            if ci._name == 'password' or ci._name == 'tags' or ci._name == 'contextRoot':
                 continue
 
             data[ci._name] = self.get_child_value(container, ci._name)
-            if (ci._name == 'deployable'):
+            if ci._name == 'deployable':
                 # Capture the version of the deployable
                 match = re.search('\/([^\/]+)\/([0-9\.]+)\/', ci["ref"])
                 data["application"] = match.group(1)
                 data["version"] = match.group(2)
 
-    def topology_from_ci(self, instance_key, ci, environment = None):
+    def topology_from_ci(self, instance_key, ci, environment=None):
         cont = self.xld_client.ci_query(ci).children[0]
 
         data = dict()
         self.collect_data(cont, data)
         data["ci_type"] = cont._name
-        if (environment is not None):
+        if environment is not None:
             data["environment"] = environment
 
         ci_type = {'name': cont._name }
@@ -203,7 +204,6 @@ class XlDeploy(AgentCheck):
         self.load_status()
 
         most_recent_check = self._persistable_store['recent_timestamp']
-        self.log.info(most_recent_check)
 
         self.get_topology(instance_key, most_recent_check)
         self.get_deployments(instance_key, most_recent_check)

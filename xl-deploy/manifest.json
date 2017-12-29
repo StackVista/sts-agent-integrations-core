@@ -1,0 +1,15 @@
+{
+  "maintainer": "info@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "xl-deploy",
+  "short_description": "XL-Deploy integration",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os"
+  ],
+  "version": "1.0.0",
+  "guid": "63f01903-5ee1-40d2-8fef-8189165fdfe3"
+}

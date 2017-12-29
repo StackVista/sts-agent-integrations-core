@@ -6,13 +6,16 @@ import datetime
 import pytz
 import urllib
 import re
-import dateutil.parser
 import time
+
+from utils.persistable_store import PersistableStore
 
 INSTANCE_TYPE = "xl-deploy"
 SERVICE_CHECK_NAME = "xl-deploy.topology_information"
 DEFAULT_XLD_URL = "http://xl-deploy:4516"
 EVENT_TYPE = "deployment"
+PERSISTENCE_CHECK_NAME = "xl-deploy"
+
 
 class XlDeployClient:
 
@@ -23,9 +26,7 @@ class XlDeployClient:
         print "Accessing XL Deploy at {} with user {}".format(self._url, self._un)
 
     def get(self, url):
-        # print url
         response = requests.get(url, auth=(self._un, self._pw))
-        print response.text
 
         o = untangle.parse(response.text)
         return o
@@ -47,7 +48,9 @@ class XlDeployClient:
 
 class XlDeploy(AgentCheck):
 
-    xld_client = None
+    xld_client = None  # XL-Deploy connection client
+    _persistable_store = None  # storage for check/instance data
+    recent_check_timestamp = None  # poll XL-Deploy for changes after this timestamp
 
     def __init__(self, name, init_config, agentConfig, instances=None):
         AgentCheck.__init__(self, name, init_config, agentConfig, instances)
@@ -105,24 +108,6 @@ class XlDeploy(AgentCheck):
         for ci in cis:
             self.topology_from_ci(instance_key, ci)
 
-    def get_most_recent_check_ts(self):
-        most_recent_check_ts = "1970-01-01T00:00:00.000000+00:00"
-
-        try:
-            with open("/tmp/most_recent_check_ts.txt", "r") as f:
-                most_recent_check_ts = f.read()
-        except:
-            print "Unable to open ts file"
-        finally:
-            pass
-
-        print 'Most recent ts: ' + most_recent_check_ts
-        return most_recent_check_ts
-
-    def store_most_recent_check_ts(self):
-        with open("/tmp/most_recent_check_ts.txt", "w") as out:
-            out.write(datetime.datetime.now(tz=pytz.utc).isoformat())
-
     def handle_deployment(self, instance_key, deployment):
         for m in self.get_child_node(deployment, "deployeds").children:
             self.handle_deployed(instance_key, deployment, m["ref"])
@@ -178,16 +163,47 @@ class XlDeploy(AgentCheck):
                 depl = self.xld_client.ci_query(ci["ref"]).children[0]
                 self.handle_deployment(instance_key, depl)
 
+    def load_status(self):
+        """
+        load recent timestamp to use in polling for new data.
+        :return: nothing
+        """
+        self._persistable_store.load_status()
+        if self._persistable_store['recent_timestamp'] is None:
+            self._persistable_store['recent_timestamp'] = "1970-01-01T00:00:00.000000+00:00"
+
+    def commit_succeeded(self, instance):
+        """
+        override from AgentCheck, commit succeeded to this point, we'll store the timestamp for next instance run
+        :param instance: check instance
+        :return: boolean indicating commit has succeeded
+        """
+        self._persistable_store['recent_timestamp'] = self.current_timestamp()
+        self._persistable_store.commit_status()
+        return True
+
+    def current_timestamp(self):
+        return datetime.datetime.now(tz=pytz.utc).isoformat()
+
+    def commit_failed(self, instance):
+        """
+        Upon failure we do not commit the new timestamp such that it will be retried in a later instance check run.
+        """
+        pass
+
     def check(self, instance):
         url = instance['url']
         user = instance['user']
         password = instance['pass']
-        self.xld_client = XlDeployClient(url, user, password)
         instance_key = {'type': INSTANCE_TYPE, 'url': url}
 
-        most_recent_check = self.get_most_recent_check_ts()
+        self.xld_client = XlDeployClient(url, user, password)
+
+        self._persistable_store = PersistableStore(PERSISTENCE_CHECK_NAME, url)
+        self.load_status()
+
+        most_recent_check = self._persistable_store['recent_timestamp']
+        self.log.info(most_recent_check)
 
         self.get_topology(instance_key, most_recent_check)
         self.get_deployments(instance_key, most_recent_check)
-
-        self.store_most_recent_check_ts()

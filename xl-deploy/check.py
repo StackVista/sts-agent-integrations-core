@@ -36,12 +36,22 @@ class XlDeployClient:
         if most_recent_check is None:
             return self.get(url)
         else:
-            return self.get(url + '&lastModifiedAfter=' + urllib.quote(most_recent_check))
+            if (url.find("?") == -1):
+                return self.get(url + '?lastModifiedAfter=' + urllib.quote(most_recent_check))
+            else:
+                return self.get(url + '&lastModifiedAfter=' + urllib.quote(most_recent_check))
 
-    def host_query(self, most_recent_check):
+    def host_query(self, most_recent_check = None):
         return self.query(self._url + '/query?type=udm.Container', most_recent_check)
 
-    def deployment_query(self, most_recent_check):
+    def env_query(self, most_recent_check = None):
+        return self.query(self._url + '/query?type=udm.Environment', most_recent_check)
+
+    # Find all CIs modified since most_recent_check
+    def mods_query(self, most_recent_check = None):
+        return self.query(self._url + '/query', most_recent_check)
+
+    def deployment_query(self, most_recent_check = None):
         return self.query(self._url + '/query?type=udm.DeployedApplication', most_recent_check)
 
     def ci_query(self, ci, most_recent_check = None):
@@ -79,7 +89,7 @@ class XlDeploy(AgentCheck):
                 data["application"] = match.group(1)
                 data["version"] = match.group(2)
 
-    def topology_from_ci(self, instance_key, ci, environment=None):
+    def topology_from_ci(self, instance_key, ci, environment = None, application = None, version = None):
         cont = self.xld_client.ci_query(ci).children[0]
 
         data = dict()
@@ -87,6 +97,12 @@ class XlDeploy(AgentCheck):
         data["ci_type"] = cont._name
         if environment is not None:
             data["environment"] = environment
+
+        if (application is not None):
+            data["application"] = application
+
+        if (version is not None):
+            data["version"] = version
 
         ci_type = {'name': cont._name }
         self.component(instance_key, cont["id"], ci_type, data)
@@ -98,44 +114,57 @@ class XlDeploy(AgentCheck):
             relation_data = dict()
             self.relation(instance_key, cont["id"], '/'.join(parts), {'name': 'RUNS_ON'}, relation_data)
 
-    def get_topology(self, instance_key, most_recent_check):
-        o = self.xld_client.host_query(most_recent_check)
+    def path_components(self, path):
+        result = []
+        comps = path.split("/")
+        for i in range(2, len(comps)+1):
+            result.append('/'.join(comps[0:i]))
+        return result
 
-        cis = []
-        for ci in o.list.children:
-            cis.append(ci["ref"])
+    def path_ancestor(self, path):
+        result = self.path_components(path)
+        return '/'.join(result[0:len(result)])
 
-        cis.sort()
+    def path_name(self, path):
+        match = re.search('\/([^\/]+)$', path)
+        return match.group(1)
 
-        for ci in cis:
-            self.topology_from_ci(instance_key, ci)
+    def get_topology(self, instance_key, most_recent_check = None):
+        # Search for topology by environment, starting with direct env members, and then each
+        # CI in the env member path
+        o = self.xld_client.env_query()
+
+        envs = {}
+        for env_ref in o.list.children:
+            cis = []
+            env = self.xld_client.ci_query(env_ref["ref"]).children[0]
+            for ci in env.members.children:
+                cis.append(ci["ref"])
+
+            cis.sort()
+            envs[env["id"]] = cis
+
+        # print "Environments map: " + str(envs)
+
+        # this loop creates topology records for all CIs in the environment.
+        # if the same CIs are present in multiple environments, they will appear as multiple topology records
+        for e in envs.keys():
+            unique_cis = set()
+            environment_name = self.path_name(e)
+            # print "Environment name = " + environment_name
+            for m in envs[e]:
+                cis = self.path_components(m)
+                for ci in cis:
+                    # print "Adding " + ci + " to unique CIs"
+                    unique_cis.add(ci)
+
+            for ci in unique_cis:
+                # print "Creating topo from " + ci + " for env " + environment_name
+                self.topology_from_ci(instance_key, ci, environment_name)
 
     def handle_deployment(self, instance_key, deployment):
         for m in self.get_child_node(deployment, "deployeds").children:
             self.handle_deployed(instance_key, deployment, m["ref"])
-
-    def deployment_event(self, deployed_id, environment_name, application_name, version_number, event_ts):
-        title = 'Deployment of {} {}'.format(application_name, version_number)
-        msg_body = title
-
-        dd_event = {
-            'timestamp': event_ts,
-            'host': self.hostname,
-            'event_type': EVENT_TYPE,
-            'msg_title': title,
-            'msg_text': msg_body,
-            'source_type_name': EVENT_TYPE,
-            'api_key': self.agentConfig['api_key'],
-            'aggregation_key': EVENT_TYPE,
-            'tags': [
-                'affects-' + deployed_id,
-                'application-' + application_name,
-                'version-' + version_number,
-                'environment-' + environment_name
-            ]
-        }
-
-        self.event(dd_event)
 
     def handle_deployed(self, instance_key, deployment, deployed_id):
         # A deployed id looks like this: Infrastructure/10.0.0.1/tc-server/vh1/zookeeper
@@ -150,11 +179,9 @@ class XlDeploy(AgentCheck):
         match = re.search('\/([^\/]+)$', self.get_child_attribute(deployment, "version", "ref"))
         version_number = match.group(1)
 
-        # timestamp = str(int(dateutil.parser.parse(deployment["last-modified-at"]).strftime('%s')) * 1000)
         timestamp = int(time.time())
 
         self.topology_from_ci(instance_key, deployed_id, environment_name)
-        self.deployment_event(deployed_id, environment_name, application_name, version_number, timestamp)
 
     def get_deployments(self, instance_key, most_recent_check):
         o = self.xld_client.deployment_query(most_recent_check)
@@ -206,5 +233,5 @@ class XlDeploy(AgentCheck):
 
         most_recent_check = self._persistable_store['recent_timestamp']
 
-        self.get_topology(instance_key, most_recent_check)
+        self.get_topology(instance_key)
         self.get_deployments(instance_key, most_recent_check)

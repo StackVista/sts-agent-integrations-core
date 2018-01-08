@@ -88,6 +88,8 @@ class XlDeploy(AgentCheck):
                 match = re.search('\/([^\/]+)\/([0-9\.]+)\/', ci["ref"])
                 data["application"] = match.group(1)
                 data["version"] = match.group(2)
+            elif ci._name == "host":
+                data["host"] = ci["ref"]
 
     def topology_from_ci(self, instance_key, ci, environment = None, application = None, version = None):
         cont = self.xld_client.ci_query(ci).children[0]

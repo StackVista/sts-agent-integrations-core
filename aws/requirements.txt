@@ -1,0 +1,2 @@
+# integration pip requirements
+boto3==1.5.27

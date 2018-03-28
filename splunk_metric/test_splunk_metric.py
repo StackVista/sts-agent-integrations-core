@@ -949,6 +949,189 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
+class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when dispatching Splunk searches
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": ["minimal_metrics", "full_metrics"],
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+
+        def _mocked_dispatch_saved_search(*args, **kwargs):
+            name = args[1].name
+            if name == "full_metrics":
+                raise Exception("BOOM")
+            else:
+                return name
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_metrics should succeed")
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+
+class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when executing Splunk searches
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": ["minimal_metrics", "full_metrics"],
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+
+        def _mocked_process_saved_search(*args, **kwargs):
+            sid = args[1].name
+            if sid == "full_metrics":
+                raise Exception("BOOM")
+            else:
+                return sid
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_process_saved_search": _mocked_process_saved_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_metrics should succeed")
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+
+class TestSplunkMetricSearchFullFailure(AgentCheckTest):
+    """
+    Splunk metric check should fail when all saved searches fail
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": ["minimal_metrics", "full_metrics"],
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+
+        def _mocked_process_saved_search(*args, **kwargs):
+            raise Exception("BOOM")
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_process_saved_search": _mocked_process_saved_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertTrue(thrown, "All saved searches should fail and an exception should've been thrown")
+
+
 class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
     CHECK_NAME = 'splunk_metric'
 

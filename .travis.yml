@@ -32,7 +32,7 @@ env:
     - PIP_CACHE=$HOME/.cache/pip
     - SDK_TESTING=true
     - BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache
-    - DD_AGENT_BRANCH=master
+    - DD_AGENT_BRANCH=splunk_individual_failures
     - EXTRAS_BRANCH=master
     - JMXFETCH_URL="https://s3-eu-west-1.amazonaws.com/sts-jmxfetch"
     - REQ_LOCALS="$TRAVIS_BUILD_DIR,$HOME/dd-agent,$HOME/integrations-extras"

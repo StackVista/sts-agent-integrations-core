@@ -967,7 +967,7 @@ class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
                     'username': "admin",
                     'password': "admin",
                     'saved_searches': [{
-                        "name": ["minimal_metrics", "full_metrics"],
+                        "match": ".*metrics",
                         "parameters": {}
                     }],
                     'tags': []
@@ -1033,7 +1033,7 @@ class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
                     'username': "admin",
                     'password': "admin",
                     'saved_searches': [{
-                        "name": ["minimal_metrics", "full_metrics"],
+                        "match": ".*metrics",
                         "parameters": {}
                     }],
                     'tags': []
@@ -1050,19 +1050,20 @@ class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
 
         data['saved_searches'] = ["minimal_metrics", "full_metrics"]
 
-        def _mocked_process_saved_search(*args, **kwargs):
+        def _mocked_failing_search(*args, **kwargs):
             sid = args[1].name
             if sid == "full_metrics":
                 raise Exception("BOOM")
             else:
-                return sid
+                return _mocked_search(*args, **kwargs)
 
         thrown = False
 
         try:
             self.run_check(config, mocks={
                 "_saved_searches": _mocked_saved_searches,
-                "_process_saved_search": _mocked_process_saved_search
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                "_search": _mocked_failing_search
             })
         except Exception:
             thrown = True

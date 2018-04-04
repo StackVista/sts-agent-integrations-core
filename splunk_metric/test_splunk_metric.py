@@ -1049,12 +1049,12 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
         self.assertMetric(
             'metric_name',
-            time=1544293796.0,
+            time=1923825600.0,
             value=1,
             tags=["uid1:uid", "uid2:1"])
         self.assertMetric(
             'metric_name',
-            time=1544293796.0,
+            time=1923825600.0,
             value=2,
             tags=["uid1:uid", "uid2:2"])
 
@@ -1105,12 +1105,12 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
         self.assertMetric(
             'metric_name',
-            time=1544293796.0,
+            time=1923825600,
             value=1,
             tags=[])
         self.assertMetric(
             'metric_name',
-            time=1544293796.0,
+            time=1923825600,
             value=2,
             tags=[])
 

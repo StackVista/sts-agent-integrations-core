@@ -996,7 +996,8 @@ class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
         try:
             self.run_check(config, mocks={
                 "_saved_searches": _mocked_saved_searches,
-                "_dispatch_saved_search": _mocked_dispatch_saved_search
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                '_search': _mocked_search
             })
         except Exception:
             thrown = True
@@ -1100,7 +1101,7 @@ class TestSplunkMetricSearchFullFailure(AgentCheckTest):
                     'username': "admin",
                     'password': "admin",
                     'saved_searches': [{
-                        "name": ["minimal_metrics", "full_metrics"],
+                        "name": "full_metrics",
                         "parameters": {}
                     }],
                     'tags': []
@@ -1115,9 +1116,9 @@ class TestSplunkMetricSearchFullFailure(AgentCheckTest):
         def _mocked_saved_searches(*args, **kwargs):
             return data['saved_searches']
 
-        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+        data['saved_searches'] = ["full_metrics"]
 
-        def _mocked_process_saved_search(*args, **kwargs):
+        def _mocked_dispatch_saved_search(*args, **kwargs):
             raise Exception("BOOM")
 
         thrown = False
@@ -1125,7 +1126,7 @@ class TestSplunkMetricSearchFullFailure(AgentCheckTest):
         try:
             self.run_check(config, mocks={
                 "_saved_searches": _mocked_saved_searches,
-                "_process_saved_search": _mocked_process_saved_search
+                "_dispatch_saved_search": _mocked_dispatch_saved_search
             })
         except Exception:
             thrown = True
@@ -1170,6 +1171,7 @@ class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
                 expected = "savedsearch%i" % self.expected_sid_increment
                 self.assertEquals(result, expected)
                 self.expected_sid_increment += 1
+            return True
 
         self.run_check(config, mocks={
             '_dispatch_and_await_search': _mock_dispatch_and_await_search,

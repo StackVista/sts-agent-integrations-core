@@ -912,6 +912,8 @@ class TestSplunkEventRespectParallelDispatches(AgentCheckTest):
                 self.assertEquals(result, expected)
                 self.expected_sid_increment += 1
 
+            return True
+
         self.run_check(config, mocks={
             '_dispatch_and_await_search': _mock_dispatch_and_await_search,
             '_saved_searches': _mocked_saved_searches
@@ -1034,3 +1036,166 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             '_saved_searches': _mocked_saved_searches
         })
         self.assertEqual(len(self.events), 0)
+
+
+class TestSplunkEventIndividualDispatchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when dispatching Splunk searches
+    """
+    CHECK_NAME = 'splunk_event'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "match": ".*events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_events", "full_events"]
+
+        def _mocked_dispatch_saved_search(*args, **kwargs):
+            name = args[1].name
+            if name == "full_events":
+                raise Exception("BOOM")
+            else:
+                return name
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                "_search": _mocked_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_events should succeed")
+        self.assertEqual(len(self.events), 2)
+
+
+class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when executing Splunk searches
+    """
+    CHECK_NAME = 'splunk_event'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "match": ".*events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_events", "full_events"]
+
+        def _mocked_failing_search(*args, **kwargs):
+            sid = args[1].name
+            if sid == "full_events":
+                raise Exception("BOOM")
+            else:
+                return _mocked_search(*args, **kwargs)
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                "_search": _mocked_failing_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_events should succeed")
+        self.assertEqual(len(self.events), 2)
+
+
+class TestSplunkEventSearchFullFailure(AgentCheckTest):
+    """
+    Splunk metric check should fail when all saved searches fail
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "match": ".*events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_events", "full_events"]
+
+        def _mocked_dispatch_saved_search(*args, **kwargs):
+            raise Exception("BOOM")
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertTrue(thrown, "All saved searches should fail and an exception should've been thrown")

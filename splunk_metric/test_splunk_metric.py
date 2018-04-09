@@ -20,6 +20,9 @@ def _mocked_search(*args, **kwargs):
     sid = args[0]
     return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
+def _mocked_auth_session(instance_config):
+    return "sessionKey1"
+
 class TestSplunkErrorResponse(AgentCheckTest):
     """
     Splunk metric check should handle a FATAL message response
@@ -48,6 +51,7 @@ class TestSplunkErrorResponse(AgentCheckTest):
         thrown = False
         try:
             self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
                 '_saved_searches': _mocked_saved_searches
             })
@@ -82,6 +86,7 @@ class TestSplunkEmptyMetrics(AgentCheckTest):
             ]
         }
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -116,6 +121,7 @@ class TestSplunkMinimalMetrics(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -160,6 +166,7 @@ class TestSplunkFullMetrics(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -215,6 +222,7 @@ class TestSplunkAlternativeFieldsMetrics(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -261,6 +269,7 @@ class TestSplunkFixedMetricNAme(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -305,6 +314,7 @@ class TestSplunkWarningOnMissingFields(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -339,6 +349,7 @@ class TestSplunkSameDataMetrics(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -413,6 +424,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_polling_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -478,6 +490,7 @@ class TestSplunkDelayFirstTime(AgentCheckTest):
             return test_data["time"]
 
         mocks = {
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -555,6 +568,7 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -639,6 +653,7 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -712,6 +727,7 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -777,6 +793,7 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -841,6 +858,7 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             return MockedResponse()
 
         test_mocks = {
+            '_auth_session': _mocked_auth_session,
             '_do_post': _mocked_dispatch_saved_search_do_post,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
@@ -892,6 +910,7 @@ class TestSplunkWildcardSearches(AgentCheckTest):
 
         data['saved_searches'] = ["minimal_metrics", "blaat"]
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -902,6 +921,7 @@ class TestSplunkWildcardSearches(AgentCheckTest):
 
         data['saved_searches'] = []
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -949,6 +969,194 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
+class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when dispatching Splunk searches
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "match": ".*metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+
+        def _mocked_dispatch_saved_search(*args, **kwargs):
+            name = args[1].name
+            if name == "full_metrics":
+                raise Exception("BOOM")
+            else:
+                return name
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                '_search': _mocked_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_metrics should succeed")
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+
+class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
+    """
+    Splunk metric check shouldn't fail if individual failures occur when executing Splunk searches
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "match": ".*metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["minimal_metrics", "full_metrics"]
+
+        def _mocked_failing_search(*args, **kwargs):
+            sid = args[1].name
+            if sid == "full_metrics":
+                raise Exception("BOOM")
+            else:
+                return _mocked_search(*args, **kwargs)
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search,
+                "_search": _mocked_failing_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertFalse(thrown, "No exception should be thrown because minimal_metrics should succeed")
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+
+class TestSplunkMetricSearchFullFailure(AgentCheckTest):
+    """
+    Splunk metric check should fail when all saved searches fail
+    """
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "full_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        data = {
+            'saved_searches': []
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            return data['saved_searches']
+
+        data['saved_searches'] = ["full_metrics"]
+
+        def _mocked_dispatch_saved_search(*args, **kwargs):
+            raise Exception("BOOM")
+
+        thrown = False
+
+        try:
+            self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
+                "_saved_searches": _mocked_saved_searches,
+                "_dispatch_saved_search": _mocked_dispatch_saved_search
+            })
+        except Exception:
+            thrown = True
+
+        self.assertTrue(thrown, "All saved searches should fail and an exception should've been thrown")
+
+
 class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
     CHECK_NAME = 'splunk_metric'
 
@@ -986,8 +1194,10 @@ class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
                 expected = "savedsearch%i" % self.expected_sid_increment
                 self.assertEquals(result, expected)
                 self.expected_sid_increment += 1
+            return True
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_and_await_search': _mock_dispatch_and_await_search,
             '_saved_searches': _mocked_saved_searches
         })
@@ -1019,6 +1229,7 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -1027,17 +1238,18 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
         self.assertMetric(
             'metric_name',
-            time=1513598400.0,
+            time=1923825600.0,
             value=1,
             tags=["uid1:uid", "uid2:1"])
         self.assertMetric(
             'metric_name',
-            time=1513598400.0,
+            time=1923825600.0,
             value=2,
             tags=["uid1:uid", "uid2:2"])
 
         # shouldn't resend the metrics
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -1073,6 +1285,7 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         }
 
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches
@@ -1081,18 +1294,19 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
         self.assertMetric(
             'metric_name',
-            time=1513598400.0,
+            time=1923825600,
             value=1,
             tags=[])
         self.assertMetric(
             'metric_name',
-            time=1513598400.0,
+            time=1923825600,
             value=2,
             tags=[])
 
 
         # shouldn't resend the metrics
         self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches

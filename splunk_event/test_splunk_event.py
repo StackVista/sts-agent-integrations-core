@@ -12,7 +12,7 @@ def _mocked_saved_searches(*args, **kwargs):
     return []
 
 def _mocked_auth_session(instance_key):
-    return "sessionKey1"
+    return
 
 class TestSplunkErrorResponse(AgentCheckTest):
     """
@@ -254,7 +254,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": test_data["sid"]}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
             return MockedResponse()
@@ -454,14 +454,14 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "empty"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[2])
+                self.assertTrue('dispatch.latest_time' not in args[1])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
 
             return MockedResponse()
 
@@ -539,14 +539,14 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "events"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[2])
+                self.assertTrue('dispatch.latest_time' not in args[1])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
 
             return MockedResponse()
 
@@ -618,7 +618,7 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "empty"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -684,7 +684,7 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "events"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -749,7 +749,7 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "events"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -859,6 +859,7 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
         thrown = False
         try:
             self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
                 '_saved_searches': _mocked_saved_searches
             })
         except CheckException:

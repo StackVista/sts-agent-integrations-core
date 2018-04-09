@@ -83,3 +83,5 @@ tmp
 # OS Specific
 *.DS_Store
 *.fuse_hidden*
+#PyCharm
+.idea/

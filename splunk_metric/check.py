@@ -63,8 +63,12 @@ class SplunkMetric(SplunkTelemetryBase):
             'default_initial_delay_seconds': 0,
             'default_unique_key_fields': ["_bkt", "_cd"]
         })
+        saved_searches = []
+        if instance['saved_searches'] is not None:
+            saved_searches = instance['saved_searches']
+
         metric_saved_searches = SavedSearches([
             MetricSavedSearch(metric_instance_config, saved_search_instance)
-            for saved_search_instance in instance['saved_searches']
+            for saved_search_instance in saved_searches
         ])
         return SplunkTelemetryInstance(current_time, instance, metric_instance_config, metric_saved_searches)

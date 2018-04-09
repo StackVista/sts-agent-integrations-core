@@ -5,14 +5,17 @@
   "fields": [
     {
       "name": "id"
+    },
+    {
+      "name": "type"
     }
   ],
   "results": [
     {
-      "id": "vm_2_1"
+      "id": "vm_2_1",
+      "type": "vm"
     },
     {
-      "id": "server_2"
     }
   ],
   "highlighted": {}

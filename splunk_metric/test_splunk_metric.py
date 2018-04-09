@@ -59,7 +59,8 @@ class TestSplunkErrorResponse(AgentCheckTest):
             thrown = True
         self.assertTrue(thrown, "Retrieving FATAL message from Splunk should throw.")
 
-        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        self.assertEquals(len(self.service_checks), 2)
+        self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
 class TestSplunkEmptyMetrics(AgentCheckTest):
@@ -139,6 +140,50 @@ class TestSplunkMinimalMetrics(AgentCheckTest):
             value=2,
             tags=[])
 
+
+class TestSplunkPartiallyIncompleteMetrics(AgentCheckTest):
+    """
+    Splunk metrics check should process continue when at least 1 datapoint was ok
+    """
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "partially_incomplete_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 1)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'],
+                          "1 telemetry records failed to process when running saved search 'partially_incomplete_metrics'")
 
 class TestSplunkFullMetrics(AgentCheckTest):
     """
@@ -453,7 +498,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
         except CheckException:
             thrown = True
         self.assertTrue(thrown, "Expect thrown to be done from the mocked search")
-        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
 class TestSplunkDelayFirstTime(AgentCheckTest):
@@ -1036,6 +1081,9 @@ class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
             value=2,
             tags=[])
 
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'], "Failed to dispatch saved search 'full_metrics' due to: BOOM")
 
 class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
     """
@@ -1103,6 +1151,11 @@ class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
             time=1488974400.0,
             value=2,
             tags=[])
+
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'],
+                          "Failed to execute dispatched search 'full_metrics' with id full_metrics due to: BOOM")
 
 
 class TestSplunkMetricSearchFullFailure(AgentCheckTest):

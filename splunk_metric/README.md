@@ -1,0 +1,1 @@
+This check can be easily tested using https://hub.docker.com/r/stackstate/splunk-test/

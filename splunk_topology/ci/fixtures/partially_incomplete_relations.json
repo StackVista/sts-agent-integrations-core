@@ -5,14 +5,22 @@
   "fields": [
     {
       "name": "id"
+    },
+    {
+      "name": "sourceId"
+    },
+    {
+      "name": "targetId"
     }
   ],
   "results": [
     {
-      "id": "vm_2_1"
+
     },
     {
-      "id": "server_2"
+      "type": "HOSTED_ON",
+      "sourceId": "vm_2_1",
+      "targetId": "server_2"
     }
   ],
   "highlighted": {}

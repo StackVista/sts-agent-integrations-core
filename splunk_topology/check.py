@@ -92,7 +92,7 @@ class SplunkTopology(AgentCheck):
 
         self.start_snapshot(instance_key)
         try:
-            instance.instance_config.set_auth_session_key(self._auth_session(instance.instance_config))
+            self._auth_session(instance.instance_config)
 
             saved_searches = self._saved_searches(instance.instance_config)
             instance.saved_searches.update_searches(self.log, saved_searches)
@@ -152,7 +152,6 @@ class SplunkTopology(AgentCheck):
         :return: search id
         """
         dispatch_url = '%s/services/saved/searches/%s/dispatch' % (instance_config.base_url, quote(saved_search.name))
-        auth_session_key = instance_config.get_auth_session_key()
 
         parameters = saved_search.parameters
         # json output_mode is mandatory for response parsing
@@ -160,7 +159,7 @@ class SplunkTopology(AgentCheck):
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        response_body = self.splunkHelper.do_post(dispatch_url, auth_session_key, parameters, saved_search.request_timeout_seconds, instance_config.verify_ssl_certificate).json()
+        response_body = self.splunkHelper.do_post(dispatch_url, parameters, saved_search.request_timeout_seconds, instance_config.verify_ssl_certificate).json()
         return response_body['sid']
 
     def _extract_components(self, instance, result):
@@ -207,4 +206,4 @@ class SplunkTopology(AgentCheck):
 
     def _auth_session(self, instance_config):
         """ This method is mocked for testing. Do not change its behavior """
-        return self.splunkHelper.auth_session(instance_config)
+        self.splunkHelper.auth_session(instance_config)

@@ -1105,6 +1105,7 @@ class TestSplunkEventIndividualDispatchFailures(AgentCheckTest):
 
         try:
             self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
                 "_saved_searches": _mocked_saved_searches,
                 "_dispatch_saved_search": _mocked_dispatch_saved_search,
                 "_search": _mocked_search
@@ -1161,6 +1162,7 @@ class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
 
         try:
             self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
                 "_saved_searches": _mocked_saved_searches,
                 "_dispatch_saved_search": _mocked_dispatch_saved_search,
                 "_search": _mocked_failing_search
@@ -1214,6 +1216,7 @@ class TestSplunkEventSearchFullFailure(AgentCheckTest):
 
         try:
             self.run_check(config, mocks={
+                '_auth_session': _mocked_auth_session,
                 "_saved_searches": _mocked_saved_searches,
                 "_dispatch_saved_search": _mocked_dispatch_saved_search
             })

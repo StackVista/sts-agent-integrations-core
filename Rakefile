@@ -13,7 +13,7 @@ unless ENV['CI']
   ENV['RUN_VENV'] = 'true'
   ENV['SDK_TESTING'] = 'true'
   ENV['DD_AGENT_REPO'] = 'https://github.com/StackVista/sts-agent.git'
-  ENV['DD_AGENT_BRANCH'] = 'master'
+  ENV['DD_AGENT_BRANCH'] = 'splunk_auth_methods'
 end
 
 ENV['SDK_HOME'] = File.dirname(__FILE__)
@@ -41,7 +41,7 @@ end
 def os
   case RUBY_PLATFORM
   when /linux/
-    'linux'
+    'linux' 
   when /darwin/
     'mac_os'
   when /x64-mingw32/

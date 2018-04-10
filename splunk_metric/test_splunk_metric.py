@@ -418,7 +418,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": test_data["sid"]}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
             return MockedResponse()
@@ -556,14 +556,14 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "empty"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[2])
+                self.assertTrue('dispatch.latest_time' not in args[1])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
 
             return MockedResponse()
 
@@ -641,14 +641,14 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "minimal_metrics"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[2])
+                self.assertTrue('dispatch.latest_time' not in args[1])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
 
             return MockedResponse()
 
@@ -720,7 +720,7 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "empty"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -786,7 +786,7 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "minimal_metrics"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -851,7 +851,7 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             class MockedResponse():
                 def json(self):
                     return {"sid": "minimal_metrics"}
-            earliest_time = args[2]['dispatch.earliest_time']
+            earliest_time = args[1]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
@@ -1194,6 +1194,8 @@ class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
                 expected = "savedsearch%i" % self.expected_sid_increment
                 self.assertEquals(result, expected)
                 self.expected_sid_increment += 1
+            return True
+
             return True
 
         self.run_check(config, mocks={

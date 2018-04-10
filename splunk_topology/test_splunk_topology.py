@@ -10,6 +10,9 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 def _mocked_saved_searches(*args, **kwargs):
     return []
 
+def _mocked_auth_session(instance_key):
+    return "sessionKey1"
+
 class TestSplunkNoTopology(AgentCheckTest):
     """
     Splunk check should work in absence of topology
@@ -31,7 +34,7 @@ class TestSplunkNoTopology(AgentCheckTest):
                 }
             ]
         }
-        self.run_check(config, mocks={'_saved_searches':_mocked_saved_searches})
+        self.run_check(config, mocks={'_saved_searches':_mocked_saved_searches, '_auth_session': _mocked_auth_session})
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
 
@@ -82,7 +85,8 @@ class TestSplunkTopology(AgentCheckTest):
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
         })
 
         instances = self.check.get_topology_instances()
@@ -166,7 +170,8 @@ class TestSplunkMinimalTopology(AgentCheckTest):
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_minimal_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
         })
 
         instances = self.check.get_topology_instances()
@@ -244,7 +249,8 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
                 '_search': _mocked_incomplete_search,
-                '_saved_searches': _mocked_saved_searches
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
             })
         except CheckException:
             thrown = True
@@ -323,7 +329,8 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_interval_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
         }
 
         # Inital run
@@ -399,7 +406,8 @@ class TestSplunkTopologyErrorResponse(AgentCheckTest):
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
                 '_search': _mocked_search,
-                '_saved_searches': _mocked_saved_searches
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
             })
         except CheckException:
             thrown = True
@@ -492,7 +500,8 @@ class TestTopologyDataIsClearedOnFailure(AgentCheckTest):
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
                 '_search': _mocked_search,
-                '_saved_searches': _mocked_saved_searches
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
             })
         except CheckException:
             thrown = True
@@ -551,7 +560,8 @@ class TestSplunkWildcardTopology(AgentCheckTest):
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
         })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
@@ -619,5 +629,6 @@ class TestSplunkTopologyRespectParallelDispatches(AgentCheckTest):
 
         self.run_check(config, mocks={
             '_dispatch_and_await_search': _mock_dispatch_and_await_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
         })

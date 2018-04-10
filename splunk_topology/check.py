@@ -4,6 +4,7 @@
 """
 
 # 3rd party
+import sys
 import time
 from urllib import quote
 
@@ -107,8 +108,7 @@ class SplunkTopology(AgentCheck):
         except Exception as e:
             self._clear_topology(instance_key, clear_in_snapshot=True)
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))
-            self.log.exception("Splunk topology exception: %s" % str(e))
-            raise CheckException("Cannot connect to Splunk, please check your configuration. Message: " + str(e))
+            raise CheckException("Splunk topology failed with message: %s" % e), None, sys.exc_info()[2]
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
@@ -128,10 +128,13 @@ class SplunkTopology(AgentCheck):
 
             count += len(response["results"])
             # process components and relations
-            if saved_search.element_type == "component":
-                self._extract_components(instance, response)
-            elif saved_search.element_type == "relation":
-                self._extract_relations(instance, response)
+            try:
+                if saved_search.element_type == "component":
+                    self._extract_components(instance, response)
+                elif saved_search.element_type == "relation":
+                    self._extract_relations(instance, response)
+            except CheckException as e:
+                raise CheckException("Failed to extract required data from %s saved search: %s, %s" % (saved_search.element_type, saved_search.name, e)), None, sys.exc_info()[2]
         self.log.debug("Save search done: %s in time %d with results %d" % (saved_search.name, time.time() - start_time, count))
 
     @staticmethod

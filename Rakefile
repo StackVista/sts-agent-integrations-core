@@ -41,7 +41,7 @@ end
 def os
   case RUBY_PLATFORM
   when /linux/
-    'linux' 
+    'linux'
   when /darwin/
     'mac_os'
   when /x64-mingw32/

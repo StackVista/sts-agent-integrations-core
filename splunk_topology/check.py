@@ -9,7 +9,7 @@ import time
 from urllib import quote
 
 from checks import AgentCheck, CheckException
-from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_required_field
+from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
 from utils.splunk.splunk_helper import SplunkHelper
 
 
@@ -97,12 +97,15 @@ class SplunkTopology(AgentCheck):
 
             saved_searches = self._saved_searches(instance.instance_config)
             instance.saved_searches.update_searches(self.log, saved_searches)
+            all_success = True
 
             for saved_searches in chunks(instance.saved_searches.searches, instance.saved_searches_parallel):
-                self._dispatch_and_await_search(instance, saved_searches)
+                all_success &= self._dispatch_and_await_search(instance, saved_searches)
 
             # If everything was successful, update the timestamp
-            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK)
+            if all_success:
+                self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK)
+
             instance.last_successful_poll_epoch_seconds = current_time_epoch_seconds
             self.stop_snapshot(instance_key)
         except Exception as e:
@@ -114,28 +117,44 @@ class SplunkTopology(AgentCheck):
         start_time = time.time()
         search_ids = [(self._dispatch_saved_search(instance.instance_config, saved_search), saved_search)
                       for saved_search in saved_searches]
+        all_success = True
 
         for (sid, saved_search) in search_ids:
             self.log.debug("Processing saved search: %s." % saved_search.name)
-            self._process_saved_search(sid, saved_search, instance, start_time)
+            all_success &= self._process_saved_search(sid, saved_search, instance, start_time)
+
+        return all_success
 
     def _process_saved_search(self, search_id, saved_search, instance, start_time):
         count = 0
-        for response in self._search(search_id, saved_search, instance):
+        fail_count = 0
+        responses = self._search(search_id, saved_search, instance)
+
+        for response in responses:
             for message in response['messages']:
                 if message['type'] != "FATAL" and message['type'] != "INFO":
                     self.log.info("Received unhandled message, got: " + str(message))
 
             count += len(response["results"])
             # process components and relations
-            try:
-                if saved_search.element_type == "component":
-                    self._extract_components(instance, response)
-                elif saved_search.element_type == "relation":
-                    self._extract_relations(instance, response)
-            except CheckException as e:
-                raise CheckException("Failed to extract required data from %s saved search: %s, %s" % (saved_search.element_type, saved_search.name, e)), None, sys.exc_info()[2]
-        self.log.debug("Save search done: %s in time %d with results %d" % (saved_search.name, time.time() - start_time, count))
+            if saved_search.element_type == "component":
+                fail_count += self._extract_components(instance, response)
+            elif saved_search.element_type == "relation":
+                fail_count += self._extract_relations(instance, response)
+
+        self.log.debug(
+            "Saved search done: %s in time %d with results %d of which %d failed" % (saved_search.name, time.time() - start_time, count, fail_count))
+
+        if fail_count is not 0:
+            if (fail_count is not count) and (count is not 0):
+                msg = "The saved search '%s' contained %d incomplete %s records" % (saved_search.name, fail_count, saved_search.element_type)
+                self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=msg)
+                self.log.warn(msg)
+                return False
+            elif count is not 0:
+                raise CheckException("All result of saved search '%s' contained incomplete data" % saved_search.name)
+
+        return True
 
     @staticmethod
     def _current_time_seconds():
@@ -166,10 +185,12 @@ class SplunkTopology(AgentCheck):
         return response_body['sid']
 
     def _extract_components(self, instance, result):
+        fail_count = 0
+
         for data in result["results"]:
             # Required fields
-            external_id = take_required_field("id", data)
-            comp_type = take_required_field("type", data)
+            external_id = take_optional_field("id", data)
+            comp_type = take_optional_field("type", data)
 
             # Add tags to data
             if 'tags' in data and instance.tags:
@@ -180,14 +201,21 @@ class SplunkTopology(AgentCheck):
             # We don't want to present all fields
             filtered_data = self._filter_fields(data)
 
-            self.component(instance.instance_key, external_id, {"name": comp_type}, filtered_data)
+            if external_id is not None and comp_type is not None:
+                self.component(instance.instance_key, external_id, {"name": comp_type}, filtered_data)
+            else:
+                fail_count += 1
+
+        return fail_count
 
     def _extract_relations(self, instance, result):
+        fail_count = 0
+
         for data in result["results"]:
             # Required fields
-            rel_type = take_required_field("type", data)
-            source_id = take_required_field("sourceId", data)
-            target_id = take_required_field("targetId", data)
+            rel_type = take_optional_field("type", data)
+            source_id = take_optional_field("sourceId", data)
+            target_id = take_optional_field("targetId", data)
 
             # Add tags to data
             if 'tags' in data and instance.tags:
@@ -198,7 +226,12 @@ class SplunkTopology(AgentCheck):
             # We don't want to present all fields
             filtered_data = self._filter_fields(data)
 
-            self.relation(instance.instance_key, source_id, target_id, {"name": rel_type}, filtered_data)
+            if rel_type is not None and source_id is not None and target_id is not None:
+                self.relation(instance.instance_key, source_id, target_id, {"name": rel_type}, filtered_data)
+            else:
+                fail_count += 1
+
+        return fail_count
 
     def _filter_fields(self, data):
         result = dict()

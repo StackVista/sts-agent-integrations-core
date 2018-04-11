@@ -50,7 +50,9 @@ class TestSplunkErrorResponse(AgentCheckTest):
             thrown = True
         self.assertTrue(thrown, "Retrieving FATAL message from Splunk should throw.")
 
-        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        self.assertEquals(len(self.service_checks), 2)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.CRITICAL")
+        self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
 class TestSplunkEmptyEvents(AgentCheckTest):
@@ -134,6 +136,54 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'msg_text': None,
             'source_type_name': None
         })
+
+class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
+    """
+    Splunk event check should continue processing even when some events are not complete
+    """
+    CHECK_NAME = 'splunk_event'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_partially_incomplete_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 1)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'],
+                          "1 telemetry records failed to process when running saved search 'events'")
+
 
 
 class TestSplunkFullEvents(AgentCheckTest):
@@ -289,7 +339,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
         except CheckException:
             thrown = True
         self.assertTrue(thrown, "Expect thrown to be done from the mocked search")
-        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
 class TestSplunkDelayFirstTime(AgentCheckTest):
@@ -882,6 +932,11 @@ def _mocked_minimal_search(*args, **kwargs):
     sid = args[0]
     return [json.loads(Fixtures.read_file("minimal_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
+def _mocked_partially_incomplete_search(*args, **kwargs):
+    # sid is set to saved search name
+    sid = args[0]
+    return [json.loads(Fixtures.read_file("partially_incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+
 def _mocked_full_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
@@ -1102,20 +1157,18 @@ class TestSplunkEventIndividualDispatchFailures(AgentCheckTest):
             else:
                 return name
 
-        thrown = False
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            "_saved_searches": _mocked_saved_searches,
+            "_dispatch_saved_search": _mocked_dispatch_saved_search,
+            "_search": _mocked_search
+        })
 
-        try:
-            self.run_check(config, mocks={
-                '_auth_session': _mocked_auth_session,
-                "_saved_searches": _mocked_saved_searches,
-                "_dispatch_saved_search": _mocked_dispatch_saved_search,
-                "_search": _mocked_search
-            })
-        except Exception:
-            thrown = True
-
-        self.assertFalse(thrown, "No exception should be thrown because minimal_events should succeed")
         self.assertEqual(len(self.events), 2)
+
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'], "Failed to dispatch saved search 'full_events' due to: BOOM")
 
 
 class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
@@ -1159,20 +1212,18 @@ class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
             else:
                 return _mocked_search(*args, **kwargs)
 
-        thrown = False
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            "_saved_searches": _mocked_saved_searches,
+            "_dispatch_saved_search": _mocked_dispatch_saved_search,
+            "_search": _mocked_failing_search
+        })
 
-        try:
-            self.run_check(config, mocks={
-                '_auth_session': _mocked_auth_session,
-                "_saved_searches": _mocked_saved_searches,
-                "_dispatch_saved_search": _mocked_dispatch_saved_search,
-                "_search": _mocked_failing_search
-            })
-        except Exception:
-            thrown = True
-
-        self.assertFalse(thrown, "No exception should be thrown because minimal_events should succeed")
         self.assertEqual(len(self.events), 2)
+
+        self.assertEqual(len(self.service_checks), 1)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'], "Failed to execute dispatched search 'full_events' with id full_events due to: BOOM")
 
 
 class TestSplunkEventSearchFullFailure(AgentCheckTest):

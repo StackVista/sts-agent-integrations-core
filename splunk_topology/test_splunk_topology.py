@@ -130,12 +130,6 @@ class TestSplunkTopology(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
 
-def _mocked_minimal_search(*args, **kwargs):
-    # sid is set to saved search name
-    sid = args[0]
-    return [json.loads(Fixtures.read_file("minimal_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
-
-
 class TestSplunkMinimalTopology(AgentCheckTest):
     """
     Splunk check should work with minimal component and relation data
@@ -153,12 +147,12 @@ class TestSplunkMinimalTopology(AgentCheckTest):
                     'username': "admin",
                     'password': "admin",
                     'component_saved_searches': [{
-                        "name": "components",
+                        "name": "minimal_components",
                         "element_type": "component",
                         "parameters": {}
                     }],
                     'relation_saved_searches': [{
-                        "name": "relations",
+                        "name": "minimal_relations",
                         "element_type": "relation",
                         "parameters": {}
                     }],
@@ -169,7 +163,7 @@ class TestSplunkMinimalTopology(AgentCheckTest):
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_minimal_search,
+            '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session
         })
@@ -207,13 +201,138 @@ class TestSplunkMinimalTopology(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
 
-def _mocked_incomplete_search(*args, **kwargs):
+class TestSplunkIncompleteTopology(AgentCheckTest):
+    """
+    Splunk check should crash on incomplete data
+    """
+    CHECK_NAME = 'splunk_topology'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'component_saved_searches': [{
+                        "name": "incomplete_components",
+                        "element_type": "component",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "incomplete_relations",
+                        "element_type": "relation",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
+            })
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown, "Retrieving incomplete data from splunk should throw")
+
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+
+def _mocked_partially_incomplete_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
-    return [json.loads(Fixtures.read_file("incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+    return [json.loads(Fixtures.read_file("partially_incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
 
-class TestSplunkIncompleteTopology(AgentCheckTest):
+class TestSplunkPartiallyIncompleteTopology(AgentCheckTest):
+    """
+    Splunk check should crash on incomplete data
+    """
+    CHECK_NAME = 'splunk_topology'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'component_saved_searches': [{
+                        "name": "partially_incomplete_components",
+                        "element_type": "component",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "partially_incomplete_relations",
+                        "element_type": "relation",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+        self.assertEqual(len(instances[0]['components']), 1)
+        self.assertEqual(len(instances[0]['relations']), 1)
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(len(self.service_checks), 2)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'],
+                          "The saved search 'partially_incomplete_components' contained 1 incomplete component records")
+        self.assertEquals(self.service_checks[1]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[1]['message'],
+                          "The saved search 'partially_incomplete_relations' contained 1 incomplete relation records")
+
+
+def _mocked_partially_incomplete_and_incomplete_search(*args, **kwargs):
+    # sid is set to saved search name
+    sid = args[0]
+    return [json.loads(Fixtures.read_file("partially_incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR)),
+            json.loads(Fixtures.read_file("incomplete_%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+
+
+class TestSplunkPartiallyIncompleteAndIncompleteTopology(AgentCheckTest):
     """
     Splunk check should crash on incomplete data
     """
@@ -244,20 +363,45 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
             ]
         }
 
-        thrown = False
-        try:
-            self.run_check(config, mocks={
-                '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': _mocked_incomplete_search,
-                '_saved_searches': _mocked_saved_searches,
-                '_auth_session': _mocked_auth_session
-            })
-        except CheckException:
-            thrown = True
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_partially_incomplete_and_incomplete_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
 
-        self.assertTrue(thrown, "Retrieving incomplete data from splunk should throw")
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+        self.assertEqual(len(instances[0]['components']), 1)
+        self.assertEqual(len(instances[0]['relations']), 1)
 
-        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(len(self.service_checks), 2)
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'],
+                          "The saved search 'components' contained 3 incomplete component records")
+        self.assertEquals(self.service_checks[1]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[1]['message'],
+                          "The saved search 'relations' contained 2 incomplete relation records")
+
 
 class TestSplunkTopologyPollingInterval(AgentCheckTest):
     """
@@ -626,6 +770,8 @@ class TestSplunkTopologyRespectParallelDispatches(AgentCheckTest):
                 expected = "savedsearch%i" % self.expected_sid_increment
                 self.assertEquals(result, expected)
                 self.expected_sid_increment += 1
+
+            return True
 
         self.run_check(config, mocks={
             '_dispatch_and_await_search': _mock_dispatch_and_await_search,

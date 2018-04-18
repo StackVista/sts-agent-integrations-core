@@ -6,7 +6,6 @@
 # 3rd party
 import sys
 import time
-from urllib import quote
 
 from checks import AgentCheck, CheckException
 from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
@@ -38,6 +37,7 @@ class Instance:
 
     def __init__(self, instance, init_config):
         self.instance_config = InstanceConfig(instance, init_config)
+        self.splunkHelper = SplunkHelper(self.instance_config)
 
         # no saved searches may be configured
         if not isinstance(instance['component_saved_searches'], list):
@@ -75,7 +75,6 @@ class SplunkTopology(AgentCheck):
         super(SplunkTopology, self).__init__(name, init_config, agentConfig, instances)
         # Data to keep over check runs, keyed by instance url
         self.instance_data = dict()
-        self.splunkHelper = SplunkHelper()
 
     def check(self, instance):
         if 'url' not in instance:
@@ -93,9 +92,9 @@ class SplunkTopology(AgentCheck):
 
         self.start_snapshot(instance_key)
         try:
-            self._auth_session(instance.instance_config)
+            self._auth_session(instance)
 
-            saved_searches = self._saved_searches(instance.instance_config)
+            saved_searches = self._saved_searches(instance)
             instance.saved_searches.update_searches(self.log, saved_searches)
             all_success = True
 
@@ -115,7 +114,7 @@ class SplunkTopology(AgentCheck):
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
-        search_ids = [(self._dispatch_saved_search(instance.instance_config, saved_search), saved_search)
+        search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]
         all_success = True
 
@@ -160,29 +159,26 @@ class SplunkTopology(AgentCheck):
     def _current_time_seconds():
         return int(round(time.time()))
 
-    def _saved_searches(self, instance_config):
-        return self.splunkHelper.saved_searches(instance_config)
+    def _saved_searches(self, instance):
+        return instance.splunkHelper.saved_searches()
 
     def _search(self, search_id, saved_search, instance):
-        return self.splunkHelper.saved_search_results(search_id, saved_search, instance.instance_config)
+        return instance.splunkHelper.saved_search_results(search_id, saved_search)
 
-    def _dispatch_saved_search(self, instance_config, saved_search):
+    def _dispatch_saved_search(self, instance, saved_search):
         """
         Initiate a saved search, returning the search id
-        :param instance_config: InstanceConfig of the splunk instance
+        :param instance: Instance of the splunk instance
         :param saved_search: SavedSearch to dispatch
         :return: search id
         """
-        dispatch_url = '%s/services/saved/searches/%s/dispatch' % (instance_config.base_url, quote(saved_search.name))
-
         parameters = saved_search.parameters
         # json output_mode is mandatory for response parsing
         parameters["output_mode"] = "json"
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        response_body = self.splunkHelper.do_post(dispatch_url, parameters, saved_search.request_timeout_seconds, instance_config.verify_ssl_certificate).json()
-        return response_body['sid']
+        return instance.splunkHelper.dispatch(saved_search, parameters)
 
     def _extract_components(self, instance, result):
         fail_count = 0
@@ -240,6 +236,6 @@ class SplunkTopology(AgentCheck):
                 result[key] = value
         return result
 
-    def _auth_session(self, instance_config):
+    def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
-        self.splunkHelper.auth_session(instance_config)
+        instance.splunkHelper.auth_session()

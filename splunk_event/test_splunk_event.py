@@ -297,21 +297,17 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             count = args[1].batch_size
             return json.loads(Fixtures.read_file("batch_%s_seq_%s.json" % (sid, count), sdk_dir=FIXTURE_DIR))
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
             if test_data["throw"]:
                 raise CheckException("Is broke it")
-
-            class MockedResponse():
-                def json(self):
-                    return {"sid": test_data["sid"]}
-            earliest_time = args[1]['dispatch.earliest_time']
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
-            return MockedResponse()
+            return test_data["sid"]
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_polling_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -438,15 +434,12 @@ class TestSplunkDeduplicateEventsInTheSameRun(AgentCheckTest):
             count = args[1].batch_size
             return json.loads(Fixtures.read_file("batch_%s_seq_%s.json" % (sid, count), sdk_dir=FIXTURE_DIR))
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": test_data["sid"]}
-            return MockedResponse()
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            return test_data["sid"]
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_dup_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -500,24 +493,21 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
         def _mocked_current_time_seconds():
             return test_data["time"]
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": "empty"}
-            earliest_time = args[1]['dispatch.earliest_time']
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[1])
+                self.assertTrue('dispatch.latest_time' not in args[2])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
 
-            return MockedResponse()
+            return "empty"
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -585,24 +575,21 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
         def _mocked_current_time_seconds():
             return test_data["time"]
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": "events"}
-            earliest_time = args[1]['dispatch.earliest_time']
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
             if test_data["latest_time"] is None:
-                self.assertTrue('dispatch.latest_time' not in args[1])
+                self.assertTrue('dispatch.latest_time' not in args[2])
             elif test_data["latest_time"] != "":
-                self.assertEquals(args[1]['dispatch.latest_time'], test_data["latest_time"])
+                self.assertEquals(args[2]['dispatch.latest_time'], test_data["latest_time"])
 
-            return MockedResponse()
+            return "events"
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -664,19 +651,16 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
         def _mocked_current_time_seconds():
             return test_data["time"]
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": "empty"}
-            earliest_time = args[1]['dispatch.earliest_time']
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
-            return MockedResponse()
+            return "empty"
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -730,19 +714,16 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
         def _mocked_current_time_seconds():
             return test_data["time"]
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": "events"}
-            earliest_time = args[1]['dispatch.earliest_time']
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
-            return MockedResponse()
+            return "events"
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches
@@ -795,19 +776,16 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
         def _mocked_current_time_seconds():
             return test_data["time"]
 
-        def _mocked_dispatch_saved_search_do_post(*args, **kwargs):
-            class MockedResponse():
-                def json(self):
-                    return {"sid": "events"}
-            earliest_time = args[1]['dispatch.earliest_time']
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[2]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
 
-            return MockedResponse()
+            return "events"
 
         test_mocks = {
             '_auth_session': _mocked_auth_session,
-            '_do_post': _mocked_dispatch_saved_search_do_post,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
             '_saved_searches': _mocked_saved_searches

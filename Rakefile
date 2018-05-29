@@ -13,7 +13,7 @@ unless ENV['CI']
   ENV['RUN_VENV'] = 'true'
   ENV['SDK_TESTING'] = 'true'
   ENV['DD_AGENT_REPO'] = 'https://github.com/StackVista/sts-agent.git'
-  ENV['DD_AGENT_BRANCH'] = 'master'
+  ENV['DD_AGENT_BRANCH'] = 'keep-host-field'
 end
 
 ENV['SDK_HOME'] = File.dirname(__FILE__)

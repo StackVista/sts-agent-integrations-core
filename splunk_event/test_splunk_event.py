@@ -230,6 +230,7 @@ class TestSplunkFullEvents(AgentCheckTest):
                 "full_formatted_message:Alarm 'Virtual machine CPU usage' on SWNC7R049 changed from Gray to Green",
                 "alarm_name:Virtual machine CPU usage",
                 "to:green",
+                "host:172.17.0.1",
                 "key:19964908",
                 "VMName:SWNC7R049",
                 "checktag:checktagvalue"
@@ -247,6 +248,7 @@ class TestSplunkFullEvents(AgentCheckTest):
                 "full_formatted_message:Alarm 'Virtual machine memory usage' on SWNC7R049 changed from Gray to Green",
                 "alarm_name:Virtual machine memory usage",
                 "to:green",
+                "host:172.17.0.1",
                 "key:19964909",
                 "VMName:SWNC7R049",
                 "checktag:checktagvalue"

@@ -40,6 +40,9 @@ init_config:
   #   - "_bkt"
   #   - "_cd"
 
+  # the Splunk app in where the saved searches are located
+  default_app: "search"
+
 # Currently it is not possible to specify multiple instances with the same url.
 # It is possible to specify multiple saved_searches on a single instance.
 instances:
@@ -57,6 +60,7 @@ instances:
         # metric_value_field: "value"
         # Wildcard match to find metric queries, can be used instead of name
         # match: "metrics.*"
+        # app: "search"
         # request_timeout_seconds: 10
         # search_max_retry_count: 5
         # search_seconds_between_retries: 1

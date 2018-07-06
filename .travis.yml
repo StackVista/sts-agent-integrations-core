@@ -16,7 +16,6 @@ git:
 branches:
   only:
     - master
-    - splunk_app_only_permissions
 
 services:
   - docker

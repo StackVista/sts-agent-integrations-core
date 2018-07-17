@@ -1,2 +1,11 @@
-cat /docker-entrypoint-initdb.d/02_datadog_test.psql | PGPASSWORD=datadog psql -h localhost -p 5432 datadog_test -U datadog
-cat /docker-entrypoint-initdb.d/03_dogs.psql | PGPASSWORD=datadog psql -h localhost -p 5432 dogs -U datadog
+#!/bin/bash
+set -e
+
+PGPASSWORD=datadog psql -v ON_ERROR_STOP=1 --username "datadog" --dbname "datadog_test" <<-EOSQL
+CREATE TABLE persons (personid SERIAL, lastname VARCHAR(255), firstname VARCHAR(255), address VARCHAR(255), city VARCHAR(255));
+INSERT INTO persons (lastname, firstname, address, city) VALUES ('Cavaille', 'Leo', 'Midtown', 'New York'), ('Someveryveryveryveryveryveryveryveryveryverylongname', 'something', 'Avenue des Champs Elysees', 'Beautiful city of lights');
+SELECT * FROM persons;
+SELECT * FROM persons;
+SELECT * FROM persons;
+EOSQL
+

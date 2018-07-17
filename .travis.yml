@@ -32,7 +32,7 @@ env:
     - PIP_CACHE=$HOME/.cache/pip
     - SDK_TESTING=true
     - BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache
-    - DD_AGENT_BRANCH=keep-host-field
+    - DD_AGENT_BRANCH=master
     - EXTRAS_BRANCH=master
     - JMXFETCH_URL="https://s3-eu-west-1.amazonaws.com/sts-jmxfetch"
     - REQ_LOCALS="$TRAVIS_BUILD_DIR,$HOME/dd-agent,$HOME/integrations-extras"
@@ -92,7 +92,7 @@ env:
     - TRAVIS_FLAVOR=openstack
     - TRAVIS_FLAVOR=pgbouncer FLAVOR_VERSION=latest
     - TRAVIS_FLAVOR=php_fpm FLAVOR_VERSION=5.5
-    - TRAVIS_FLAVOR=postgres FLAVOR_VERSION=latest
+    - TRAVIS_FLAVOR=postgres FLAVOR_VERSION=9.6
     - TRAVIS_FLAVOR=powerdns_recursor FLAVOR_VERSION=3.7.3
     - TRAVIS_FLAVOR=powerdns_recursor FLAVOR_VERSION=4.0.3
     - TRAVIS_FLAVOR=rabbitmq FLAVOR_VERSION=3.5.0

@@ -64,3 +64,14 @@ First do the setup of running integration tests
 Run `./run.sh install` to install all checks and config files in embedded/dd-agent.
 Edit the config file in embedded/dd-agent and embedded/dd-agent/conf.d for the checks you want to run.
 Run `./run.sh start` to start and `./run.sh stop` to stop.
+
+
+# Side notes
+
+if you have situation, when rake commands fail to find `datadog-sdk-testing`,
+obvious solution would be use `bundle exec rake <original command>` to ensure,
+that gem installed from source is found.
+
+If you experience import errors near `from tests.common`
+add agent directory `export PYTHONPATH=...sts-agent-integrations-core/embedded/dd-agent:$PYTHONPATH` 
+ 

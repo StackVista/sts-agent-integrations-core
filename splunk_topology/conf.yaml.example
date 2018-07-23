@@ -19,7 +19,11 @@ init_config:
   # Interval at which to dispatch a saved search
   default_polling_interval_seconds: 300
 
+  # verify ssl certificate of the connection to Splunk
   default_verify_ssl_certificate: false
+
+  # the Splunk app in where the saved searches are located
+  default_app: "search"
 
 
 # Currently it is not possible to specify multiple instances with the same url.
@@ -35,6 +39,7 @@ instances:
       - name: "components"
         # Wilcard match to find component queries, can be used instead of name
         # match: "comp.*"
+        # app: "search"
         # request_timeout_seconds: 10
         # search_max_retry_count: 5
         # search_seconds_between_retries: 1
@@ -48,6 +53,7 @@ instances:
       #- name: "relations"
       # Wilcard match to find relation queries, can be used instead of name
       #  match: "relation*"
+      #  app: "search"
       #  request_timeout_seconds: 10
       #  search_max_retry_count: 5
       #  search_seconds_between_retries: 1

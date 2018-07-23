@@ -61,7 +61,8 @@ class SplunkMetric(SplunkTelemetryBase):
             'default_max_restart_history_seconds': 86400,
             'default_max_query_chunk_seconds': 3600,
             'default_initial_delay_seconds': 0,
-            'default_unique_key_fields': ["_bkt", "_cd"]
+            'default_unique_key_fields': ["_bkt", "_cd"],
+            'default_app': "search"
         })
         saved_searches = []
         if instance['saved_searches'] is not None:

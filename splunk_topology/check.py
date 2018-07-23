@@ -26,7 +26,8 @@ class InstanceConfig(SplunkInstanceConfig):
             'default_search_seconds_between_retries': 1,
             'default_verify_ssl_certificate': False,
             'default_batch_size': 1000,
-            'default_saved_searches_parallel': 3
+            'default_saved_searches_parallel': 3,
+            'default_app': "search"
         })
 
         self.default_polling_interval_seconds = init_config.get('default_polling_interval_seconds', 15)
@@ -176,9 +177,12 @@ class SplunkTopology(AgentCheck):
         # json output_mode is mandatory for response parsing
         parameters["output_mode"] = "json"
 
+        splunk_user = instance.instance_config.username
+        splunk_app = saved_search.app
+
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        return instance.splunkHelper.dispatch(saved_search, parameters)
+        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, parameters)
 
     def _extract_components(self, instance, result):
         fail_count = 0

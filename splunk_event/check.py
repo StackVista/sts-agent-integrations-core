@@ -45,7 +45,11 @@ class SplunkEvent(SplunkTelemetryBase):
             'default_max_query_chunk_seconds': 3600,
             'default_initial_delay_seconds': 0,
             'default_unique_key_fields': ["_bkt", "_cd"],
-            'default_app': "search"
+            'default_app': "search",
+            'default_parameters': {
+                "force_dispatch": True,
+                "dispatch.now": True
+            }
         })
         saved_searches = []
         if instance['saved_searches'] is not None:

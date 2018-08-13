@@ -37,7 +37,12 @@ init_config:
   #   - "_cd"
 
   # the Splunk app in where the saved searches are located
-  default_app: "search"
+  # default_app: "search"
+
+  # default parameters for the Splunk saved search query, these parameters make sure the query refreshes.
+  default_parameters:
+    force_dispatch: true
+    dispatch.now: true
 
 # Currently it is not possible to specify multiple instances with the same url.
 # It is possible to specify multiple saved_searches on a single instance.
@@ -64,12 +69,9 @@ instances:
         # unique_key_fields:
         #   - "_bkt"
         #   - "_cd"
-
-        # Additional parameters for the splunk saved search query
-        parameters:
-          # These parameters make sure the query refreshes.
-          force_dispatch: true
-          dispatch.now: true
+        # parameters:
+        #   force_dispatch: true
+        #   dispatch.now: true
 
     # tags:
     #      - optional_tag1

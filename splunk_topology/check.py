@@ -27,7 +27,11 @@ class InstanceConfig(SplunkInstanceConfig):
             'default_verify_ssl_certificate': False,
             'default_batch_size': 1000,
             'default_saved_searches_parallel': 3,
-            'default_app': "search"
+            'default_app': "search",
+            'default_parameters': {
+                "force_dispatch": True,
+                "dispatch.now": True
+            }
         })
 
         self.default_polling_interval_seconds = init_config.get('default_polling_interval_seconds', 15)

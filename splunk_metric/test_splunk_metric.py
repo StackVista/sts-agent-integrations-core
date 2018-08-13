@@ -1350,3 +1350,125 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         })
 
         self.assertEqual(len(self.metrics), 0)
+
+
+class TestSplunkDefaults(AgentCheckTest):
+    CHECK_NAME = 'splunk_metric'
+
+    def test_default_parameters(self):
+        """
+        when no default parameters are provided, the code should provide the parameters
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_metrics"
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        expected_default_parameters = {'dispatch.now': True, 'force_dispatch': True}
+
+        def _mocked_auth_session_to_check_instance_config(instance):
+            for saved_search in instance.saved_searches.searches:
+                self.assertEqual(saved_search.parameters, expected_default_parameters, msg="Unexpected default parameters for saved search: %s" % saved_search.name)
+            return "sessionKey1"
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session_to_check_instance_config,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+
+
+    def test_non_default_parameters(self):
+        """
+        when non default parameters are provided, the code should respect them.
+        """
+        config = {
+            'init_config': {
+                'default_parameters': {
+                    'respect': 'me'
+                }
+            },
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_metrics"
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        expected_default_parameters = {'respect': 'me'}
+
+        def _mocked_auth_session_to_check_instance_config(instance):
+            for saved_search in instance.saved_searches.searches:
+                self.assertEqual(saved_search.parameters, expected_default_parameters, msg="Unexpected non-default parameters for saved search: %s" % saved_search.name)
+            return "sessionKey1"
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session_to_check_instance_config,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+
+
+    def test_overwrite_default_parameters(self):
+        """
+        when default parameters are overwritten, the code should respect them.
+        """
+        config = {
+            'init_config': {
+                'default_parameters': {
+                    'default_should': 'be ignored'
+                }
+            },
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {
+                            "respect": "me"
+                        }
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        expected_default_parameters = {'respect': 'me'}
+
+        def _mocked_auth_session_to_check_instance_config(instance):
+            for saved_search in instance.saved_searches.searches:
+                self.assertEqual(saved_search.parameters, expected_default_parameters, msg="Unexpected overwritten default parameters for saved search: %s" % saved_search.name)
+            return "sessionKey1"
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session_to_check_instance_config,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)

@@ -815,8 +815,7 @@ class TestSplunkDefaults(AgentCheckTest):
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session_to_check_instance_config
-        }
-        )
+        })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
 
@@ -856,8 +855,7 @@ class TestSplunkDefaults(AgentCheckTest):
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session_to_check_instance_config
-        }
-                       )
+        })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
 
@@ -903,7 +901,6 @@ class TestSplunkDefaults(AgentCheckTest):
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session_to_check_instance_config
-        }
-                       )
+        })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)

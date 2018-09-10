@@ -13,9 +13,9 @@ python:
 git:
   depth: 3
 
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 
 services:
   - docker

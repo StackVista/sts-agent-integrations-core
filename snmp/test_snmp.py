@@ -63,16 +63,19 @@ class SNMPTestCase(AgentCheckTest):
     }
 
     SUPPORTED_METRIC_TYPES = [
+        # {
+        #     'OID': "1.3.6.1.2.1.7.1.0",             # Counter32
+        #     'name': "IAmACounter32"
+        # },
         {
-            'OID': "1.3.6.1.2.1.7.1.0",             # Counter32
-            'name': "IAmACounter32"
-        }, {
             'OID': "1.3.6.1.2.1.4.31.1.1.6.1",      # Counter64
             'name': "IAmACounter64"
-        }, {
-            'OID': "1.3.6.1.2.1.4.24.6.0",          # Gauge32
-            'name': "IAmAGauge32"
-        }, {
+        },
+        # {
+        #     'OID': "1.3.6.1.2.1.4.24.6.0",          # Gauge32
+        #     'name': "IAmAGauge32"
+        # },
+        {
             'OID': "1.3.6.1.2.1.88.1.1.1.0",        # Integer
             'name': "IAmAnInteger"
         }

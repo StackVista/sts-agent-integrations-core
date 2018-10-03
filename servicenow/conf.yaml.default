@@ -1,0 +1,19 @@
+init_config:
+  # Any global configurable parameters should be added here
+  default_timeout: 10
+  min_collection_interval: 5
+
+instances:
+  #   A typical instance configuration might include a hostname and port
+  #   a set of customizable tags and other parameters we might need to
+  #   configure the behavior of our check.
+  #
+  # - host: localhost
+  #   port: 26379
+  #   tags: ['custom:tag']
+
+  # URL of ServiceNow instance
+  - url: "https://dev60476.service-now.com"
+    basic_auth:
+       user: admin
+       password: Service@123

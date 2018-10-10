@@ -22,16 +22,6 @@ class ServicenowCheck(AgentCheck):
 
     INSTANCE_TYPE = "servicenow_cmdb"
     SERVICE_CHECK_NAME = "servicenow.cmdb.topology_information"
-    service_check_needed = True
-    service_check_done = False
-
-    auth = None  # http basic authentication
-    timeout = None  # connection timeout
-    instance_key = None  # unique key to identify this check from its instances.
-    # The same check might be run on multiple clusters
-    base_url = None  # base url of where CMDB instance can be found, for example: https://dev12406.service-now.com
-    relation_types = {}  # relation types that are available in table cmdb_rel_type
-    instance_tags = []
 
     def check(self, instance):
         if 'url' not in instance:
@@ -45,45 +35,54 @@ class ServicenowCheck(AgentCheck):
         if 'password' not in basic_auth:
             raise Exception('ServiceNow CMDB topology instance missing "basic_auth.password" value.')
 
-        self.relation_types = {}
+        relation_types = {}
 
         basic_auth_user = basic_auth['user']
         basic_auth_password = basic_auth['password']
-        self.auth = (basic_auth_user, basic_auth_password)
+        auth = (basic_auth_user, basic_auth_password)
 
-        self.base_url = instance['url']
-
-        self.instance_key = {
-            "type": self.INSTANCE_TYPE,
-            "url": self.base_url
-        }
-
-        self.instance_tags = instance.get('tags', [])
+        base_url = instance['url']
+        batch_size = instance['default_batch_size']
+        instance_key = {"type": self.INSTANCE_TYPE, "url": base_url}
+        instance_tags = instance.get('tags', [])
 
         default_timeout = self.init_config.get('default_timeout', 5)
-        self.timeout = float(instance.get('timeout', default_timeout))
+        timeout = float(instance.get('timeout', default_timeout))
 
-        self._process_and_cache_relation_types()
-        self.start_snapshot(self.instance_key)
-        self._process_components()
-        self._process_component_relations()
-        self.stop_snapshot(self.instance_key)
+        params = {"service_check_done": False, "batch_size": batch_size, "relation_types": relation_types,
+                  "instance_key": instance_key, "instance_tags": instance_tags, "base_url": base_url,
+                  "auth": auth, "timeout": timeout}
 
-    def _collect_components(self):
+        self._process_and_cache_relation_types(params)
+        self.start_snapshot(instance_key)
+        self._process_components(params)
+        self._process_component_relations(params)
+        self.stop_snapshot(instance_key)
+
+    def _collect_components(self, params):
         """
         collect components from ServiceNow CMDB's cmdb_ci table
+        (API Doc- https://developer.servicenow.com/app.do#!/rest_api_doc?v=london&id=r_TableAPI-GET)
+
         :return: dict, raw response from CMDB
         """
-        url = self.base_url + '/api/now/table/cmdb_ci?sysparm_fields=name,sys_id,sys_class_name,sys_created_on'
 
-        return self._get_json(url, self.timeout, self.auth)
+        base_url = params['base_url']
+        auth = params['auth']
+        timeout = params['timeout']
+        url = base_url + '/api/now/table/cmdb_ci?sysparm_fields=name,sys_id,sys_class_name,sys_created_on'
 
-    def _process_components(self):
+        return self._get_json(params, url, timeout, auth)
+
+    def _process_components(self, params):
         """
         process components fetched from CMDB
         :return: nothing
         """
-        state = self._collect_components()
+        instance_tags = params['instance_tags']
+        instance_key = params['instance_key']
+
+        state = self._collect_components(params)
 
         for component in state['result']:
             id = component['sys_id']
@@ -92,47 +91,59 @@ class ServicenowCheck(AgentCheck):
             }
             data = {
                 "name": component['name'].strip(),
-                "tags": self.instance_tags
+                "tags": instance_tags
             }
 
-            self.component(self.instance_key, id, type, data)
+            self.component(instance_key, id, type, data)
 
-    def _collect_relation_types(self):
+    def _collect_relation_types(self, params):
         """
         collects relations from CMDB
         :return: dict, raw response from CMDB
         """
-        url = self.base_url + '/api/now/table/cmdb_rel_type?sysparm_fields=sys_id,parent_descriptor'
 
-        return self._get_json(url, self.timeout, self.auth)
+        base_url = params['base_url']
+        timeout = params['timeout']
+        auth = params['auth']
+        url = base_url + '/api/now/table/cmdb_rel_type?sysparm_fields=sys_id,parent_descriptor'
 
-    def _process_and_cache_relation_types(self):
+        return self._get_json(params, url, timeout, auth)
+
+    def _process_and_cache_relation_types(self, params):
         """
         collect available relations from cmdb_rel_ci and cache them in self.relation_types dict.
         :return: nothing
         """
-        state = self._collect_relation_types()
+
+        relation_types = params['relation_types']
+        state = self._collect_relation_types(params)
 
         for relation in state['result']:
             id = relation['sys_id']
             parent_descriptor = relation['parent_descriptor']
-            self.relation_types[id] = parent_descriptor
+            relation_types[id] = parent_descriptor
 
-    def _collect_component_relations(self, offset, batch_size):
+    def _collect_component_relations(self, params, offset, batch_size):
         """
         collect relations between components from cmdb_rel_ci and publish these in batches.
         """
-        url = self.base_url + '/api/now/table/cmdb_rel_ci?sysparm_fields=parent,type,child'
+        base_url = params['base_url']
+        timeout = params['timeout']
+        auth = params['auth']
+        url = base_url + '/api/now/table/cmdb_rel_ci?sysparm_fields=parent,type,child'
 
-        return self._get_json_batch(url, offset, batch_size)
+        return self._get_json_batch(params, url, offset, batch_size, timeout, auth)
 
-    def _process_component_relations(self):
-        BATCH_SIZE = 100
+    def _process_component_relations(self, params):
+        batch_size = params['batch_size']
         offset = 0
+        relation_types = params['relation_types']
+        instance_tags = params['instance_tags']
+        instance_key = params['instance_key']
 
         completed = False
         while not completed:
-            state = self._collect_component_relations(offset, BATCH_SIZE)['result']
+            state = self._collect_component_relations(params, offset, batch_size)['result']
 
             for relation in state:
 
@@ -141,23 +152,23 @@ class ServicenowCheck(AgentCheck):
                 type_sys_id = relation['type']['value']
 
                 relation_type = {
-                    "name": self.relation_types[type_sys_id]
+                    "name": relation_types[type_sys_id]
                 }
                 data = {
-                    "tags": self.instance_tags
+                    "tags": instance_tags
                 }
 
-                self.relation(self.instance_key, parent_sys_id, child_sys_id, relation_type, data)
+                self.relation(instance_key, parent_sys_id, child_sys_id, relation_type, data)
 
-            completed = len(state) < BATCH_SIZE
-            offset += BATCH_SIZE
+            completed = len(state) < batch_size
+            offset += batch_size
 
-    def _get_json_batch(self, url, offset, batch_size):
+    def _get_json_batch(self, params, url, offset, batch_size, timeout, auth):
         limit_args = "&sysparm_query=ORDERBYsys_created_on&sysparm_offset=%i&sysparm_limit=%i" % (offset, batch_size)
         limited_url = url + limit_args
-        return self._get_json(limited_url, self.timeout, self.auth)
+        return self._get_json(params, limited_url, timeout, auth)
 
-    def _get_json(self, url, timeout, auth=None, verify=True):
+    def _get_json(self, params, url, timeout, auth=None, verify=True):
         tags = ["url:%s" % url]
         msg = None
         status = None
@@ -178,20 +189,19 @@ class ServicenowCheck(AgentCheck):
             msg = str(e)
             status = AgentCheck.CRITICAL
         finally:
-            if not self.service_check_done or status is AgentCheck.CRITICAL:
-                self.make_service_check(status, tags=tags, msg=msg)
+            if not params['service_check_done'] or status is AgentCheck.CRITICAL:
+                self.make_service_check(params, status, tags=tags, msg=msg)
 
         if resp.encoding is None:
             resp.encoding = 'UTF8'
 
         return resp.json()
 
-    def make_service_check(self, status, tags, msg):
-        self.service_check_done = True
-        if self.service_check_needed and status is AgentCheck.OK:
+    def make_service_check(self, params, status, tags, msg):
+        params['service_check_done'] = True
+        if status is AgentCheck.OK:
             self.service_check(self.SERVICE_CHECK_NAME, status, tags=tags,
                                message=msg)
-            self.service_check_needed = False
         if status is AgentCheck.CRITICAL:
             self.service_check(self.SERVICE_CHECK_NAME, status, tags=tags,
                                message=msg)

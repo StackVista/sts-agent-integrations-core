@@ -63,7 +63,6 @@ class ServicenowCheck(AgentCheck):
         default_timeout = self.init_config.get('default_timeout', 5)
         self.timeout = float(instance.get('timeout', default_timeout))
 
-
         self._process_and_cache_relation_types()
         self.start_snapshot(self.instance_key)
         self._process_components()
@@ -125,7 +124,7 @@ class ServicenowCheck(AgentCheck):
         """
         url = self.base_url + '/api/now/table/cmdb_rel_ci?sysparm_fields=parent,type,child'
 
-        return self._get_json_in_batches(url, offset, batch_size)
+        return self._get_json_batch(url, offset, batch_size)
 
     def _process_component_relations(self):
         BATCH_SIZE = 100
@@ -153,7 +152,7 @@ class ServicenowCheck(AgentCheck):
             completed = len(state) < BATCH_SIZE
             offset += BATCH_SIZE
 
-    def _get_json_in_batches(self, url, offset, batch_size):
+    def _get_json_batch(self, url, offset, batch_size):
         limit_args = "&sysparm_query=ORDERBYsys_created_on&sysparm_offset=%i&sysparm_limit=%i" % (offset, batch_size)
         limited_url = url + limit_args
         return self._get_json(limited_url, self.timeout, self.auth)
@@ -189,7 +188,7 @@ class ServicenowCheck(AgentCheck):
 
     def make_service_check(self, status, tags, msg):
         self.service_check_done = True
-        if self.service_check_needed:
+        if self.service_check_needed and status is AgentCheck.OK:
             self.service_check(self.SERVICE_CHECK_NAME, status, tags=tags,
                                message=msg)
             self.service_check_needed = False

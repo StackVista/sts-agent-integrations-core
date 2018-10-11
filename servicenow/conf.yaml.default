@@ -17,4 +17,4 @@ instances:
     basic_auth:
        user: admin
        password: Service@123
-    default_batch_size: 100
+    batch_size: 100

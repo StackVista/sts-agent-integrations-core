@@ -1,0 +1,12 @@
+{
+  "maintainer": "help@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.6.3",
+  "name": "servicenow",
+  "short_description": "Retrieve CMDB Configuration Items(CIs) and their relations from ServiceNow instance.",
+  "guid": "40c3b6e7-82dc-4d0c-90f4-be5bc726889e",
+  "support": "contrib",
+  "supported_os": ["linux","mac_os","windows"],
+  "version": "0.1.0"
+}

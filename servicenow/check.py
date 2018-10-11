@@ -6,11 +6,6 @@
 
 # 3rd party
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from requests.packages.urllib3 import disable_warnings
-
-# Disable https warnings
-disable_warnings(InsecureRequestWarning)
 
 # project
 from checks import AgentCheck, CheckException

@@ -31,29 +31,40 @@ CONFIG = {
     ]
 }
 
+
 def mock__process_and_cache_relation_types(params):
     return
 
+
 def mock__process_components(params):
     return
+
 
 def mock__process_component_relations(params):
     return
 
 
 def mock_collect_components():
-    ''' Mock behaviour(response) from ServiceNow API for Components(CIs)'''
+    """
+    Mock behaviour(response) from ServiceNow API for Components(CIs)
+    """
     response = {'result': [{'sys_class_name': 'cmdb_ci_computer', 'sys_id': '00a96c0d3790200044e0bfc8bcbe5db4',
                             'sys_created_on': '2012-02-18 08:14:21', 'name': 'MacBook Pro 15'}]}
     return json.dumps(response)
 
+
 def mock_relation_types():
-    '''Mock behaviour for relation types'''
+    """
+    Mock behaviour for relation types
+    """
     response = {'result': [{'parent_descriptor': 'Cools', 'sys_id': '53979c53c0a801640116ad2044643fb2'}]}
     return json.dumps(response)
 
+
 def mock_relation_components():
-    ''' Mock response from ServiceNow API for relation between components'''
+    """
+    Mock response from ServiceNow API for relation between components
+    """
     response = {'result': [
         {'type': {'link': 'https://dev60476.service-now.com/api/now/table/cmdb_rel_type/1a9cb166f1571100a92eb60da2bce5c5',
                   'value': '1a9cb166f1571100a92eb60da2bce5c5'},
@@ -61,10 +72,11 @@ def mock_relation_components():
                     'value': '451047c6c0a8016400de0ae6df9b9d76'},
          'child': {'link': 'https://dev60476.service-now.com/api/now/table/cmdb_ci/53979c53c0a801640116ad2044643fb2',
                    'value': '53979c53c0a801640116ad2044643fb2'}}
-        ]}
+    ]}
     return json.dumps(response)
 
 # NOTE: Feel free to declare multiple test classes if needed
+
 
 @attr(requires='servicenow')
 class TestServicenow(AgentCheckTest):
@@ -80,10 +92,10 @@ class TestServicenow(AgentCheckTest):
         self.base_url = instance['url']
 
         self.run_check(CONFIG, mocks={
-                '_process_and_cache_relation_types': mock__process_and_cache_relation_types,
-                '_process_components': mock__process_components,
-                '_process_component_relations': mock__process_component_relations
-            })
+            '_process_and_cache_relation_types': mock__process_and_cache_relation_types,
+            '_process_components': mock__process_components,
+            '_process_component_relations': mock__process_component_relations
+        })
 
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
@@ -123,7 +135,6 @@ class TestServicenow(AgentCheckTest):
     def test_collect_components(self):
         """
         Test to raise a check exception when hitting API
-        :return:
         """
         self.load_check(CONFIG)
         params = {'base_url': instance.get('url'), 'auth': ('admin', 'Service@123'),
@@ -177,7 +188,6 @@ class TestServicenow(AgentCheckTest):
     def test_process_component_relations(self):
         """
         Test to collect the component relations and process it as a topology
-        :return:
         """
         self.load_check(CONFIG)
         params = {'relation_types': {'1a9cb166f1571100a92eb60da2bce5c5': 'Cools'}, 'instance_tags': [], 'instance_key': {"key": "dummy"},

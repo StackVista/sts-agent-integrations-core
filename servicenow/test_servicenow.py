@@ -113,7 +113,7 @@ class TestServicenow(AgentCheckTest):
         Test to raise a check exception when collecting components
         """
         self.load_check(CONFIG)
-        self.assertRaises(CheckException, self.check._collect_components, instance_config, 10)
+        self.assertRaises(CheckException, self.check._collect_components, instance_config, 10, 0, 100)
 
     def test_process_components(self):
         """
@@ -122,7 +122,7 @@ class TestServicenow(AgentCheckTest):
         self.load_check(CONFIG)
         self.check._collect_components = mock.MagicMock()
         self.check._collect_components.return_value = json.loads(mock_collect_components())
-        self.check._process_components(instance_config, 10)
+        self.check._process_components(instance_config, 10, 100)
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['components'][0]['type']['name'], 'cmdb_ci_computer')

@@ -54,7 +54,7 @@ class ServicenowCheck(AgentCheck):
 
         relation_types = self._process_and_cache_relation_types(instance_config, timeout)
         self.start_snapshot(instance_key)
-        self._process_components(instance_config, timeout)
+        self._process_components(instance_config, timeout, batch_size)
         self._process_component_relations(instance_config, batch_size, timeout, relation_types)
         self.stop_snapshot(instance_key)
 
@@ -63,7 +63,7 @@ class ServicenowCheck(AgentCheck):
         tags = ["url:%s" % base_url]
         self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK, tags=tags, message=msg)
 
-    def _collect_components(self, instance_config, timeout):
+    def _collect_components(self, instance_config, timeout, offset, batch_size):
         """
         collect components from ServiceNow CMDB's cmdb_ci table
         (API Doc- https://developer.servicenow.com/app.do#!/rest_api_doc?v=london&id=r_TableAPI-GET)
@@ -75,29 +75,35 @@ class ServicenowCheck(AgentCheck):
         auth = instance_config.auth
         url = base_url + '/api/now/table/cmdb_ci?sysparm_fields=name,sys_id,sys_class_name,sys_created_on'
 
-        return self._get_json(url, timeout, auth)
+        return self._get_json_batch(url, offset, batch_size, timeout, auth)
 
-    def _process_components(self, instance_config, timeout):
+    def _process_components(self, instance_config, timeout, batch_size):
         """
         process components fetched from CMDB
         :return: nothing
         """
+        offset = 0
         instance_tags = instance_config.instance_tags
         instance_key = instance_config.instance_key
 
-        state = self._collect_components(instance_config, timeout)
+        completed = False
+        while not completed:
+            state = self._collect_components(instance_config, timeout, offset, batch_size)['result']
 
-        for component in state['result']:
-            id = component['sys_id']
-            type = {
-                "name": component['sys_class_name']
-            }
-            data = {
-                "name": component['name'].strip(),
-                "tags": instance_tags
-            }
+            for component in state:
+                id = component['sys_id']
+                type = {
+                    "name": component['sys_class_name']
+                }
+                data = {
+                    "name": component['name'].strip(),
+                    "tags": instance_tags
+                }
 
-            self.component(instance_key, id, type, data)
+                self.component(instance_key, id, type, data)
+
+            completed = len(state) < batch_size
+            offset += batch_size
 
     def _collect_relation_types(self, instance_config, timeout):
         """

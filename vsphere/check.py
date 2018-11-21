@@ -601,6 +601,7 @@ class VSphereCheck(AgentCheck):
 
             for c in container.view:
                 instance_tags = []
+                topology_tags = {}
                 if not self._is_excluded(c, regexes, include_only_marked):
                     hostname = c.name
                     if c.parent:
@@ -609,23 +610,55 @@ class VSphereCheck(AgentCheck):
                     vsphere_type = None
                     if isinstance(c, vim.VirtualMachine):
                         vsphere_type = u'vsphere_type:vm'
+                        topology_tags["topo_type"] = "vsphere-VirtualMachine"
+                        topology_tags["name"] = c.name
+                        topology_tags["datastore"] = c.datastore[0]._moId
+                        self.component({"type": topology_tags["topo_type"], "name": topology_tags["name"]}, instance, "vsphere")
                         if c.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
                             continue
                         host = c.runtime.host.name
                         instance_tags.append(u'vsphere_host:{}'.format(host))
                     elif isinstance(c, vim.HostSystem):
+                        # c.vm contains list of virtual machines on a host.
+                        # c.hardware - info about hardware
+                        # c.compability
                         vsphere_type = u'vsphere_type:host'
+                        topology_tags["name"] = c.name
+                        topology_tags["topo_type"] = "vsphere-HostSystem"
                     elif isinstance(c, vim.Datastore):
                         vsphere_type = u'vsphere_type:datastore'
                         instance_tags.append(u'vsphere_datastore:{}'.format(c.name))
+                        topology_tags["topo_type"] = "vsphere-Datacenter"
+                        topology_tags["name"] = c.name
+                        topology_tags["accessible"] = c.summary.accessible
+                        topology_tags["capacity"] = c.summary.capacity
+                        topology_tags["type"] = c.summary.type
+                        topology_tags["url"] = c.summary.url
+
+                        datastore_hosts = []
+                        datastore_vms = []
+
+                        for vm in c.vm:
+                            datastore_vms.append(vm.name)
+
+                        for host in c.host:
+                            datastore_vms.append(host.key.name)
+
+                        topology_tags["vm"] = datastore_vms
+                        topology_tags["host"] = datastore_hosts
+
                         hostname = None
                     elif isinstance(c, vim.Datacenter):
                         vsphere_type = u'vsphere_type:datacenter'
+                        datastores = []
+                        for datastore in c.datastore:
+                            datastores.append(datastore.name)   # datastore._moId - GUID of store
+                        topology_tags["datastores"] = datastores
                         hostname = None
 
                     if vsphere_type:
                         instance_tags.append(vsphere_type)
-                    obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, tags=tags+instance_tags))
+                    obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, tags=tags+instance_tags, topo_tags = topology_tags ))
 
             return obj_list
 
@@ -644,12 +677,12 @@ class VSphereCheck(AgentCheck):
                     include_only_marked,
                     tags
                 )
-
         # collect...
         self.pool.apply_async(
             build_resource_registry,
             args=(instance, tags, regexes, include_only_marked)
         )
+
 
     @staticmethod
     def _is_excluded(obj, regexes, include_only_marked):
@@ -923,6 +956,25 @@ class VSphereCheck(AgentCheck):
             self.pool.apply_async(self._collect_metrics_atomic, args=(instance, mor))
 
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
+
+    def collect_topology(self,instance):
+        for instance in self.morlist:
+          self.component({"type": "instance", "name": instance}, instance, "instance")
+          for item in self.morlist_raw[instance]:
+              if item == 'datacenter':
+                  self.component({"type": "datacenter", "name": instance}, instance, "datacenter")
+              elif item == "datastore":
+                  self.component({"type": "datastore", "name": instance}, instance, "datastore")
+              elif item == "host":
+                  self.component({"type": "host", "name": instance}, instance, "host")
+              elif item == "vm":
+                  self.component({"type": "vm", "name": instance}, instance, "vm")
+              else:
+                  self.log.debug(item)
+        # datacenter datastore host vm
+        # host - hostname tags
+        # vm - hostname tags
+
 
     def check(self, instance):
         if not self.pool_started:

@@ -1033,19 +1033,19 @@ class VSphereCheck(AgentCheck):
     def collect_topology(self,instance):
         topology_items = self.get_topologyitems_sync(instance)
         for vm in topology_items["vms"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance,vm["hostname"])}, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance["name"],vm["hostname"])}, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])
         for host in topology_items["hosts"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance,host["hostname"])}, host["hostname"], host["topo_tags"]["topo_type"],host["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance["name"],host["hostname"])}, host["hostname"], host["topo_tags"]["topo_type"],host["topo_tags"])
         for dc in topology_items["datacenters"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", dc["topo_tags"]["topo_type"],dc["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance["name"],"unidentified_datacenter")}, "unidentified_datacenter", dc["topo_tags"]["topo_type"],dc["topo_tags"])
             # for ds in dc["topo_tags"]["datastores"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}/datastores".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", dc, "vsphere-Datacenter-Datastores")
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}/datastores".format(instance["name"],"unidentified_datacenter")}, "unidentified_datacenter", dc, "vsphere-Datacenter-Datastores")
         for ds in topology_items["datastores"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance["name"], ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
             # for vm in ds["topo_tags"]["vms"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance["name"],ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
             # for host in ds["topo_tags"]["hosts"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/hosts".format(instance,ds["topo_tags"]["name"])}, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/hosts".format(instance["name"],ds["topo_tags"]["name"])}, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
 
 
     def check(self, instance):
@@ -1088,8 +1088,8 @@ class VSphereCheck(AgentCheck):
         ### </TEST-INSTRUMENTATION>
 
 if __name__ == '__main__':
-    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
-#    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
+#    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
+    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
     try:
         for i in xrange(200):
             print "Loop %d" % i

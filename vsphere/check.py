@@ -957,23 +957,88 @@ class VSphereCheck(AgentCheck):
 
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
 
+    def _vsphere_objs(self, content, vimtype, regexes=None, include_only_marked=False, tags=[]):
+        obj_list = []
+        container = content.viewManager.CreateContainerView(
+            content.rootFolder,
+            [RESOURCE_TYPE_MAP[vimtype]],
+            True)
+
+        for c in container.view:
+            topology_tags = {}
+            if not self._is_excluded(c, regexes, include_only_marked):
+                hostname = c.name
+
+                vsphere_type = None
+                if isinstance(c, vim.VirtualMachine):
+                    topology_tags["topo_type"] = "vsphere-VirtualMachine"
+                    topology_tags["name"] = c.name
+                    topology_tags["datastore"] = c.datastore[0]._moId
+                elif isinstance(c, vim.HostSystem):
+                    # c.vm contains list of virtual machines on a host.
+                    # c.hardware - info about hardware
+                    # c.compability
+                    topology_tags["name"] = c.name
+                    topology_tags["topo_type"] = "vsphere-HostSystem"
+                elif isinstance(c, vim.Datastore):
+                    topology_tags["topo_type"] = "vsphere-Datacenter"
+                    topology_tags["name"] = c.name
+                    topology_tags["accessible"] = c.summary.accessible
+                    topology_tags["capacity"] = c.summary.capacity
+                    topology_tags["type"] = c.summary.type
+                    topology_tags["url"] = c.summary.url
+
+                    datastore_hosts = []
+                    datastore_vms = []
+
+                    for vm in c.vm:
+                        datastore_vms.append(vm.name)
+
+                    for host in c.host:
+                        datastore_vms.append(host.key.name)
+
+                    topology_tags["vm"] = datastore_vms
+                    topology_tags["host"] = datastore_hosts
+
+                    hostname = None
+                elif isinstance(c, vim.Datacenter):
+                    datastores = []
+                    for datastore in c.datastore:
+                        datastores.append(datastore.name)   # datastore._moId - GUID of store
+                    topology_tags["datastores"] = datastores
+                    hostname = None
+                obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, topo_tags = topology_tags))
+
+        return obj_list
+
+
+    def get_topologyitems_sync(self, instance, tags=[], regexes=None, include_only_marked=False):
+        server_instance = self._get_server_instance(instance)
+        content = server_instance.RetrieveContent()
+
+        vms = self._vsphere_objs (content, "vm")
+        hosts = self._vsphere_objs (content, "host")
+        datacenters = self._vsphere_objs (content, "datacenter")
+        datastores = self._vsphere_objs (content, "datastore")
+
+        return {
+            "vms": vms,
+            "hosts": hosts,
+            "datacenters": datacenters,
+            "datastores": datastores
+        }
+
+
     def collect_topology(self,instance):
-        for instance in self.morlist:
-          self.component({"type": "instance", "name": instance}, instance, "instance")
-          for item in self.morlist_raw[instance]:
-              if item == 'datacenter':
-                  self.component({"type": "datacenter", "name": instance}, instance, "datacenter")
-              elif item == "datastore":
-                  self.component({"type": "datastore", "name": instance}, instance, "datastore")
-              elif item == "host":
-                  self.component({"type": "host", "name": instance}, instance, "host")
-              elif item == "vm":
-                  self.component({"type": "vm", "name": instance}, instance, "vm")
-              else:
-                  self.log.debug(item)
-        # datacenter datastore host vm
-        # host - hostname tags
-        # vm - hostname tags
+        topology_items = self.get_topologyitems_sync(instance)
+        for vm in topology_items["vms"]:
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance,vm["hostname"])}, vm["hostname"], "vsphere-VirtualMachine",vm["topo_tags"])
+        for host in topology_items["hosts"]:
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance,host["hostname"])}, host["hostname"], "vsphere-HostSystem",host["topo_tags"])
+        for dc in topology_items["datacenters"]:
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", "vsphere-Datacenter",dc["topo_tags"])
+        for ds in topology_items["datastores"]:
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], "vsphere-Datacenter",ds["topo_tags"])
 
 
     def check(self, instance):
@@ -1016,11 +1081,13 @@ class VSphereCheck(AgentCheck):
 
 if __name__ == '__main__':
     check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
+#    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
     try:
         for i in xrange(200):
             print "Loop %d" % i
             for instance in check.instances:
                 check.check(instance)
+                check.collect_topology(instance)
                 if check.has_events():
                     print 'Events: %s' % (check.get_events())
                 print 'Metrics: %d' % (len(check.get_metrics()))

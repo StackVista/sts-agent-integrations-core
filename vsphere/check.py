@@ -981,7 +981,7 @@ class VSphereCheck(AgentCheck):
                     topology_tags["name"] = c.name
                     topology_tags["topo_type"] = "vsphere-HostSystem"
                 elif isinstance(c, vim.Datastore):
-                    topology_tags["topo_type"] = "vsphere-Datacenter"
+                    topology_tags["topo_type"] = "vsphere-Datastore"
                     topology_tags["name"] = c.name
                     topology_tags["accessible"] = c.summary.accessible
                     topology_tags["capacity"] = c.summary.capacity
@@ -997,14 +997,15 @@ class VSphereCheck(AgentCheck):
                     for host in c.host:
                         datastore_vms.append(host.key.name)
 
-                    topology_tags["vm"] = datastore_vms
-                    topology_tags["host"] = datastore_hosts
+                    topology_tags["vms"] = datastore_vms
+                    topology_tags["hosts"] = datastore_hosts
 
                     hostname = None
                 elif isinstance(c, vim.Datacenter):
                     datastores = []
                     for datastore in c.datastore:
                         datastores.append(datastore.name)   # datastore._moId - GUID of store
+                    topology_tags["topo_type"] = "vsphere-Datacenter"
                     topology_tags["datastores"] = datastores
                     hostname = None
                 obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, topo_tags = topology_tags))
@@ -1032,13 +1033,19 @@ class VSphereCheck(AgentCheck):
     def collect_topology(self,instance):
         topology_items = self.get_topologyitems_sync(instance)
         for vm in topology_items["vms"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance,vm["hostname"])}, vm["hostname"], "vsphere-VirtualMachine",vm["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance,vm["hostname"])}, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])
         for host in topology_items["hosts"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance,host["hostname"])}, host["hostname"], "vsphere-HostSystem",host["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance,host["hostname"])}, host["hostname"], host["topo_tags"]["topo_type"],host["topo_tags"])
         for dc in topology_items["datacenters"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", "vsphere-Datacenter",dc["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", dc["topo_tags"]["topo_type"],dc["topo_tags"])
+            # for ds in dc["topo_tags"]["datastores"]:
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}/datastores".format(instance,"unidentified_datacenter")}, "unidentified_datacenter", dc, "vsphere-Datacenter-Datastores")
         for ds in topology_items["datastores"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], "vsphere-Datacenter",ds["topo_tags"])
+            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
+            # for vm in ds["topo_tags"]["vms"]:
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance,ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
+            # for host in ds["topo_tags"]["hosts"]:
+            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/hosts".format(instance,ds["topo_tags"]["name"])}, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
 
 
     def check(self, instance):
@@ -1060,6 +1067,7 @@ class VSphereCheck(AgentCheck):
         # Second part: do the job
         self.collect_metrics(instance)
         self._query_event(instance)
+        self.collect_topology(instance)
 
         # For our own sanity
         self._clean()
@@ -1087,7 +1095,6 @@ if __name__ == '__main__':
             print "Loop %d" % i
             for instance in check.instances:
                 check.check(instance)
-                check.collect_topology(instance)
                 if check.has_events():
                     print 'Events: %s' % (check.get_events())
                 print 'Metrics: %d' % (len(check.get_metrics()))

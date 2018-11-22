@@ -40,7 +40,14 @@ RESOURCE_TYPE_MAP = {
     'vm': vim.VirtualMachine,
     'datacenter': vim.Datacenter,
     'host': vim.HostSystem,
-    'datastore': vim.Datastore
+    'datastore': vim.Datastore,
+    'clustercomputeresource': vim.ClusterComputeResource
+}
+
+RELATION_TYPE = {
+    'vm-host': 'vsphere-vm-is-hosted-on',
+    'host-cluster': 'vsphere-hostsystem-is-located-on',
+    'cluster-dc': 'vsphere-clustercomputeresource-is-located-on'
 }
 
 # Time after which we reap the jobs that clog the queue
@@ -318,6 +325,7 @@ class VSphereCheck(AgentCheck):
     """
 
     SERVICE_CHECK_NAME = 'vcenter.can_connect'
+    INSTANCE_TYPE = "vsphere"
 
     def __init__(self, name, init_config, agentConfig, instances):
         AgentCheck.__init__(self, name, init_config, agentConfig, instances)
@@ -980,6 +988,9 @@ class VSphereCheck(AgentCheck):
                     # c.compability
                     topology_tags["name"] = c.name
                     topology_tags["topo_type"] = "vsphere-HostSystem"
+                elif isinstance(c, vim.ClusterComputeResource):
+                    topology_tags["topo_type"] = "vsphere-ClusterComputeResource"
+                    topology_tags["name"] = c.name
                 elif isinstance(c, vim.Datastore):
                     topology_tags["topo_type"] = "vsphere-Datastore"
                     topology_tags["name"] = c.name
@@ -1012,7 +1023,6 @@ class VSphereCheck(AgentCheck):
 
         return obj_list
 
-
     def get_topologyitems_sync(self, instance, tags=[], regexes=None, include_only_marked=False):
         server_instance = self._get_server_instance(instance)
         content = server_instance.RetrieveContent()
@@ -1021,32 +1031,41 @@ class VSphereCheck(AgentCheck):
         hosts = self._vsphere_objs (content, "host")
         datacenters = self._vsphere_objs (content, "datacenter")
         datastores = self._vsphere_objs (content, "datastore")
+        clustercomputeresource = self._vsphere_objs(content, "clustercomputeresource")
 
         return {
             "vms": vms,
             "hosts": hosts,
             "datacenters": datacenters,
-            "datastores": datastores
+            "datastores": datastores,
+            "clustercomputeresource": clustercomputeresource
         }
-
 
     def collect_topology(self,instance):
         topology_items = self.get_topologyitems_sync(instance)
+        vsphere_url = instance.get("host")
+        instance_key = {"type": self.INSTANCE_TYPE, "url": vsphere_url}
+        self.start_snapshot(instance_key)
         for vm in topology_items["vms"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/vm/{1}".format(instance["name"],vm["hostname"])}, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])
+            self.component(instance_key, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])
         for host in topology_items["hosts"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/host/{1}".format(instance["name"],host["hostname"])}, host["hostname"], host["topo_tags"]["topo_type"],host["topo_tags"])
+            self.component(instance_key, host["hostname"], host["topo_tags"]["topo_type"],host["topo_tags"])
+        for cluster in topology_items["clustercomputeresource"]:
+            self.component(instance_key, cluster["topo_tags"]["name"], cluster["topo_tags"]["topo_type"], cluster["topo_tags"])
         for dc in topology_items["datacenters"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}".format(instance["name"],"unidentified_datacenter")}, "unidentified_datacenter", dc["topo_tags"]["topo_type"],dc["topo_tags"])
+            self.component(instance_key, "unidentified_datacenter", dc["topo_tags"]["topo_type"],dc["topo_tags"])
             # for ds in dc["topo_tags"]["datastores"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datacenter/{1}/datastores".format(instance["name"],"unidentified_datacenter")}, "unidentified_datacenter", dc, "vsphere-Datacenter-Datastores")
-        for ds in topology_items["datastores"]:
-            self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance["name"], ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
-            # for vm in ds["topo_tags"]["vms"]:
-            #      self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance["name"],ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
-            # for host in ds["topo_tags"]["hosts"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/hosts".format(instance["name"],ds["topo_tags"]["name"])}, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
+            #     self.relation(instance_key, "unidentified_datacenter", dc, "vsphere-Datacenter-Datastores")
 
+        # we don't need datastores for now
+
+        # for ds in topology_items["datastores"]:
+        #     self.component(instance_key, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
+        #     for vm in ds["topo_tags"]["vms"]:
+        #          self.relation(instance_key, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
+        #     for host in ds["topo_tags"]["hosts"]:
+        #         self.relation(instance_key, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
+        self.stop_snapshot(instance_key)
 
     def check(self, instance):
         if not self.pool_started:

@@ -1043,7 +1043,7 @@ class VSphereCheck(AgentCheck):
         for ds in topology_items["datastores"]:
             self.component({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}".format(instance["name"], ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], ds["topo_tags"]["topo_type"],ds["topo_tags"])
             # for vm in ds["topo_tags"]["vms"]:
-            #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance["name"],ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
+            #      self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/vms".format(instance["name"],ds["topo_tags"]["name"])}, ds["topo_tags"]["name"], vm, "vsphere-Datastore-vms")
             # for host in ds["topo_tags"]["hosts"]:
             #     self.relation({"type": "vsphere", "url": "http://vsphere/{0}/datastore/{1}/hosts".format(instance["name"],ds["topo_tags"]["name"])}, host["topo_tags"]["name"], host, "vsphere-Datastore-hosts")
 
@@ -1088,8 +1088,8 @@ class VSphereCheck(AgentCheck):
         ### </TEST-INSTRUMENTATION>
 
 if __name__ == '__main__':
-#    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
-    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
+    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
+#    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
     try:
         for i in xrange(200):
             print "Loop %d" % i

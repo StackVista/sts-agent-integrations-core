@@ -41,7 +41,8 @@ RESOURCE_TYPE_MAP = {
     'datacenter': vim.Datacenter,
     'host': vim.HostSystem,
     'datastore': vim.Datastore,
-    'clustercomputeresource': vim.ClusterComputeResource
+    'clustercomputeresource': vim.ClusterComputeResource,
+    'computeresource': vim.ComputeResource
 }
 
 class VSPHERE_COMPONENT_TYPE:
@@ -50,14 +51,17 @@ class VSPHERE_COMPONENT_TYPE:
     HOST = "vsphere-HostSystem"
     DATASTORE = "vsphere-Datastore"
     CLUSTERCOMPUTERESOURCE = "vsphere-ClusterComputeResource"
+    COMPUTERESOURCE = "vsphere-ComputeResource"
 
 class VSPHERE_RELATION_TYPE:
     VM_HOST = 'vsphere-vm-is-hosted-on'
-    HOST_CLUSTER = 'vsphere-hostsystem-is-located-on'
+    HOST_COMPUTERESOURCE = 'vsphere-hostsystem-belongs-to'
     CLUSTER_DC = 'vsphere-clustercomputeresource-is-located-on'
     VM_STORE = 'vsphere-vm-is-hosted-store'
     DATASTORE_DATACENTER = 'vsphere-datastore-is-located-on'
     DATASTORE_HOST = 'vsphere-hostsystem-uses-datastore'
+    DATACENTER_CLUSTERCOMPUTERESOURCES = 'vsphere-cluster-computeresources'
+    DATACENTER_COMPUTERESOURCES = 'vsphere-cluster-computeresources'
 
 
 # Time after which we reap the jobs that clog the queue
@@ -998,9 +1002,58 @@ class VSphereCheck(AgentCheck):
                     # c.compability
                     topology_tags["name"] = c.name
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.HOST
+                    host_datastores = []
+                    host_vms = []
+
+                    for vm in c.vm:
+                        host_vms.append(vm.name)
+
+                    for ds in c.datastore:
+                        host_datastores.append(ds.name) #ds._moId GUID
+
+                    topology_tags["datastores"] = host_datastores
+                    topology_tags["vms"] = host_datastores
+
+                    if isinstance(c.parent, vim.ComputeResource):
+                        topology_tags["computeresource"] = c.parent.name
+
+                    if isinstance(c.parent, vim.ClusterComputeResource):
+                        topology_tags["clustercomputeresource"] = c.parent.name
+
+
                 elif isinstance(c, vim.ClusterComputeResource):
-                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTER_COMPUTE_RESOURCE
+                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTER_COMPUTERESOURCE
                     topology_tags["name"] = c.name
+
+                    datastores = []
+                    hosts = []
+
+                    for ds in c.datastore:
+                        datastores.append(ds.name) #ds._moId GUID
+
+                    for host in c.host:
+                        hosts.append(host.name)
+
+                    topology_tags["hosts"] = hosts
+                    topology_tags["datastores"] = hosts
+
+                elif isinstance(c, vim.ComputeResource):
+                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE
+                    topology_tags["name"] = c.name
+
+                    datastores = []
+                    hosts = []
+
+                    for ds in c.datastore:
+                        datastores.append(ds.name) #ds._moId GUID
+
+                    for host in c.host:
+                        hosts.append(host.name)
+
+                    topology_tags["hosts"] = hosts
+                    topology_tags["datastores"] = hosts
+
+
                 elif isinstance(c, vim.Datastore):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATASTORE
                     topology_tags["name"] = c.name
@@ -1009,17 +1062,12 @@ class VSphereCheck(AgentCheck):
                     topology_tags["type"] = c.summary.type
                     topology_tags["url"] = c.summary.url
 
-                    datastore_hosts = []
-                    datastore_vms = []
+                    vms = []
 
                     for vm in c.vm:
-                        datastore_vms.append(vm.name)
+                        vms.append(vm.name)
 
-                    for host in c.host:
-                        datastore_vms.append(host.key.name)
-
-                    topology_tags["vms"] = datastore_vms
-                    topology_tags["hosts"] = datastore_hosts
+                    topology_tags["vms"] = vms
 
                     hostname = None
                 elif isinstance(c, vim.Datacenter):
@@ -1028,6 +1076,21 @@ class VSphereCheck(AgentCheck):
                         datastores.append(datastore.name)   # datastore._moId - GUID of store
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATACENTER
                     topology_tags["datastores"] = datastores
+                    topology_tags["name"] = c.name
+                    topology_tags["id"] = c._moId
+
+                    computeresources = []
+                    clustercomputeresources = []
+
+                    for computeres in c.hostFolder.childEntity:
+                        if isinstance(computeres, vim.ComputeResource):
+                            computeresources.append(computeres.name)
+                        elif  isinstance(computeres, vim.CloudComputeResource):
+                            clustercomputeresources.append(computeres.name)
+
+                    topology_tags["computeresources"] = computeresources
+                    topology_tags["clustercomputeresources"] = clustercomputeresources
+
                     hostname = None
                 obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, topo_tags = topology_tags))
 
@@ -1042,13 +1105,15 @@ class VSphereCheck(AgentCheck):
         datacenters = self._vsphere_objs (content, "datacenter")
         datastores = self._vsphere_objs (content, "datastore")
         clustercomputeresource = self._vsphere_objs(content, "clustercomputeresource")
+        computeresource = self._vsphere_objs(content, "computeresource")
 
         return {
             "vms": vms,
             "hosts": hosts,
             "datacenters": datacenters,
             "datastores": datastores,
-            "clustercomputeresource": clustercomputeresource
+            "clustercomputeresource": clustercomputeresource,
+            "computeresource": computeresource
         }
 
     def collect_topology(self,instance):
@@ -1088,21 +1153,59 @@ class VSphereCheck(AgentCheck):
               build_type(VSPHERE_COMPONENT_TYPE.CLUSTERCOMPUTERESOURCE),
               cluster["topo_tags"]
               )
+
+        for cluster in topology_items["computeresource"]:
+            self.component(
+              instance_key,
+              build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, cluster["topo_tags"]["name"]),
+              build_type(VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE),
+              cluster["topo_tags"]
+              )
+
+            for host_id in cluster["topo_tags"]["hosts"]:
+                self.relation(
+                  instance_key,
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, cluster["topo_tags"]["name"]),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host_id),
+                  build_type(VSPHERE_RELATION_TYPE.HOST_COMPUTERESOURCE),
+                  {}
+                )
+
+
         for dc in topology_items["datacenters"]:
             self.component(
               instance_key,
-              build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, "unidentified_datacenter"),
+              build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
               build_type(VSPHERE_COMPONENT_TYPE.DATACENTER),
               dc["topo_tags"]
               )
             for ds_id in dc["topo_tags"]["datastores"]:
                 self.relation(
                   instance_key,
-                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, "unidentified_datacenter"),
-                  build_id(vsphere_url, build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds_id), ds_id),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds_id),
                   build_type(VSPHERE_RELATION_TYPE.DATASTORE_DATACENTER),
                   {}
                 )
+            for computeresource in dc["topo_tags"]["computeresources"]:
+                self.relation(
+                  instance_key,
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, computeresource),
+                  build_type(VSPHERE_RELATION_TYPE.DATACENTER_COMPUTERESOURCES),
+                  {}
+                )
+
+            for clustercomputeresource in dc["topo_tags"]["clustercomputeresources"]:
+                self.relation(
+                  instance_key,
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.CLUSTERCOMPUTERESOURCE, clustercomputeresource),
+                  build_type(VSPHERE_RELATION_TYPE.DATACENTER_CLUSTERCOMPUTERESOURCES),
+                  {}
+                )
+
+
         for ds in topology_items["datastores"]:
             self.component(
               instance_key,
@@ -1117,13 +1220,13 @@ class VSphereCheck(AgentCheck):
                     build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
                     build_type(VSPHERE_RELATION_TYPE.VM_STORE)
                     )
-            for host_id in ds["topo_tags"]["hosts"]:
-                 self.relation(
-                   instance_key,
-                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
-                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host_id),
-                   build_type(VSPHERE_RELATION_TYPE.DATASTORE_HOST)
-                   )
+            # for host_id in ds["topo_tags"]["hosts"]:
+            #      self.relation(
+            #        instance_key,
+            #        build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
+            #        build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host_id),
+            #        build_type(VSPHERE_RELATION_TYPE.DATASTORE_HOST)
+            #        )
         self.stop_snapshot(instance_key)
 
     def check(self, instance):
@@ -1166,8 +1269,8 @@ class VSphereCheck(AgentCheck):
         ### </TEST-INSTRUMENTATION>
 
 if __name__ == '__main__':
-    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
-    # check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
+    # check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
+    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
     try:
         for i in xrange(200):
             print "Loop %d" % i

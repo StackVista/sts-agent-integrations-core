@@ -1045,6 +1045,7 @@ class VSphereCheck(AgentCheck):
         topology_items = self.get_topologyitems_sync(instance)
         vsphere_url = instance.get("host")
         instance_key = {"type": self.INSTANCE_TYPE, "url": vsphere_url}
+        self.log.info("Topoitems- %s" % topology_items)
         self.start_snapshot(instance_key)
         for vm in topology_items["vms"]:
             self.component(instance_key, vm["hostname"], vm["topo_tags"]["topo_type"],vm["topo_tags"])

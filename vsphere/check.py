@@ -1012,7 +1012,7 @@ class VSphereCheck(AgentCheck):
                         host_datastores.append(ds.name) #ds._moId GUID
 
                     topology_tags["datastores"] = host_datastores
-                    topology_tags["vms"] = host_datastores
+                    topology_tags["vms"] = host_vms
 
                     if isinstance(c.parent, vim.ComputeResource):
                         topology_tags["computeresource"] = c.parent.name
@@ -1145,6 +1145,14 @@ class VSphereCheck(AgentCheck):
               build_type(VSPHERE_COMPONENT_TYPE.HOST),
               host["topo_tags"]
               )
+            for vm_id in host["topo_tags"]["vms"]:
+                  self.relation(
+                    instance_key,
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host["hostname"]),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
+                    build_type(VSPHERE_RELATION_TYPE.VM_HOST)
+                    )
+
 
         for cluster in topology_items["clustercomputeresource"]:
             self.component(

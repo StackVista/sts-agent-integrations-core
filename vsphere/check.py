@@ -55,13 +55,15 @@ class VSPHERE_COMPONENT_TYPE:
 
 class VSPHERE_RELATION_TYPE:
     VM_HOST = 'vsphere-vm-is-hosted-on'
+    VM_DATASTORE = 'vsphere-vm-uses-datastore'
+
     HOST_COMPUTERESOURCE = 'vsphere-hostsystem-belongs-to'
-    CLUSTER_DC = 'vsphere-clustercomputeresource-is-located-on'
-    VM_STORE = 'vsphere-vm-is-hosted-store'
+    HOST_DATASTORE = 'vsphere-hostsystem-uses-datastore'
+
     DATASTORE_DATACENTER = 'vsphere-datastore-is-located-on'
-    DATASTORE_HOST = 'vsphere-hostsystem-uses-datastore'
-    DATACENTER_CLUSTERCOMPUTERESOURCES = 'vsphere-cluster-computeresources'
-    DATACENTER_COMPUTERESOURCES = 'vsphere-cluster-computeresources'
+
+    CLUSTERCOMPUTERESOURCE_DATACENTER = 'vsphere-clustercomputeresource-is-located-on'
+    COMPUTERESOURCE_DATACENTER = 'vsphere-computeresources-is-located-on'
 
 
 # Time after which we reap the jobs that clog the queue
@@ -1148,8 +1150,8 @@ class VSphereCheck(AgentCheck):
             for vm_id in host["topo_tags"]["vms"]:
                   self.relation(
                     instance_key,
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host["hostname"]),
                     build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host["hostname"]),
                     build_type(VSPHERE_RELATION_TYPE.VM_HOST)
                     )
 
@@ -1173,8 +1175,8 @@ class VSphereCheck(AgentCheck):
             for host_id in cluster["topo_tags"]["hosts"]:
                 self.relation(
                   instance_key,
-                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, cluster["topo_tags"]["name"]),
                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host_id),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, cluster["topo_tags"]["name"]),
                   build_type(VSPHERE_RELATION_TYPE.HOST_COMPUTERESOURCE),
                   {}
                 )
@@ -1190,26 +1192,26 @@ class VSphereCheck(AgentCheck):
             for ds_id in dc["topo_tags"]["datastores"]:
                 self.relation(
                   instance_key,
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, host_id),
                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
-                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds_id),
                   build_type(VSPHERE_RELATION_TYPE.DATASTORE_DATACENTER),
                   {}
                 )
             for computeresource in dc["topo_tags"]["computeresources"]:
                 self.relation(
                   instance_key,
-                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, computeresource),
-                  build_type(VSPHERE_RELATION_TYPE.DATACENTER_COMPUTERESOURCES),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
+                  build_type(VSPHERE_RELATION_TYPE.COMPUTERESOURCE_DATACENTER),
                   {}
                 )
 
             for clustercomputeresource in dc["topo_tags"]["clustercomputeresources"]:
                 self.relation(
                   instance_key,
-                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
                   build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.CLUSTERCOMPUTERESOURCE, clustercomputeresource),
-                  build_type(VSPHERE_RELATION_TYPE.DATACENTER_CLUSTERCOMPUTERESOURCES),
+                  build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
+                  build_type(VSPHERE_RELATION_TYPE.CLUSTERCOMPUTERESOURCE_DATACENTER),
                   {}
                 )
 
@@ -1224,9 +1226,9 @@ class VSphereCheck(AgentCheck):
             for vm_id in ds["topo_tags"]["vms"]:
                   self.relation(
                     instance_key,
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
                     build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
-                    build_type(VSPHERE_RELATION_TYPE.VM_STORE)
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
+                    build_type(VSPHERE_RELATION_TYPE.VM_DATASTORE)
                     )
             # for host_id in ds["topo_tags"]["hosts"]:
             #      self.relation(

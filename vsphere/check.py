@@ -995,14 +995,23 @@ class VSphereCheck(AgentCheck):
 
                 if isinstance(c, vim.VirtualMachine):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.VM
-                    topology_tags["name"] = c.name
                     topology_tags["datastore"] = c.datastore[0]._moId
+                    topology_tags["Name"] = c.summary.config.name
+                    topology_tags["Guest"] = c.summary.config.guestFullName
+                    topology_tags["Instance UUID"] = c.summary.config.instanceUuid
+                    topology_tags["BIOS UUID"] = c.summary.config.uuid
+                    topology_tags["State"] = c.summary.runtime.powerState
                 elif isinstance(c, vim.HostSystem):
                     # c.vm contains list of virtual machines on a host.
                     # c.hardware - info about hardware
                     # c.compability
                     topology_tags["name"] = c.name
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.HOST
+                    topology_tags["Connection State"] = c.summary.runtime.connectionState
+                    topology_tags["Product FullName"] = c.summary.config.product.fullName
+                    topology_tags["Product Version"] = c.summary.config.product.version
+                    topology_tags["Product OS Type"] = c.summary.config.product.osType
+
                     host_datastores = []
                     host_vms = []
 
@@ -1020,7 +1029,6 @@ class VSphereCheck(AgentCheck):
 
                     if isinstance(c.parent, vim.ClusterComputeResource):
                         topology_tags["clustercomputeresource"] = c.parent.name
-
 
                 elif isinstance(c, vim.ClusterComputeResource):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTER_COMPUTERESOURCE
@@ -1135,7 +1143,7 @@ class VSphereCheck(AgentCheck):
             self.component(
                 instance_key,
                 build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm["hostname"]),
-                build_type(VSPHERE_COMPONENT_TYPE.VM) ,
+                build_type(VSPHERE_COMPONENT_TYPE.VM),
                 vm["topo_tags"]
             )
 

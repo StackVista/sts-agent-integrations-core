@@ -958,6 +958,10 @@ class VSphereCheck(AgentCheck):
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
 
     def _vsphere_objs(self, content, vimtype, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
+
+        def add_label_pair (label_list, key, value):
+            label_list.append("{0}:{1}".format(key, value))
+
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -966,6 +970,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
+            labels = []
             if not self._is_excluded(c, regexes, include_only_marked):
                 hostname = c.name
 
@@ -975,6 +980,12 @@ class VSphereCheck(AgentCheck):
                     topology_tags["datastore"] = c.datastore[0]._moId
                     topology_tags["layer"] = TOPOLOGY_LAYERS.VM
                     topology_tags["domain"] = domain
+
+                    add_label_pair(labels, "name", topology_tags["name"])
+                    add_label_pair(labels, "guestId", c.config.guestId)
+                    add_label_pair(labels, "guestFullName", c.config.guestFullName)
+                    add_label_pair(labels, "numCPU", c.config.hardware.numCPU)
+                    add_label_pair(labels, "memoryMB", c.config.hardware.memoryMB)
                 elif isinstance(c, vim.HostSystem):
                     # c.vm contains list of virtual machines on a host.
                     # c.hardware - info about hardware
@@ -1001,6 +1012,8 @@ class VSphereCheck(AgentCheck):
                     if isinstance(c.parent, vim.ClusterComputeResource):
                         topology_tags["clustercomputeresource"] = c.parent.name
 
+                    add_label_pair(labels, "name", topology_tags["name"])
+
                 elif isinstance(c, vim.ClusterComputeResource):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTER_COMPUTERESOURCE
                     topology_tags["name"] = c.name
@@ -1018,6 +1031,8 @@ class VSphereCheck(AgentCheck):
 
                     topology_tags["hosts"] = hosts
                     topology_tags["datastores"] = hosts
+
+                    add_label_pair(labels, "name", topology_tags["name"])
 
                 elif isinstance(c, vim.ComputeResource):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE
@@ -1037,6 +1052,8 @@ class VSphereCheck(AgentCheck):
                     topology_tags["hosts"] = hosts
                     topology_tags["datastores"] = hosts
 
+                    add_label_pair(labels, "name", topology_tags["name"])
+
 
                 elif isinstance(c, vim.Datastore):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATASTORE
@@ -1047,6 +1064,8 @@ class VSphereCheck(AgentCheck):
                     topology_tags["url"] = c.summary.url
                     topology_tags["layer"] = TOPOLOGY_LAYERS.DATASTORE
                     topology_tags["domain"] = domain
+
+                    add_label_pair(labels, "name", topology_tags["name"])
 
                     vms = []
 
@@ -1079,7 +1098,10 @@ class VSphereCheck(AgentCheck):
                     topology_tags["computeresources"] = computeresources
                     topology_tags["clustercomputeresources"] = clustercomputeresources
 
+                    add_label_pair(labels, "name", topology_tags["name"])
+
                     hostname = None
+                topology_tags["labels"] = labels
                 obj_list.append(dict(mor_type=vimtype, mor=c, hostname=hostname, topo_tags = topology_tags))
 
         return obj_list

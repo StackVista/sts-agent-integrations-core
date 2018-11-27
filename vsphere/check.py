@@ -65,6 +65,12 @@ class VSPHERE_RELATION_TYPE:
     CLUSTERCOMPUTERESOURCE_DATACENTER = 'vsphere-clustercomputeresource-is-located-on'
     COMPUTERESOURCE_DATACENTER = 'vsphere-computeresources-is-located-on'
 
+class TOPOLOGY_LAYERS:
+    DATASTORE = 'VSphere Datastores'
+    HOST = 'VSphere Hosts'
+    VM = 'VSphere VMs'
+    COMPUTERESOURCE = 'VSphere Compute Resources'
+    DATACENTER = 'VSphere Datacenter'
 
 # Time after which we reap the jobs that clog the queue
 # TODO: use it
@@ -951,7 +957,7 @@ class VSphereCheck(AgentCheck):
 
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
 
-    def _vsphere_objs(self, content, vimtype, regexes=None, include_only_marked=False, tags=[]):
+    def _vsphere_objs(self, content, vimtype, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -967,12 +973,16 @@ class VSphereCheck(AgentCheck):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.VM
                     topology_tags["name"] = c.name
                     topology_tags["datastore"] = c.datastore[0]._moId
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.VM
+                    topology_tags["domain"] = domain
                 elif isinstance(c, vim.HostSystem):
                     # c.vm contains list of virtual machines on a host.
                     # c.hardware - info about hardware
                     # c.compability
                     topology_tags["name"] = c.name
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.HOST
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.HOST
+                    topology_tags["domain"] = domain
                     host_datastores = []
                     host_vms = []
 
@@ -991,10 +1001,11 @@ class VSphereCheck(AgentCheck):
                     if isinstance(c.parent, vim.ClusterComputeResource):
                         topology_tags["clustercomputeresource"] = c.parent.name
 
-
                 elif isinstance(c, vim.ClusterComputeResource):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTER_COMPUTERESOURCE
                     topology_tags["name"] = c.name
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
+                    topology_tags["domain"] = domain
 
                     datastores = []
                     hosts = []
@@ -1011,6 +1022,8 @@ class VSphereCheck(AgentCheck):
                 elif isinstance(c, vim.ComputeResource):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE
                     topology_tags["name"] = c.name
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
+                    topology_tags["domain"] = domain
 
                     datastores = []
                     hosts = []
@@ -1032,6 +1045,8 @@ class VSphereCheck(AgentCheck):
                     topology_tags["capacity"] = c.summary.capacity
                     topology_tags["type"] = c.summary.type
                     topology_tags["url"] = c.summary.url
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.DATASTORE
+                    topology_tags["domain"] = domain
 
                     vms = []
 
@@ -1049,6 +1064,8 @@ class VSphereCheck(AgentCheck):
                     topology_tags["datastores"] = datastores
                     topology_tags["name"] = c.name
                     topology_tags["id"] = c._moId
+                    topology_tags["layer"] = TOPOLOGY_LAYERS.DATACENTER
+                    topology_tags["domain"] = domain
 
                     computeresources = []
                     clustercomputeresources = []
@@ -1070,13 +1087,14 @@ class VSphereCheck(AgentCheck):
     def get_topologyitems_sync(self, instance, tags=[], regexes=None, include_only_marked=False):
         server_instance = self._get_server_instance(instance)
         content = server_instance.RetrieveContent()
+        domain = instance["host"]  # candidate also name
 
-        vms = self._vsphere_objs(content, "vm")
-        hosts = self._vsphere_objs(content, "host")
-        datacenters = self._vsphere_objs(content, "datacenter")
-        datastores = self._vsphere_objs(content, "datastore")
-        clustercomputeresource = self._vsphere_objs(content, "clustercomputeresource")
-        computeresource = self._vsphere_objs(content, "computeresource")
+        vms = self._vsphere_objs(content, "vm", domain)
+        hosts = self._vsphere_objs(content, "host", domain)
+        datacenters = self._vsphere_objs(content, "datacenter", domain)
+        datastores = self._vsphere_objs(content, "datastore", domain)
+        clustercomputeresource = self._vsphere_objs(content, "clustercomputeresource", domain)
+        computeresource = self._vsphere_objs(content, "computeresource", domain)
 
         return {
             "vms": vms,

@@ -362,7 +362,7 @@ class TestVsphereTopo(AgentCheckTest):
         self.check._is_excluded.return_value = False
 
         content_mock = self.vm_mock_content()
-        obj_list = self.check._vsphere_objs(content_mock, "vm")
+        obj_list = self.check._vsphere_objs(content_mock, "vm", "ESXi")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
@@ -371,7 +371,7 @@ class TestVsphereTopo(AgentCheckTest):
         """
         Test if it returns the topology items for VM
         """
-        instance = {'name': 'vsphere_mock'}
+        instance = {'name': 'vsphere_mock', 'host': "ESXi"}
         config = {}
         self.load_check(config)
         self.check._is_excluded = MagicMock()

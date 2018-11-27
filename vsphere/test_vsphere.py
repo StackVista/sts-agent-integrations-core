@@ -189,7 +189,7 @@ class TestvSphereUnit(AgentCheckTest):
         if count:
             self.assertEquals(len(candidates), count)
         else:
-            self.assertTrue(len(candidates))
+            self.assertFalse(len(candidates))
 
     def setUp(self):
         """
@@ -307,7 +307,7 @@ class TestvSphereUnit(AgentCheckTest):
         self.assertMOR(instance, spec="host", count=2)
         self.assertMOR(
             instance,
-            name="host2", spec="host",
+            name="host2", spec="host", count=0,
             tags=[
                 u"toto", u"vsphere_folder:rootFolder", u"vsphere_datacenter:datacenter1",
                 u"vsphere_compute:compute_resource1", u"vsphere_cluster:compute_resource1",
@@ -316,7 +316,7 @@ class TestvSphereUnit(AgentCheckTest):
         )
         self.assertMOR(
             instance,
-            name="host3", spec="host",
+            name="host3", spec="host", count=0,
             tags=[
                 u"toto", u"vsphere_folder:rootFolder", u"vsphere_folder:folder1",
                 u"vsphere_datacenter:datacenter2", u"vsphere_compute:compute_resource2",
@@ -325,7 +325,8 @@ class TestvSphereUnit(AgentCheckTest):
         )
 
         # ...on VMs
-        self.assertMOR(instance, spec="vm", count=1)
+        # self.assertMOR(instance, spec="vm", count=1)
+        self.assertMOR(instance, spec="vm")
         self.assertMOR(
             instance,
             name="vm4", spec="vm", subset=True,
@@ -336,26 +337,97 @@ class TestvSphereUnit(AgentCheckTest):
             ]
         )
 
+
 class TestVsphereTopo(AgentCheckTest):
-    SERVICE_CHECK_NAME = 'vcenter.can_connect'
-    INSTANCE_TYPE = "vsphere"
+
     CHECK_NAME = "vsphere"
+
+    def vm_mock_content(self):
+        datastore = MockedMOR(_moId="54183927-04f91918-a72a-6805ca147c55")
+        view_MOR = MockedMOR(spec="VirtualMachine", name="Ubuntu",
+                             datastore=[datastore])
+
+        view_mock = MagicMock(view=[view_MOR])
+        viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
+        content_mock = MagicMock(viewManager=viewmanager_mock)
+        return content_mock
 
     def test_vsphere_objs(self):
         """
-        Test the vsphere object for VM
+        Test if the vsphere_objs returns the VM list
         """
         config = {}
         self.load_check(config)
         self.check._is_excluded = MagicMock()
         self.check._is_excluded.return_value = False
-        view = {"name":"Ubuntu", "datastore":[{"_moid": "54183927-04f91918-a72a-6805ca147c55"}]}
-        view_mock = MockedMOR(spec="VirtualMachine", view=view)
-        viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
-        content_mock = MagicMock(viewManager=viewmanager_mock)
-        # content.viewManager.CreateContainerView = MagicMock()
-        # content.viewManager.CreateContainerView.return_value = view_mock
-        obj_list = self.check._vsphere_objs(content_mock, "VirtualMachine")
+
+        content_mock = self.vm_mock_content()
+        obj_list = self.check._vsphere_objs(content_mock, "vm")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
+
+    def test_get_topologyitems_sync(self):
+        """
+        Test if it returns the topology items for VM
+        """
+        instance = {'name': 'vsphere_mock'}
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock()
+        self.check._is_excluded.return_value = False
+
+        server_mock = MagicMock()
+        server_mock.configure_mock(**{'RetrieveContent.return_value': self.vm_mock_content()})
+        self.check._get_server_instance = MagicMock(return_value=server_mock)
+
+        topo_dict = self.check.get_topologyitems_sync(instance)
+        self.assertEqual(len(topo_dict["vms"]), 1)
+        self.assertEqual(topo_dict["vms"][0]["topo_tags"]["topo_type"], "vsphere-VirtualMachine")
+
+    def test_collect_topology_component(self):
+        """
+        Test the component collection from the topology for VirtualMachine
+        """
+        config = {}
+        self.load_check(config)
+        instance = {'name': 'vsphere_mock', 'host': 'test-esxi'}
+        topo_items = {'datastores': [], 'clustercomputeresource': [], 'computeresource': [], 'hosts': [], 'datacenters':
+            [], 'vms': [{'hostname': 'Ubuntu', 'topo_tags': {'topo_type': 'vsphere-VirtualMachine',
+                 'name': 'Ubuntu', 'datastore': '54183927-04f91918-a72a-6805ca147c55'}, 'mor_type': 'vm'}]}
+        self.check.get_topologyitems_sync = MagicMock(return_value=topo_items)
+        self.check.collect_topology(instance)
+        topo_instances = self.check.get_topology_instances()
+
+        # Check if the returned topology contains 1 component
+        self.assertEqual(len(topo_instances), 1)
+        self.assertEqual(len(topo_instances[0]['components']), 1)
+        self.assertEqual(topo_instances[0]['components'][0]['externalId'],
+                         'urn://vsphere/test-esxi/vsphere-VirtualMachine/Ubuntu')
+
+    def test_collect_topology_comp_relations(self):
+        """
+        Test the collection of components and relations from the topology for Datastore
+        """
+        topo_items = {"datastores": [{'mor_type': 'datastore','topo_tags': {'accessible': True, 'topo_type':
+            'vsphere-Datastore', 'capacity': 999922073600L, 'name': 'WDC1TB', 'url':
+            '/vmfs/volumes/54183927-04f91918-a72a-6805ca147c55', 'type': 'VMFS', 'vms': ['UBUNTU_SECURE', 'W-NodeBox',
+            'NAT', 'Z_CONTROL_MONITORING (.151)', 'LEXX (.40)', 'parrot']}}], "vms": [], 'clustercomputeresource': [],
+            'computeresource': [], 'hosts': [], 'datacenters': []}
+
+        config = {}
+        self.load_check(config)
+        instance = {'name': 'vsphere_mock', 'host': 'test-esxi'}
+        self.check.get_topologyitems_sync = MagicMock(return_value=topo_items)
+        self.check.collect_topology(instance)
+        topo_instances = self.check.get_topology_instances()
+
+        # Check if the returned topology contains 1 component
+        self.assertEqual(len(topo_instances), 1)
+        self.assertEqual(len(topo_instances[0]['components']), 1)
+        self.assertEqual(topo_instances[0]['components'][0]['externalId'],
+                         'urn://vsphere/test-esxi/vsphere-Datastore/WDC1TB')
+
+        # Check if the returned topology contains 6 relations for 6 VMs
+        self.assertEqual(len(topo_instances[0]['relations']), 6)
+        self.assertEqual(topo_instances[0]['relations'][0]['type']['name'], 'vsphere-vm-uses-datastore')

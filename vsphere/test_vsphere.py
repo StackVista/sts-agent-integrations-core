@@ -344,8 +344,10 @@ class TestVsphereTopo(AgentCheckTest):
 
     def vm_mock_content(self):
         datastore = MockedMOR(_moId="54183927-04f91918-a72a-6805ca147c55")
+        hardware = MockedMOR(numCPU=1, memoryMB=4096)
+        config = MockedMOR(guestId='ubuntu64Guest', guestFullName='Ubuntu Linux (64-bit)', hardware=hardware)
         view_MOR = MockedMOR(spec="VirtualMachine", name="Ubuntu",
-                             datastore=[datastore])
+                             datastore=[datastore], config=config)
 
         view_mock = MagicMock(view=[view_MOR])
         viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
@@ -366,6 +368,8 @@ class TestVsphereTopo(AgentCheckTest):
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
+        # Check if labels are added
+        self.assertTrue(obj_list[0]['topo_tags']["labels"])
 
     def test_get_topologyitems_sync(self):
         """

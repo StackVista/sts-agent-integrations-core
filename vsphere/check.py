@@ -1164,7 +1164,6 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.VM_HOST)
                 )
 
-
         for cluster in topology_items["clustercomputeresource"]:
             self.component(
                 instance_key,
@@ -1189,7 +1188,6 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.HOST_COMPUTERESOURCE),
                     {}
                 )
-
 
         for dc in topology_items["datacenters"]:
             self.component(
@@ -1223,7 +1221,6 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.CLUSTERCOMPUTERESOURCE_DATACENTER),
                     {}
                 )
-
 
         for ds in topology_items["datastores"]:
             self.component(
@@ -1288,8 +1285,8 @@ class VSphereCheck(AgentCheck):
         ### </TEST-INSTRUMENTATION>
 
 if __name__ == '__main__':
-    # check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
-    check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
+    check, _instances = VSphereCheck.from_yaml('conf.d/vsphere.yaml')
+    # check, _instances = VSphereCheck.from_yaml('/home/slavko/ssq/stackstate/sts-agent-integrations-core/vsphere/conf.yaml')
     try:
         for i in xrange(200):
             print "Loop %d" % i

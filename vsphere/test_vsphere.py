@@ -301,7 +301,7 @@ class TestvSphereUnit(AgentCheckTest):
         discover_mor(instance, tags, include_regexes, include_only_marked)
 
         # Assertions: 1 labaled+monitored VM + 2 hosts + 2 datacenters.
-        self.assertMOR(instance, count=5)
+        self.assertMOR(instance, count=7)
 
         # ... on hosts
         self.assertMOR(instance, spec="host", count=2)
@@ -346,15 +346,16 @@ class TestVsphereTopo(AgentCheckTest):
         Test the vsphere object for VM
         """
         config = {}
-        content = {}
         self.load_check(config)
+        self.check._is_excluded = MagicMock()
         self.check._is_excluded.return_value = False
         view = {"name":"Ubuntu", "datastore":[{"_moid": "54183927-04f91918-a72a-6805ca147c55"}]}
         view_mock = MockedMOR(spec="VirtualMachine", view=view)
-        # viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
-        content.viewManager.CreateContainerView = MagicMock()
-        content.viewManager.CreateContainerView.return_value = view_mock
-        obj_list = self.check._vsphere_objs(content, "VirtualMachine")
+        viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
+        content_mock = MagicMock(viewManager=viewmanager_mock)
+        # content.viewManager.CreateContainerView = MagicMock()
+        # content.viewManager.CreateContainerView.return_value = view_mock
+        obj_list = self.check._vsphere_objs(content_mock, "VirtualMachine")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')

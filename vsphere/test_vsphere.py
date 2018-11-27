@@ -335,3 +335,26 @@ class TestvSphereUnit(AgentCheckTest):
                 u"vsphere_host:host3", u"vsphere_type:vm"
             ]
         )
+
+class TestVsphereTopo(AgentCheckTest):
+    SERVICE_CHECK_NAME = 'vcenter.can_connect'
+    INSTANCE_TYPE = "vsphere"
+    CHECK_NAME = "vsphere"
+
+    def test_vsphere_objs(self):
+        """
+        Test the vsphere object for VM
+        """
+        config = {}
+        content = {}
+        self.load_check(config)
+        self.check._is_excluded.return_value = False
+        view = {"name":"Ubuntu", "datastore":[{"_moid": "54183927-04f91918-a72a-6805ca147c55"}]}
+        view_mock = MockedMOR(spec="VirtualMachine", view=view)
+        # viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
+        content.viewManager.CreateContainerView = MagicMock()
+        content.viewManager.CreateContainerView.return_value = view_mock
+        obj_list = self.check._vsphere_objs(content, "VirtualMachine")
+
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')

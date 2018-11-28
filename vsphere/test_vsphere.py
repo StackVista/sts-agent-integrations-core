@@ -364,7 +364,7 @@ class TestVsphereTopo(AgentCheckTest):
         self.check._is_excluded.return_value = False
 
         content_mock = self.vm_mock_content()
-        obj_list = self.check._vsphere_objs(content_mock, "vm", "ESXi")
+        obj_list = self.check._vsphere_vms(content_mock, "ESXi")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')

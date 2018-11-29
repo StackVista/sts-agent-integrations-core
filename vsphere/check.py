@@ -1140,7 +1140,7 @@ class VSphereCheck(AgentCheck):
                         hosts.append(host.name)
 
                     topology_tags["hosts"] = hosts
-                    topology_tags["datastores"] = hosts
+                    topology_tags["datastores"] = datastores
                     add_label_pair(labels, "name", topology_tags["name"])
                 topology_tags["labels"] = labels
                 obj_list.append(dict(mor_type="clustercomputeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
@@ -1170,13 +1170,12 @@ class VSphereCheck(AgentCheck):
                     hosts = []
 
                     for ds in c.datastore:
-                        datastores.append(ds.name) # ds._moId GUID
-
+                        datastores.append(ds.name)
                     for host in c.host:
                         hosts.append(host.name)
 
                     topology_tags["hosts"] = hosts
-                    topology_tags["datastores"] = hosts
+                    topology_tags["datastores"] = datastores
                     add_label_pair(labels, "name", topology_tags["name"])
                 topology_tags["labels"] = labels
                 obj_list.append(dict(mor_type="computeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
@@ -1208,6 +1207,7 @@ class VSphereCheck(AgentCheck):
 
         def build_id(vsphere_url, object_type, object_name):
             return "urn:vsphere:/{0}/{1}/{2}".format(vsphere_url, object_type, object_name)
+
         def build_type(object_type):
             return {"name": object_type}
 

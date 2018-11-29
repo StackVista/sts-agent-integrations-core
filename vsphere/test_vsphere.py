@@ -357,7 +357,7 @@ class TestVsphereTopo(AgentCheckTest):
                                            datastore=[datastore], host=[host])
 
         datacenter = MockedMOR(spec="Datacenter", name="da-Datacenter", _moId="54183347-04d231918",
-                                hostFolder=MockedMOR(childEntity=[computeresource]), datastore=[datastore])
+                               hostFolder=MockedMOR(childEntity=[computeresource]), datastore=[datastore])
 
         if vimtype == 'vm':
             view_mock = MagicMock(view=[virtualmachine])

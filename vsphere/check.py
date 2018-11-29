@@ -1208,6 +1208,7 @@ class VSphereCheck(AgentCheck):
 
         def build_id(vsphere_url, object_type, object_name):
             return "urn:vsphere:/{0}/{1}/{2}".format(vsphere_url, object_type, object_name)
+
         def build_type(object_type):
             return {"name": object_type}
 

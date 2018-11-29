@@ -189,7 +189,7 @@ class TestvSphereUnit(AgentCheckTest):
         if count:
             self.assertEquals(len(candidates), count)
         else:
-            self.assertTrue(len(candidates))
+            self.assertFalse(len(candidates))
 
     def setUp(self):
         """
@@ -301,7 +301,7 @@ class TestvSphereUnit(AgentCheckTest):
         discover_mor(instance, tags, include_regexes, include_only_marked)
 
         # Assertions: 1 labaled+monitored VM + 2 hosts + 2 datacenters.
-        self.assertMOR(instance, count=5)
+        self.assertMOR(instance, count=7)
 
         # ... on hosts
         self.assertMOR(instance, spec="host", count=2)
@@ -325,7 +325,7 @@ class TestvSphereUnit(AgentCheckTest):
         )
 
         # ...on VMs
-        self.assertMOR(instance, spec="vm", count=1)
+        self.assertMOR(instance, spec="vm")
         self.assertMOR(
             instance,
             name="vm4", spec="vm", subset=True,
@@ -335,3 +335,244 @@ class TestvSphereUnit(AgentCheckTest):
                 u"vsphere_host:host3", u"vsphere_type:vm"
             ]
         )
+
+
+class TestVsphereTopo(AgentCheckTest):
+
+    CHECK_NAME = "vsphere"
+
+    def mock_content(self, vimtype):
+        # summary object for datastore
+        ds_summary = MockedMOR(accessible="true", capacity=987959765, type="VMFS",
+                               url='/vmfs/volumes/54183927-04f91918-a72a-6805ca147c55')
+        # hardware and config object needed for vms
+        vm_config_hardware = MockedMOR(numCPU=1, memoryMB=4096)
+        config = MockedMOR(guestId='ubuntu64Guest', guestFullName='Ubuntu Linux (64-bit)', hardware=vm_config_hardware)
+
+        datastore = MockedMOR(spec='Datastore', _moId="54183927-04f91918-a72a-6805ca147c55", name="WDC1TB")
+        virtualmachine = MockedMOR(spec="VirtualMachine", name="Ubuntu", datastore=[datastore], config=config)
+        host = MockedMOR(spec="HostSystem", name="localhost.localdomain", datastore=[datastore], vm=[virtualmachine])
+        computeresource = MockedMOR(spec="ComputeResource", name="localhost", datastore=[datastore], host=[host])
+        clustercomputeresource = MockedMOR(spec="ClusterComputeResource", name="local",
+                                           datastore=[datastore], host=[host])
+
+        datacenter = MockedMOR(spec="Datacenter", name="da-Datacenter", _moId="54183347-04d231918",
+                                hostFolder=MockedMOR(childEntity=[computeresource]), datastore=[datastore])
+
+        if vimtype == 'vm':
+            view_mock = MagicMock(view=[virtualmachine])
+        elif vimtype == 'dc':
+            view_mock = MagicMock(view=[datacenter])
+        elif vimtype == 'ds':
+            datastore.summary = ds_summary
+            datastore.vm = [virtualmachine]
+            view_mock = MagicMock(view=[datastore])
+        elif vimtype == 'host':
+            host.parent = computeresource
+            view_mock = MagicMock(view=[host])
+        elif vimtype == 'cluster':
+            view_mock = MagicMock(view=[clustercomputeresource])
+        else:
+            view_mock = MagicMock(view=[computeresource])
+
+        viewmanager_mock = MagicMock(**{'CreateContainerView.return_value': view_mock})
+        content_mock = MagicMock(viewManager=viewmanager_mock)
+        return content_mock
+
+    def test_vsphere_vms(self):
+        """
+        Test if the vsphere_vms returns the VM list and labels
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("vm")
+        obj_list = self.check._vsphere_vms(content_mock, "ESXi")
+
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
+
+        # Check if labels are added
+        self.assertTrue(obj_list[0]['topo_tags']["labels"])
+        expected_name_label = obj_list[0]['topo_tags']["labels"][0]
+        expected_guestid_label = obj_list[0]['topo_tags']["labels"][1]
+        expected_numcpu_label = obj_list[0]['topo_tags']["labels"][3]
+        expected_memory_label = obj_list[0]['topo_tags']["labels"][4]
+
+        # Check if the labels are as expected
+        self.assertEqual(expected_name_label, 'name:Ubuntu')
+        self.assertEqual(expected_guestid_label, 'guestId:ubuntu64Guest')
+        self.assertEqual(expected_numcpu_label, 'numCPU:1')
+        self.assertEqual(expected_memory_label, 'memoryMB:4096')
+
+    def test_vsphere_datacenters(self):
+        """
+        Test if the vsphere_datacenter returns the datacenter list
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("dc")
+        obj_list = self.check._vsphere_datacenters(content_mock, "ESXi")
+
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(type(obj_list[0]['topo_tags']['datastores']), list)
+        self.assertEqual(obj_list[0]['topo_tags']['datastores'][0], 'WDC1TB')
+        self.assertEqual(obj_list[0]['topo_tags']['name'], 'da-Datacenter')
+
+    def test_vsphere_datastores(self):
+        """
+        Test if the vsphere_datastores returns the datastores list
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("ds")
+        obj_list = self.check._vsphere_datastores(content_mock, "ESXi")
+
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['topo_tags']['type'], 'VMFS')
+        self.assertEqual(obj_list[0]['topo_tags']['accessible'], 'true')
+        self.assertEqual(obj_list[0]['topo_tags']['name'], 'WDC1TB')
+        self.assertEqual(obj_list[0]['topo_tags']['url'], '/vmfs/volumes/54183927-04f91918-a72a-6805ca147c55')
+
+    def test_vsphere_hosts(self):
+        """
+        Test if the vsphere_hosts returns the hosts list
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("host")
+        obj_list = self.check._vsphere_hosts(content_mock, "ESXi")
+        # Check if host has tags name and topo_type
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['topo_tags']['name'], 'localhost.localdomain')
+        self.assertEqual(obj_list[0]['topo_tags']['topo_type'], 'vsphere-HostSystem')
+        # Check if host list contains vm, datastore and computeresource
+        self.assertEqual(obj_list[0]['topo_tags']['vms'][0], 'Ubuntu')
+        self.assertEqual(obj_list[0]['topo_tags']['datastores'][0], 'WDC1TB')
+        self.assertEqual(obj_list[0]['topo_tags']['computeresource'], 'localhost')
+
+    def test_vsphere_clustercomputeresources(self):
+        """
+        Test if the vsphere_clustercomputeresources returns the cluster list
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("cluster")
+        obj_list = self.check._vsphere_clustercomputeresources(content_mock, "ESXi")
+        # Check if clustercomputeresources has tags name and topo_type
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['topo_tags']['name'], 'local')
+        self.assertEqual(obj_list[0]['topo_tags']['topo_type'], 'vsphere-ClusterComputeResource')
+        # Check if clustercomputeresources list contains host and datastore
+        self.assertEqual(obj_list[0]['topo_tags']['hosts'][0], 'localhost.localdomain')
+        self.assertEqual(obj_list[0]['topo_tags']['datastores'][0], 'WDC1TB')
+
+    def test_vsphere_computeresources(self):
+        """
+        Test if the vsphere_computeresources returns the computeresource list
+        """
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        content_mock = self.mock_content("compute")
+        obj_list = self.check._vsphere_computeresources(content_mock, "ESXi")
+        # Check if computeresources has tags name and topo_type
+        self.assertEqual(len(obj_list), 1)
+        self.assertEqual(obj_list[0]['topo_tags']['name'], 'localhost')
+        self.assertEqual(obj_list[0]['topo_tags']['topo_type'], 'vsphere-ComputeResource')
+        # Check if computeresources list contains host and datastore
+        self.assertEqual(obj_list[0]['topo_tags']['hosts'][0], 'localhost.localdomain')
+        self.assertEqual(obj_list[0]['topo_tags']['datastores'][0], 'WDC1TB')
+
+    def test_vsphere_vms_with_regex(self):
+        """
+        Test if the vsphere_vms_regex returns the empty VM list
+        """
+        config = {}
+        self.load_check(config)
+
+        content_mock = self.mock_content("vm")
+        regex = {"vm_include": "host12"}
+        obj_list_regex = self.check._vsphere_vms(content_mock, domain="ESXi", regexes=regex)
+
+        self.assertEqual(len(obj_list_regex), 0)
+
+    def test_get_topologyitems_sync(self):
+        """
+        Test if it returns the topology items and tags for VM
+        """
+        instance = {'name': 'vsphere_mock', 'host': "ESXi"}
+        config = {}
+        self.load_check(config)
+        self.check._is_excluded = MagicMock(return_value=False)
+
+        server_mock = MagicMock()
+        server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("vm")})
+        self.check._get_server_instance = MagicMock(return_value=server_mock)
+
+        topo_dict = self.check.get_topologyitems_sync(instance)
+        self.assertEqual(len(topo_dict["vms"]), 1)
+
+        # Check if tags are as expected
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['name'], 'Ubuntu')
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['domain'], 'ESXi')
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['layer'], 'VSphere VMs')
+        self.assertEqual(topo_dict["vms"][0]["topo_tags"]["topo_type"], "vsphere-VirtualMachine")
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['datastore'], '54183927-04f91918-a72a-6805ca147c55')
+
+    def test_collect_topology_component(self):
+        """
+        Test the component collection from the topology for VirtualMachine
+        """
+        config = {}
+        self.load_check(config)
+        instance = {'name': 'vsphere_mock', 'host': 'test-esxi'}
+        topo_items = {'datastores': [], 'clustercomputeresource': [], 'computeresource': [], 'hosts': [], 'datacenters':
+            [], 'vms': [{'hostname': 'Ubuntu', 'topo_tags': {'topo_type': 'vsphere-VirtualMachine',
+                 'name': 'Ubuntu', 'datastore': '54183927-04f91918-a72a-6805ca147c55'}, 'mor_type': 'vm'}]}
+        self.check.get_topologyitems_sync = MagicMock(return_value=topo_items)
+        self.check.collect_topology(instance)
+        topo_instances = self.check.get_topology_instances()
+
+        # Check if the returned topology contains 1 component
+        self.assertEqual(len(topo_instances), 1)
+        self.assertEqual(len(topo_instances[0]['components']), 1)
+        self.assertEqual(topo_instances[0]['components'][0]['externalId'],
+                         'urn:vsphere:/test-esxi/vsphere-VirtualMachine/Ubuntu')
+
+    def test_collect_topology_comp_relations(self):
+        """
+        Test the collection of components and relations from the topology for Datastore
+        """
+        topo_items = {"datastores": [{'mor_type': 'datastore','topo_tags': {'accessible': True, 'topo_type':
+            'vsphere-Datastore', 'capacity': 999922073600L, 'name': 'WDC1TB', 'url':
+            '/vmfs/volumes/54183927-04f91918-a72a-6805ca147c55', 'type': 'VMFS', 'vms': ['UBUNTU_SECURE', 'W-NodeBox',
+            'NAT', 'Z_CONTROL_MONITORING (.151)', 'LEXX (.40)', 'parrot']}}], "vms": [], 'clustercomputeresource': [],
+            'computeresource': [], 'hosts': [], 'datacenters': []}
+
+        config = {}
+        self.load_check(config)
+        instance = {'name': 'vsphere_mock', 'host': 'test-esxi'}
+        self.check.get_topologyitems_sync = MagicMock(return_value=topo_items)
+        self.check.collect_topology(instance)
+        topo_instances = self.check.get_topology_instances()
+
+        # Check if the returned topology contains 1 component
+        self.assertEqual(len(topo_instances), 1)
+        self.assertEqual(len(topo_instances[0]['components']), 1)
+        self.assertEqual(topo_instances[0]['components'][0]['externalId'],
+                         'urn:vsphere:/test-esxi/vsphere-Datastore/WDC1TB')
+
+        # Check if the returned topology contains 6 relations for 6 VMs
+        self.assertEqual(len(topo_instances[0]['relations']), 6)
+        self.assertEqual(topo_instances[0]['relations'][0]['type']['name'], 'vsphere-vm-uses-datastore')

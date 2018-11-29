@@ -72,6 +72,9 @@ class TOPOLOGY_LAYERS:
     COMPUTERESOURCE = 'VSphere Compute Resources'
     DATACENTER = 'VSphere Datacenter'
 
+def add_label_pair(label_list, key, value):
+    label_list.append("{0}:{1}".format(key, value))
+
 # Time after which we reap the jobs that clog the queue
 # TODO: use it
 JOB_TIMEOUT = 10
@@ -960,8 +963,6 @@ class VSphereCheck(AgentCheck):
 
     def _vsphere_vms(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
 
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
 
         obj_list = []
         container = content.viewManager.CreateContainerView(
@@ -993,10 +994,6 @@ class VSphereCheck(AgentCheck):
         return obj_list
 
     def _vsphere_datacenters(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
-
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -1042,10 +1039,6 @@ class VSphereCheck(AgentCheck):
         return obj_list
 
     def _vsphere_datastores(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
-
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -1086,10 +1079,6 @@ class VSphereCheck(AgentCheck):
 
 
     def _vsphere_hosts(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
-
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -1138,10 +1127,6 @@ class VSphereCheck(AgentCheck):
         return obj_list
 
     def _vsphere_clustercomputeresources(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
-
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -1180,10 +1165,6 @@ class VSphereCheck(AgentCheck):
         return obj_list
 
     def _vsphere_computeresources(self, content, domain="Unspecified", regexes=None, include_only_marked=False, tags=[]):
-
-        def add_label_pair(label_list, key, value):
-            label_list.append("{0}:{1}".format(key, value))
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,
@@ -1245,8 +1226,7 @@ class VSphereCheck(AgentCheck):
     def collect_topology(self,instance):
 
         def build_id(vsphere_url, object_type, object_name):
-            return "urn://vsphere/{0}/{1}/{2}".format(vsphere_url, object_type, object_name)
-
+            return "urn:vsphere:/{0}/{1}/{2}".format(vsphere_url, object_type, object_name)
         def build_type(object_type):
             return {"name": object_type}
 

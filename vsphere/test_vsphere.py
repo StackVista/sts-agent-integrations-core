@@ -307,7 +307,7 @@ class TestvSphereUnit(AgentCheckTest):
         self.assertMOR(instance, spec="host", count=2)
         self.assertMOR(
             instance,
-            name="host2", spec="host", count=0,
+            name="host2", spec="host",
             tags=[
                 u"toto", u"vsphere_folder:rootFolder", u"vsphere_datacenter:datacenter1",
                 u"vsphere_compute:compute_resource1", u"vsphere_cluster:compute_resource1",
@@ -316,7 +316,7 @@ class TestvSphereUnit(AgentCheckTest):
         )
         self.assertMOR(
             instance,
-            name="host3", spec="host", count=0,
+            name="host3", spec="host",
             tags=[
                 u"toto", u"vsphere_folder:rootFolder", u"vsphere_folder:folder1",
                 u"vsphere_datacenter:datacenter2", u"vsphere_compute:compute_resource2",
@@ -325,7 +325,6 @@ class TestvSphereUnit(AgentCheckTest):
         )
 
         # ...on VMs
-        # self.assertMOR(instance, spec="vm", count=1)
         self.assertMOR(instance, spec="vm")
         self.assertMOR(
             instance,
@@ -354,32 +353,54 @@ class TestVsphereTopo(AgentCheckTest):
         content_mock = MagicMock(viewManager=viewmanager_mock)
         return content_mock
 
-    def test_vsphere_objs(self):
+    def test_vsphere_vms(self):
         """
-        Test if the vsphere_objs returns the VM list
+        Test if the vsphere_vms returns the VM list and labels
         """
         config = {}
         self.load_check(config)
-        self.check._is_excluded = MagicMock()
-        self.check._is_excluded.return_value = False
+        self.check._is_excluded = MagicMock(return_value=False)
 
         content_mock = self.vm_mock_content()
         obj_list = self.check._vsphere_vms(content_mock, "ESXi")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
+
         # Check if labels are added
         self.assertTrue(obj_list[0]['topo_tags']["labels"])
+        expected_name_label = obj_list[0]['topo_tags']["labels"][0]
+        expected_guestid_label = obj_list[0]['topo_tags']["labels"][1]
+        expected_numcpu_label = obj_list[0]['topo_tags']["labels"][3]
+        expected_memory_label = obj_list[0]['topo_tags']["labels"][4]
+
+        # Check if the labels are as expected
+        self.assertEqual(expected_name_label, 'name:Ubuntu')
+        self.assertEqual(expected_guestid_label, 'guestId:ubuntu64Guest')
+        self.assertEqual(expected_numcpu_label, 'numCPU:1')
+        self.assertEqual(expected_memory_label, 'memoryMB:4096')
+
+    def test_vsphere_vms_with_regex(self):
+        """
+        Test if the vsphere_vms_regex returns the empty VM list
+        """
+        config = {}
+        self.load_check(config)
+
+        content_mock = self.vm_mock_content()
+        regex = {"vm_include": "host12"}
+        obj_list_regex = self.check._vsphere_vms(content_mock, domain="ESXi", regexes=regex)
+
+        self.assertEqual(len(obj_list_regex), 0)
 
     def test_get_topologyitems_sync(self):
         """
-        Test if it returns the topology items for VM
+        Test if it returns the topology items and tags for VM
         """
         instance = {'name': 'vsphere_mock', 'host': "ESXi"}
         config = {}
         self.load_check(config)
-        self.check._is_excluded = MagicMock()
-        self.check._is_excluded.return_value = False
+        self.check._is_excluded = MagicMock(return_value=False)
 
         server_mock = MagicMock()
         server_mock.configure_mock(**{'RetrieveContent.return_value': self.vm_mock_content()})
@@ -387,7 +408,13 @@ class TestVsphereTopo(AgentCheckTest):
 
         topo_dict = self.check.get_topologyitems_sync(instance)
         self.assertEqual(len(topo_dict["vms"]), 1)
+
+        # Check if tags are as expected
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['name'], 'Ubuntu')
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['domain'], 'ESXi')
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['layer'], 'VSphere VMs')
         self.assertEqual(topo_dict["vms"][0]["topo_tags"]["topo_type"], "vsphere-VirtualMachine")
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['datastore'], '54183927-04f91918-a72a-6805ca147c55')
 
     def test_collect_topology_component(self):
         """

@@ -961,8 +961,6 @@ class VSphereCheck(AgentCheck):
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
 
     def _vsphere_vms(self, content, domain="Unspecified", regexes=None, include_only_marked=False):
-
-
         obj_list = []
         container = content.viewManager.CreateContainerView(
             content.rootFolder,

@@ -25,6 +25,11 @@ init_config:
   # the Splunk app in where the saved searches are located
   default_app: "search"
 
+  # default parameters for the Splunk saved search query, these parameters make sure the query refreshes.
+  default_parameters:
+    force_dispatch: true
+    dispatch.now: true
+
 
 # Currently it is not possible to specify multiple instances with the same url.
 # It is possible to specify multiple saved_searches on a single instance.
@@ -44,11 +49,9 @@ instances:
         # search_max_retry_count: 5
         # search_seconds_between_retries: 1
         # batch_size: 1000
-
-        # Additional parameters for the splunk saved search query
-        parameters:
-          force_dispatch: true
-          dispatch.now: true
+        # parameters:
+        #   force_dispatch: true
+        #   dispatch.now: true
     relation_saved_searches:
       #- name: "relations"
       # Wilcard match to find relation queries, can be used instead of name

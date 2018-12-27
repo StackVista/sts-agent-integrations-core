@@ -33,9 +33,9 @@ To go beyond we advise you to read the full documentation [here](http://docs.dat
     bundle install
     # When this fails, check whether the python2 executable is available (solvable with symlink)
     # When this fails without venv, just retry with the venv
-    rake setup_env
-    ./fix-shadowing.sh
+    bundle exec rake setup_env
     source venv/bin/activate
+    ./fix-shadowing.sh
 
 Run tests:
 

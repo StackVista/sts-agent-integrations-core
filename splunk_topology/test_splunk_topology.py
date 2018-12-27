@@ -127,6 +127,60 @@ class TestSplunkTopology(AgentCheckTest):
             }
         })
 
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+
+class TestSplunkNoSnapshot(AgentCheckTest):
+    """
+    Splunk check should work with component and relation data
+    """
+    CHECK_NAME = 'splunk_topology'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'snapshot': False,
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "relations",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(len(instances[0]['components']), 2)
+
+        self.assertEquals(len(instances[0]['relations']), 1)
+
+        self.assertFalse("start_snapshot" in instances[0])
+        self.assertFalse("stop_snapshot" in instances[0])
+
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
 

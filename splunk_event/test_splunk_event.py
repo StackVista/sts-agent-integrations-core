@@ -1011,7 +1011,7 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
         self.assertEqual(self.events[0], {
             'event_type': u"some_type",
             'tags': [u"uid2:1", u"uid1:uid"],
-            'timestamp': 1544293796.0,
+            'timestamp': 4100437796.0,
             'msg_title': None,
             'msg_text': None,
             'source_type_name': None
@@ -1019,7 +1019,7 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
         self.assertEqual(self.events[1], {
             'event_type': u"some_type",
             'tags': [u"uid2:2", u"uid1:uid"],
-            'timestamp': 1544293796.0,
+            'timestamp': 4100437796.0,
             'msg_title': None,
             'msg_text': None,
             'source_type_name': None
@@ -1072,7 +1072,7 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         self.assertEqual(self.events[0], {
             'event_type': u"some_type",
             'tags': [u"value:1"],
-            'timestamp': 1544293796.0,
+            'timestamp': 4100437796.0,
             'msg_title': None,
             'msg_text': None,
             'source_type_name': None
@@ -1080,7 +1080,7 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
         self.assertEqual(self.events[1], {
             'event_type': u"some_type",
             'tags': [u"value:2"],
-            'timestamp': 1544293796.0,
+            'timestamp': 4100437796.0,
             'msg_title': None,
             'msg_text': None,
             'source_type_name': None

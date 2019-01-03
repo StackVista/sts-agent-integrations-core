@@ -38,6 +38,8 @@ instances:
     # verify_ssl_certificate: false
     username: "admin"
     password: "admin"
+    # Determine whether to produce topology in snapshots, defaults to true
+    # snapshot: true
     # polling_interval_seconds: 300
     # saved_searches_parallel: 5
     component_saved_searches:

@@ -44,6 +44,8 @@ class Instance:
         self.instance_config = InstanceConfig(instance, init_config)
         self.splunkHelper = SplunkHelper(self.instance_config)
 
+        self.snapshot = bool(instance.get('snapshot', True))
+
         # no saved searches may be configured
         if not isinstance(instance['component_saved_searches'], list):
             instance['component_saved_searches'] = []
@@ -95,7 +97,9 @@ class SplunkTopology(AgentCheck):
         if not instance.should_poll(current_time_epoch_seconds):
             return
 
-        self.start_snapshot(instance_key)
+        if instance.snapshot:
+            self.start_snapshot(instance_key)
+
         try:
             self._auth_session(instance)
 
@@ -111,7 +115,9 @@ class SplunkTopology(AgentCheck):
                 self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK)
 
             instance.last_successful_poll_epoch_seconds = current_time_epoch_seconds
-            self.stop_snapshot(instance_key)
+
+            if instance.snapshot:
+                self.stop_snapshot(instance_key)
         except Exception as e:
             self._clear_topology(instance_key, clear_in_snapshot=True)
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))

@@ -58,6 +58,7 @@ class VSPHERE_RELATION_TYPE:
     VM_DATASTORE = 'vsphere-vm-uses-datastore'
 
     HOST_COMPUTERESOURCE = 'vsphere-hostsystem-belongs-to'
+    DATASTORE_COMPUTERESOURCE = 'vsphere-datastore-belongs-to'
     HOST_DATASTORE = 'vsphere-hostsystem-uses-datastore'
 
     DATASTORE_DATACENTER = 'vsphere-datastore-is-located-on'
@@ -1238,6 +1239,21 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.VM_HOST)
                 )
 
+        for ds in topology_items["datastores"]:
+            self.component(
+                instance_key,
+                build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
+                build_type(VSPHERE_COMPONENT_TYPE.DATASTORE),
+                ds["topo_tags"]
+            )
+            for vm_id in ds["topo_tags"]["vms"]:
+                self.relation(
+                    instance_key,
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
+                    build_type(VSPHERE_RELATION_TYPE.VM_DATASTORE)
+                )
+
         for cluster in topology_items["clustercomputeresource"]:
             self.component(
                 instance_key,
@@ -1262,20 +1278,13 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.HOST_COMPUTERESOURCE),
                     {}
                 )
-
-        for ds in topology_items["datastores"]:
-            self.component(
-                instance_key,
-                build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
-                build_type(VSPHERE_COMPONENT_TYPE.DATASTORE),
-                ds["topo_tags"]
-            )
-            for vm_id in ds["topo_tags"]["vms"]:
+            for ds_id in cluster["topo_tags"]["datastores"]:
                 self.relation(
                     instance_key,
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
-                    build_type(VSPHERE_RELATION_TYPE.VM_DATASTORE)
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds_id),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE, cluster["topo_tags"]["name"]),
+                    build_type(VSPHERE_RELATION_TYPE.DATASTORE_COMPUTERESOURCE),
+                    {}
                 )
 
         for dc in topology_items["datacenters"]:

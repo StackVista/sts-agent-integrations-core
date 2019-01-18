@@ -1269,7 +1269,6 @@ class VSphereCheck(AgentCheck):
                 build_type(VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE),
                 cluster["topo_tags"]
             )
-
             for host_id in cluster["topo_tags"]["hosts"]:
                 self.relation(
                     instance_key,
@@ -1297,7 +1296,7 @@ class VSphereCheck(AgentCheck):
             for ds_id in dc["topo_tags"]["datastores"]:
                 self.relation(
                     instance_key,
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.HOST, ds_id),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds_id),
                     build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATACENTER, dc["topo_tags"]["name"]),
                     build_type(VSPHERE_RELATION_TYPE.DATASTORE_DATACENTER),
                     {}
@@ -1310,7 +1309,6 @@ class VSphereCheck(AgentCheck):
                     build_type(VSPHERE_RELATION_TYPE.COMPUTERESOURCE_DATACENTER),
                     {}
                 )
-
             for clustercomputeresource in dc["topo_tags"]["clustercomputeresources"]:
                 self.relation(
                     instance_key,

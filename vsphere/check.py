@@ -1249,8 +1249,8 @@ class VSphereCheck(AgentCheck):
             for vm_id in ds["topo_tags"]["vms"]:
                 self.relation(
                     instance_key,
-                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
                     build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.DATASTORE, ds["topo_tags"]["name"]),
+                    build_id(vsphere_url, VSPHERE_COMPONENT_TYPE.VM, vm_id),
                     build_type(VSPHERE_RELATION_TYPE.VM_DATASTORE)
                 )
 

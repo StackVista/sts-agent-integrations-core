@@ -189,7 +189,7 @@ class TestStaticCSVTopology(AgentCheckTest):
     @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
         'component.csv': ['id,name,NOTYPE'],
         'relation.csv': []}))
-    def test_missing_component_id_field(self, mock):
+    def test_missing_component_type_field(self, mock):
         config = {
             'init_config': {},
             'instances': [

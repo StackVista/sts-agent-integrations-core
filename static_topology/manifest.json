@@ -1,0 +1,16 @@
+{
+  "maintainer": "help@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "static_topology",
+  "short_description": "Ingest static topology from file",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os",
+    "windows"
+  ],
+  "version": "1.0.0",
+  "guid": "fa7d59b5-9f8c-071f-8a9f-25823228a600"
+}

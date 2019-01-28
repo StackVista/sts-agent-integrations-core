@@ -1,0 +1,10 @@
+# Static topology from file
+init_config:
+    # run every minute
+    min_collection_interval: 60
+
+instances:
+  - type: csv
+    components_file: /Users/wytze/Downloads/components.csv
+    relations_file: /Users/wytze/Downloads/relations.csv
+    delimiter: ';'

@@ -8,3 +8,7 @@ instances:
     components_file: /Users/wytze/Downloads/components.csv
     relations_file: /Users/wytze/Downloads/relations.csv
     delimiter: ';'
+
+    #tags:
+    #  - optional_tag1
+    #  - optional_tag2

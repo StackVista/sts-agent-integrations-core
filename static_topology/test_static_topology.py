@@ -94,7 +94,7 @@ class TestStaticCSVTopology(AgentCheckTest):
 
     with self.assertRaises(CheckException) as context:
       self.run_check(config, mocks={
-        'handle_component_csv': lambda instance_key,filelocation,delimiter: None
+        'handle_component_csv': lambda instance_key,filelocation,delimiter,instance_tags: None
       })
 
     self.assertEquals('Relation CSV file is empty.', str(context.exception))
@@ -120,6 +120,33 @@ class TestStaticCSVTopology(AgentCheckTest):
     self.assertEqual(len(instances), 1)
     self.assertEqual(len(instances[0]['components']), 2)
     self.assertEqual(len(instances[0]['relations']), 1)
+
+  @mock.patch('codecs.open',
+              side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                'component.csv': ['id,name,type', '1,name1,type1', '2,name2,type2'],
+                'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+  def test_topology_with_instance_tags(self, mock):
+    config = {
+      'init_config': {},
+      'instances': [
+        {
+          'type': 'csv',
+          'components_file': 'component.csv',
+          'relations_file': 'relation.csv',
+          'delimiter': ',',
+          'tags': ['tag1', 'tag2']
+        }
+      ]
+    }
+    self.run_check(config)
+    instances = self.check.get_topology_instances()
+    self.assertEqual(len(instances), 1)
+    self.assertEqual(len(instances[0]['components']), 2)
+    self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
+    self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+
+    self.assertEqual(len(instances[0]['relations']), 1)
+    self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 2)
 
   @mock.patch('codecs.open', side_effect = lambda location,mode,encoding: MockFileReader(location, {
                 'component.csv': ['NOID,name,type'],

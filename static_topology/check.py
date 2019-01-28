@@ -19,18 +19,20 @@ class StaticTopology(AgentCheck):
     if 'type' not in instance:
         raise CheckException('Static topology instance missing "type" value.')
 
+    instance_tags = instance['tags'] if 'tags' in instance else []
+
     if instance['type'].lower() == "csv":
       component_file = instance['components_file']
       relation_file = instance['relations_file'] if 'relations_file' in instance else None
       delimiter = instance['delimiter']
       instance_key = {"type": "StaticTopology", "url": component_file}
-      self.handle_component_csv(instance_key, component_file, delimiter)
+      self.handle_component_csv(instance_key, component_file, delimiter, instance_tags)
       if relation_file:
-        self.handle_relation_csv(instance_key, relation_file, delimiter)
+        self.handle_relation_csv(instance_key, relation_file, delimiter, instance_tags)
     else:
       raise CheckException('Static topology instance only supports type CSV.')
 
-  def handle_component_csv(self, instance_key, filelocation, delimiter):
+  def handle_component_csv(self, instance_key, filelocation, delimiter, instance_tags):
     self.log.debug("Processing component CSV file %s." % filelocation)
 
     COMPONENT_ID_FIELD = 'id'
@@ -58,9 +60,10 @@ class StaticTopology(AgentCheck):
 
       for row in reader:
         data = dict(zip(header_row, row))
+        data['labels'] = instance_tags
         self.component(instance_key=instance_key, id=row[id_idx], type={"name": row[type_idx]}, data=data)
 
-  def handle_relation_csv(self, instance_key, filelocation, delimiter):
+  def handle_relation_csv(self, instance_key, filelocation, delimiter, instance_tags):
     self.log.debug("Processing relation CSV file %s." % filelocation)
 
     RELATION_SOURCE_ID_FIELD = 'sourceid'
@@ -85,6 +88,7 @@ class StaticTopology(AgentCheck):
 
       for row in reader:
         data = dict(zip(header_row, row))
+        data['labels'] = instance_tags
         self.relation(instance_key=instance_key,
                       source_id=row[source_id_idx],
                       target_id=row[target_id_idx],

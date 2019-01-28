@@ -5,8 +5,8 @@ init_config:
 
 instances:
   - type: csv
-    components_file: /Users/wytze/Downloads/components.csv
-    relations_file: /Users/wytze/Downloads/relations.csv
+    components_file: /path/to/components.csv
+    relations_file: /path/to/relations.csv
     delimiter: ';'
 
     #tags:

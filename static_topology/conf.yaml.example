@@ -1,0 +1,14 @@
+# Static topology from file
+init_config:
+    # run every minute
+    min_collection_interval: 60
+
+instances:
+  - type: csv
+    components_file: /path/to/components.csv
+    relations_file: /path/to/relations.csv
+    delimiter: ';'
+
+    #tags:
+    #  - optional_tag1
+    #  - optional_tag2

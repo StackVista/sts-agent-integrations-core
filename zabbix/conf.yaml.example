@@ -1,0 +1,10 @@
+# Zabbix
+init_config:
+    # run every minute
+    min_collection_interval: 60
+
+instances:
+  - url: http://192.168.178.24/zabbix/api_jsonrpc.php
+    user: Admin
+    password: zabbix
+    # host_group_filter: # TODO

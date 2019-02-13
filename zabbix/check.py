@@ -51,31 +51,10 @@ class ZabbixProblem:
     def __str__(self):
         return "ZabbixProblem(event_id:%s, acknowledged:%s, trigger_id:%s, severity:%s)" % (self.event_id, self.acknowledged, self.trigger_id, self.severity)
 
-class ZabbixHostStates:
-    _states = {} # host_id: {trigger_id -> [ZabbixEvent]}
-
-    def update(self, zabbix_event):
-        for host in zabbix_event.hosts:
-            host_id = host.host_id
-            trigger_id = zabbix_event.trigger.trigger_id
-            self._states[host_id][trigger_id].append(zabbix_event)
-
-    def get_most_severe_zabbix_event(self, host_id):
-        most_severe_zabbix_severity = 0
-        most_severe_zabbix_event = None
-        for trigger_id, zabbix_events in self._states[host_id].iteritems():
-            for zabbix_event in zabbix_events:
-                if zabbix_event.trigger.priority > most_severe_zabbix_severity:
-                    most_severe_zabbix_event = zabbix_event
-        # TODO take ACKs into account
-        return most_severe_zabbix_event
-
-
 class Zabbix(AgentCheck):
     SERVICE_CHECK_NAME = SOURCE_TYPE_NAME = "Zabbix"
     log = logging.getLogger('Zabbix')
     begin_epoch = None # start to listen to events from epoch timestamp
-    host_states = ZabbixHostStates()
 
     def check(self, instance):
         """
@@ -116,6 +95,7 @@ class Zabbix(AgentCheck):
         event_ids = list(problem.event_id for problem in zabbix_problems)
         zabbix_events = self.retrieve_events(url, auth, event_ids)
 
+        # TODO take ACKs into account
         rolled_up_events_per_host = {}  # host_id -> [ZabbixEvent]
         most_severe_severity_per_host = {}  # host_id -> severity int
         for zabbix_event in zabbix_events:
@@ -169,14 +149,15 @@ class Zabbix(AgentCheck):
             })
 
     def process_host_topology(self, topology_instance, zabbix_host):
-        external_id = zabbix_host.host
+        external_id = "urn:zabbix:%s:host/%s" % (topology_instance['url'], zabbix_host.host)
         data = {
             'name': zabbix_host.name,
             'host_id': zabbix_host.host_id,
             'host': zabbix_host.host,
             'layer': 'Host',
             'domain': 'Zabbix', # TODO host group (+filter_
-            'environment': 'Production' # TODO make configurable in yaml
+            'identifiers': [zabbix_host.host],
+            'environment': 'Production'  # TODO make configurable in yaml
         }
         component_type = {"name": "zabbix_host"}
 

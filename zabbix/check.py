@@ -1,6 +1,6 @@
 """
     StackState.
-    Zabbix telemetry integration
+    Zabbix host topology and problem integration
 """
 
 import requests
@@ -8,6 +8,7 @@ import logging
 import time
 
 from checks import AgentCheck, CheckException
+
 
 class ZabbixHost:
     def __init__(self, hostid, host, name, host_groups):
@@ -17,16 +18,33 @@ class ZabbixHost:
         self.name = name
         self.host_groups = host_groups
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "ZabbixHost(hostid:%s, host:%s, name:%s, host_groups:%s.)" % (self.hostid, self.host, self.name, self.host_groups)
+
+
 class ZabbixHostGroup:
     def __init__(self, host_group_id, name):
         self.host_group_id = host_group_id
         self.name = name
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "ZabbixHostGroup(host_group_id:%s, name:%s.)" % (self.host_group_id, self.name)
+
 
 class ZabbixTrigger:
     def __init__(self, trigger_id, description, priority):
         self.trigger_id = trigger_id
         self.description = description
         self.priority = priority  # translates to severity
+
+    def __repr__(self):
+        return self.__str__()
 
     def __str__(self):
         return "ZabbixTrigger(trigger_id:%s, description:%s, priority:%s.)" % (self.trigger_id, self.description, self.priority)
@@ -41,6 +59,7 @@ class ZabbixEvent:
 
     def __repr__(self):
         return self.__str__()
+
     def __str__(self):
         return "ZabbixEvent(event_id:%s, acknowledged:%s, host_ids:%s, trigger:%s)" % (self.event_id, self.acknowledged, self.host_ids, self.trigger)
 
@@ -52,8 +71,12 @@ class ZabbixProblem:
         self.trigger_id = trigger_id
         self.severity = severity
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return "ZabbixProblem(event_id:%s, acknowledged:%s, trigger_id:%s, severity:%s)" % (self.event_id, self.acknowledged, self.trigger_id, self.severity)
+
 
 class Zabbix(AgentCheck):
     SERVICE_CHECK_NAME = SOURCE_TYPE_NAME = "Zabbix"
@@ -207,7 +230,8 @@ class Zabbix(AgentCheck):
 
             self.log.debug("Parsed ZabbixEvent: %s." % zabbix_event)
 
-            # TODO check for None values and give self.log.warn()
+            if not trigger_id or not trigger_description or not trigger_priority or not event_id or len(host_ids) == 0:
+                self.log.warn("Incomplete ZabbixEvent, got: %s" % zabbix_event)
 
             yield zabbix_event
 
@@ -230,7 +254,12 @@ class Zabbix(AgentCheck):
                 host_group_name = raw_group.get('name', None)
                 zabbix_host_group = ZabbixHostGroup(host_group_id, host_group_name)
                 groups.append(zabbix_host_group)
-            yield ZabbixHost(host_id, host, name, groups)
+
+            zabbix_host = ZabbixHost(host_id, host, name, groups)
+            if not host_id or not host or not name or len(groups) == 0:
+                self.log.warn("Incomplete ZabbixHost, got: %s" % zabbix_host)
+
+            yield zabbix_host
 
     def retrieve_problems(self, url, auth):
         self.log.debug("Retrieving problems.")
@@ -247,9 +276,12 @@ class Zabbix(AgentCheck):
             severity = item.get("severity", self.get_trigger_priority(url, auth, trigger_id)) # for Zabbix versions <4.0 we need to get the trigger.priority
 
             zabbix_problem = ZabbixProblem(event_id, acknowledged, trigger_id, severity)
-            self.log.debug("Parsed ZabbixProblem %s." % zabbix_problem)
-            yield zabbix_problem
 
+            self.log.debug("Parsed ZabbixProblem %s." % zabbix_problem)
+            if not event_id or not trigger_id or not severity:
+                self.log.warn("Incomplete ZabbixProblem, got: %s" % zabbix_problem)
+
+            yield zabbix_problem
 
     def get_trigger_priority(self, url, auth, trigger_id):
         params = {
@@ -259,7 +291,6 @@ class Zabbix(AgentCheck):
         response = self.method_request(url, "trigger.get", auth=auth, params=params)
         trigger = response.get('result', [None])[0] # get first element or None
         return trigger.get("priority", None)
-
 
     def check_connection(self, url):
         """

@@ -22,25 +22,34 @@ class ZabbixTrigger:
     def __init__(self, trigger_id, description, priority):
         self.trigger_id = trigger_id
         self.description = description
-        self.priority = priority # translates to severity
+        self.priority = priority  # translates to severity
+
+    def __str__(self):
+        return "ZabbixTrigger(trigger_id:%s, description:%s, priority:%s.)" % (self.trigger_id, self.description, self.priority)
 
 
 class ZabbixEvent:
-    def __init__(self, event_id, value, acknowledged, hosts, trigger):
+    def __init__(self, event_id, acknowledged, host_ids, trigger):
         self.event_id = event_id
-        self.acknowledged = acknowledged # 0/1 (not) acknowledged
-        self.value = value # 0/1 -> inactive/active
-        self.hosts = hosts # ZabbixHost list
-        self.trigger = trigger # ZabbixTrigger
+        self.acknowledged = acknowledged  # 0/1 (not) acknowledged
+        self.host_ids = host_ids
+        self.trigger = trigger  # ZabbixTrigger
+
+    def __repr__(self):
+        return self.__str__()
+    def __str__(self):
+        return "ZabbixEvent(event_id:%s, acknowledged:%s, host_ids:%s, trigger:%s)" % (self.event_id, self.acknowledged, self.host_ids, self.trigger)
+
 
 class ZabbixProblem:
-    def __init__(self, event_id, host, trigger_name, acknowledged, trigger_id, severity):
+    def __init__(self, event_id, acknowledged, trigger_id, severity):
         self.event_id = event_id
-        self.host = host
-        self.trigger_name = trigger_name
         self.acknowledged = acknowledged
         self.trigger_id = trigger_id
         self.severity = severity
+
+    def __str__(self):
+        return "ZabbixProblem(event_id:%s, acknowledged:%s, trigger_id:%s, severity:%s)" % (self.event_id, self.acknowledged, self.trigger_id, self.severity)
 
 class ZabbixHostStates:
     _states = {} # host_id: {trigger_id -> [ZabbixEvent]}
@@ -60,7 +69,6 @@ class ZabbixHostStates:
                     most_severe_zabbix_event = zabbix_event
         # TODO take ACKs into account
         return most_severe_zabbix_event
-
 
 
 class Zabbix(AgentCheck):
@@ -92,49 +100,55 @@ class Zabbix(AgentCheck):
 
         self.start_snapshot(topology_instance)
 
+        host_ids = []
+
+        # Topology, get all hosts
         for zabbix_host in self.retrieve_hosts(url, auth):
             # TODO host_group as domain
             # TODO environment configurable in conf yaml
             self.process_host_topology(topology_instance, zabbix_host)
 
-            zabbix_problems = self.retrieve_problems(url, auth, [zabbix_host.host_id]) # TODO combine host ids in one payload, batching
-            self.process_problems(zabbix_host, zabbix_problems)
+            host_ids.append(zabbix_host.host_id)
+
+        # Telemetry, get all problems.
+        zabbix_problems = self.retrieve_problems(url, auth)
+
+        event_ids = list(problem.event_id for problem in zabbix_problems)
+        zabbix_events = self.retrieve_events(url, auth, event_ids)
+
+        rolled_up_events_per_host = {}  # host_id -> [ZabbixEvent]
+        most_severe_severity_per_host = {}  # host_id -> severity int
+        for zabbix_event in zabbix_events:
+            for host_id in zabbix_event.host_ids:
+                if host_id in rolled_up_events_per_host:
+                    rolled_up_events_per_host[host_id].append(zabbix_event)
+                    if most_severe_severity_per_host[host_id] > zabbix_event.trigger.priority:
+                        most_severe_severity_per_host[host_id] = zabbix_event.trigger.priority
+                else:
+                    rolled_up_events_per_host[host_id] = [zabbix_event]
+                    most_severe_severity_per_host[host_id] = zabbix_event.trigger.priority
+
+        # iterate all hosts to send an event per host, either in OK/PROBLEM state
+        for host_id in host_ids:
+            if host_id in rolled_up_events_per_host:
+                triggers = [event.trigger.description for event in rolled_up_events_per_host[host_id]]
+                severity = most_severe_severity_per_host[host_id]
+            else:
+                triggers = []
+                severity = 0
+
+            self.event({
+                'timestamp': int(time.time()),
+                'source_type_name': self.SOURCE_TYPE_NAME,
+                'host': self.hostname,
+                'tags': [
+                    'host_id:%s' % host_id,
+                    'severity:%s' % severity,
+                    'triggers:%s' % triggers
+                ]
+            })
 
         self.stop_snapshot(topology_instance)
-
-    def process_problems(self, zabbix_host, zabbix_problems):
-        most_severe = None
-        severe_problems = []
-        for zabbix_problem in zabbix_problems:
-            if not most_severe:
-                most_severe = zabbix_problem.severity
-                severe_problems.append(zabbix_problem)
-            elif zabbix_problem.severity == most_severe:
-                severe_problems.append(zabbix_problem)
-            elif zabbix_problem.severity > most_severe:
-                most_severe = zabbix_problem.severity
-                severe_problems = [zabbix_problem]
-
-        # TODO what if all highs/disasters are acked!
-
-        # TODO is there an ACK in severe_problems?
-
-
-        self.event({
-            'timestamp': int(time.time()),
-            'source_type_name': self.SOURCE_TYPE_NAME,
-            'host': self.hostname,
-            'tags': [
-                'host_name:%s' % zabbix_host.name,
-                'host_id:%s' % zabbix_host.host_id,
-                'host:%s' % zabbix_host.host,
-                'severity:%s' % 0  # TODO
-                # TODO problems
-            ]
-        })
-
-
-        print("")
 
     def process_host_health_state(self, zabbix_event):
         self.host_states.update(zabbix_event)
@@ -154,7 +168,6 @@ class Zabbix(AgentCheck):
                 ]
             })
 
-
     def process_host_topology(self, topology_instance, zabbix_host):
         external_id = zabbix_host.host
         data = {
@@ -169,46 +182,43 @@ class Zabbix(AgentCheck):
 
         self.component(topology_instance, external_id, component_type, data=data)
 
-    def parse_event(self, event):
-        event_id = event.get('event', None)
-        value = event.get('value', None)
-        acknowledged = event.get('acknowledged', None)
+    def retrieve_events(self, url, auth, event_ids):
+        assert(type(event_ids) == list)
+        self.log.debug("Retrieving events for event_ids: %s." % event_ids)
 
-        hosts_items = event.get('hosts', [])
-        hosts = []
-        for item in hosts_items:
-            host_id = item.get('hostid', None)
-            host = item.get('host', None)
-            host_name = item.get('name', None)
-            zabbix_host = ZabbixHost(host_id, host, host_name)
-            hosts.append(zabbix_host)
-
-        trigger = event.get('relatedObject', {})
-        trigger_id = trigger.get('triggerid', None)
-        trigger_description = trigger.get('description', None)
-        trigger_priority = trigger.get('priority', None)
-
-        trigger = ZabbixTrigger(trigger_id, trigger_description, trigger_priority)
-        zabbix_event = ZabbixEvent(event_id, value, acknowledged, hosts, trigger)
-        self.log.debug("Parsed ZabbixEvent: %s." % zabbix_event)
-
-        # TODO check for None values and give self.log.warn()
-        return zabbix_event
-
-    def retrieve_events(self, url, auth, begin_epoch, end_epoch):
         params = {
-            "object": 0, # trigger events
-            "output": ["eventid", "value", "acknowledged"],
-            "time_from": begin_epoch,
-            "time_till": end_epoch,
-            "selectHosts": ["hostid", "host"],
-            "selectRelatedObject": ["triggerid", "description", "priority"],
-            "sortfield": ["clock", "eventid"],
-            "sortorder": "ASC"
+            "object": 0,  # trigger events
+            "eventids": event_ids,
+            "output": ["eventid", "value", "severity", "acknowledged"],
+            "selectHosts": ["hostid"],
+            "selectRelatedObject": ["triggerid", "description", "priority"]
         }
 
         response = self.method_request(url, "event.get", auth=auth, params=params)
-        return iter(response['result'])
+
+        events = response.get('result', [])
+        for event in events:
+            event_id = event.get('eventid', None)
+            acknowledged = event.get('acknowledged', None)
+
+            hosts_items = event.get('hosts', [])
+            host_ids = []
+            for item in hosts_items:
+                host_id = item.get('hostid', None)
+                host_ids.append(host_id)
+
+            trigger = event.get('relatedObject', {})
+            trigger_id = trigger.get('triggerid', None)
+            trigger_description = trigger.get('description', None)
+            trigger_priority = trigger.get('priority', None)
+
+            trigger = ZabbixTrigger(trigger_id, trigger_description, trigger_priority)
+            zabbix_event = ZabbixEvent(event_id, acknowledged, host_ids, trigger)
+            self.log.debug("Parsed ZabbixEvent: %s." % zabbix_event)
+
+            # TODO check for None values and give self.log.warn()
+
+            yield zabbix_event
 
     # TODO pagination
     def retrieve_hosts(self, url, auth):
@@ -223,33 +233,29 @@ class Zabbix(AgentCheck):
             name = item.get("name", None)
             yield ZabbixHost(host_id, host, name)
 
-
-    def retrieve_problems(self, url, auth, host_ids):
-        assert(type(host_ids) == list)
+    def retrieve_problems(self, url, auth):
+        self.log.debug("Retrieving problems.")
 
         params = {
-            "hostids": host_ids, # filter on specific host ids
-            "object": 0, # only interested in triggers
-            "output": ["hostid", "host", "name"]
+            "object": 0,  # only interested in triggers
+            "output": ["severity", "objectid", "acknowledged"]
         }
         response = self.method_request(url, "problem.get", auth=auth, params=params)
         for item in response.get('result', []):
             event_id = item.get("eventid", None)
-            host = item.get("host", None)
-            trigger_name = item.get("name", None)
             acknowledged = item.get("acknowledged", None)
-            trigger_id = item.get("objectid", None) # Object id is in case of object=0 a trigger.
+            trigger_id = item.get("objectid", None)  # Object id is in case of object=0 a trigger.
             severity = item.get("severity", self.get_trigger_priority(url, auth, trigger_id)) # for Zabbix versions <4.0 we need to get the trigger.priority
 
-            zabbix_problem = ZabbixProblem(event_id, host, trigger_name, acknowledged, trigger_id, severity)
+            zabbix_problem = ZabbixProblem(event_id, acknowledged, trigger_id, severity)
             self.log.debug("Parsed ZabbixProblem %s." % zabbix_problem)
-            yield  zabbix_problem
+            yield zabbix_problem
 
 
     def get_trigger_priority(self, url, auth, trigger_id):
         params = {
             "output": ["priority"],
-            "triggerids": trigger_id
+            "triggerids": [trigger_id]
         }
         response = self.method_request(url, "trigger.get", auth=auth, params=params)
         trigger = response.get('result', [None])[0] # get first element or None

@@ -103,7 +103,7 @@ class Zabbix(AgentCheck):
             for host_id in zabbix_event.host_ids:
                 if host_id in rolled_up_events_per_host:
                     rolled_up_events_per_host[host_id].append(zabbix_event)
-                    if most_severe_severity_per_host[host_id] > zabbix_event.trigger.priority:
+                    if most_severe_severity_per_host[host_id] < zabbix_event.trigger.priority:
                         most_severe_severity_per_host[host_id] = zabbix_event.trigger.priority
                 else:
                     rolled_up_events_per_host[host_id] = [zabbix_event]

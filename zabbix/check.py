@@ -8,15 +8,19 @@ import logging
 import time
 
 from checks import AgentCheck, CheckException
-from utils.persistable_store import PersistableStore
-
 
 class ZabbixHost:
-    def __init__(self, hostid, host, name):
+    def __init__(self, hostid, host, name, host_groups):
+        assert(type(host_groups == list))
         self.host_id = hostid
         self.host = host
         self.name = name
+        self.host_groups = host_groups
 
+class ZabbixHostGroup:
+    def __init__(self, host_group_id, name):
+        self.host_group_id = host_group_id
+        self.name = name
 
 class ZabbixTrigger:
     def __init__(self, trigger_id, description, priority):
@@ -151,14 +155,19 @@ class Zabbix(AgentCheck):
 
     def process_host_topology(self, topology_instance, zabbix_host, stackstate_environment):
         external_id = "urn:zabbix:%s:host/%s" % (topology_instance['url'], zabbix_host.host)
+        labels = ['zabbix']
+        for host_group in zabbix_host.host_groups:
+            labels.append('host group:%s' % host_group.name)
         data = {
             'name': zabbix_host.name,
             'host_id': zabbix_host.host_id,
             'host': zabbix_host.host,
             'layer': 'Host',
-            'domain': 'Zabbix', # TODO host group (+filter_
+            'domain': zabbix_host.host_groups[0].name if len(zabbix_host.host_groups) == 1 else 'Zabbix',  # use host group of component as StackState domain when there is only one host group
             'identifiers': [zabbix_host.host],
-            'environment': stackstate_environment
+            'environment': stackstate_environment,
+            'host_groups': [host_group.name for host_group in zabbix_host.host_groups],
+            'labels': labels
         }
         component_type = {"name": "zabbix_host"}
 
@@ -196,6 +205,7 @@ class Zabbix(AgentCheck):
 
             trigger = ZabbixTrigger(trigger_id, trigger_description, trigger_priority)
             zabbix_event = ZabbixEvent(event_id, acknowledged, host_ids, trigger)
+
             self.log.debug("Parsed ZabbixEvent: %s." % zabbix_event)
 
             # TODO check for None values and give self.log.warn()
@@ -206,14 +216,22 @@ class Zabbix(AgentCheck):
     def retrieve_hosts(self, url, auth):
         self.log.debug("Retrieving hosts.")
         params = {
-            "output": ["hostid", "host", "name"]
+            "output": ["hostid", "host", "name"],
+            "selectGroups": ["groupid", "name"]
         }
         response = self.method_request(url, "host.get", auth=auth, params=params)
         for item in response.get("result", []):
             host_id = item.get("hostid", None)
             host = item.get("host", None)
             name = item.get("name", None)
-            yield ZabbixHost(host_id, host, name)
+            raw_groups = item.get('groups', [])
+            groups = []
+            for raw_group in raw_groups:
+                host_group_id = raw_group.get('groupid', None)
+                host_group_name = raw_group.get('name', None)
+                zabbix_host_group = ZabbixHostGroup(host_group_id, host_group_name)
+                groups.append(zabbix_host_group)
+            yield ZabbixHost(host_id, host, name, groups)
 
     def retrieve_problems(self, url, auth):
         self.log.debug("Retrieving problems.")

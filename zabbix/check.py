@@ -13,7 +13,7 @@ from utils.persistable_store import PersistableStore
 
 class ZabbixHost:
     def __init__(self, hostid, host, name):
-        self.host_id = hostid,
+        self.host_id = hostid
         self.host = host
         self.name = name
 
@@ -165,7 +165,7 @@ class Zabbix(AgentCheck):
             'domain': 'Zabbix', # TODO host group (+filter_
             'environment': 'Production' # TODO make configurable in yaml
         }
-        component_type = "zabbix_host"
+        component_type = {"name": "zabbix_host"}
 
         self.component(topology_instance, external_id, component_type, data=data)
 

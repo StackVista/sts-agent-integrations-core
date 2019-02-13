@@ -89,7 +89,6 @@ class Zabbix(AgentCheck):
 
         # Topology, get all hosts
         for zabbix_host in self.retrieve_hosts(url, auth):
-            # TODO host_group as domain
             self.process_host_topology(topology_instance, zabbix_host, stackstate_environment)
 
             host_ids.append(zabbix_host.host_id)

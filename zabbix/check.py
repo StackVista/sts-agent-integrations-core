@@ -67,6 +67,8 @@ class Zabbix(AgentCheck):
         if 'password' not in instance:
             raise CheckException('Missing password in configuration.')
 
+        stackstate_environment = instance.get('stackstate_environment', 'Production')
+
         url = instance['url']
 
         topology_instance = {
@@ -84,8 +86,7 @@ class Zabbix(AgentCheck):
         # Topology, get all hosts
         for zabbix_host in self.retrieve_hosts(url, auth):
             # TODO host_group as domain
-            # TODO environment configurable in conf yaml
-            self.process_host_topology(topology_instance, zabbix_host)
+            self.process_host_topology(topology_instance, zabbix_host, stackstate_environment)
 
             host_ids.append(zabbix_host.host_id)
 
@@ -148,7 +149,7 @@ class Zabbix(AgentCheck):
                 ]
             })
 
-    def process_host_topology(self, topology_instance, zabbix_host):
+    def process_host_topology(self, topology_instance, zabbix_host, stackstate_environment):
         external_id = "urn:zabbix:%s:host/%s" % (topology_instance['url'], zabbix_host.host)
         data = {
             'name': zabbix_host.name,
@@ -157,7 +158,7 @@ class Zabbix(AgentCheck):
             'layer': 'Host',
             'domain': 'Zabbix', # TODO host group (+filter_
             'identifiers': [zabbix_host.host],
-            'environment': 'Production'  # TODO make configurable in yaml
+            'environment': stackstate_environment
         }
         component_type = {"name": "zabbix_host"}
 

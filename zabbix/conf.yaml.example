@@ -7,4 +7,5 @@ instances:
   - url: http://192.168.178.24/zabbix/api_jsonrpc.php
     user: Admin
     password: zabbix
+    # stackstate_environment: Production
     # host_group_filter: # TODO

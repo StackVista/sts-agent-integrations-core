@@ -176,7 +176,7 @@ class Zabbix(AgentCheck):
             })
 
     def process_host_topology(self, topology_instance, zabbix_host, stackstate_environment):
-        external_id = "urn:zabbix:%s:host/%s" % (topology_instance['url'], zabbix_host.host)
+        external_id = "urn:host/%s" % zabbix_host.host
         labels = ['zabbix']
         for host_group in zabbix_host.host_groups:
             labels.append('host group:%s' % host_group.name)

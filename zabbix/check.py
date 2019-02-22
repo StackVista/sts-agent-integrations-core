@@ -1,6 +1,10 @@
 """
     StackState.
     Zabbix host topology and problem integration
+
+    Current limitations:
+    - Unsupported Zabbix Problem acks
+    - Unsupported Zabbix version 4+ severity upgrades, currently the trigger's severity is used for compatibility
 """
 
 import requests
@@ -81,7 +85,7 @@ class ZabbixProblem:
 class Zabbix(AgentCheck):
     SERVICE_CHECK_NAME = SOURCE_TYPE_NAME = "Zabbix"
     log = logging.getLogger('Zabbix')
-    begin_epoch = None # start to listen to events from epoch timestamp
+    begin_epoch = None  # start to listen to events from epoch timestamp
 
     def check(self, instance):
         """
@@ -90,9 +94,9 @@ class Zabbix(AgentCheck):
         if 'url' not in instance:
             raise CheckException('Missing API url in configuration.')
         if 'user' not in instance:
-            raise CheckException('Missing user in configuration.')
+            raise CheckException('Missing API user in configuration.')
         if 'password' not in instance:
-            raise CheckException('Missing password in configuration.')
+            raise CheckException('Missing API password in configuration.')
 
         stackstate_environment = instance.get('stackstate_environment', 'Production')
 
@@ -120,9 +124,8 @@ class Zabbix(AgentCheck):
         zabbix_problems = self.retrieve_problems(url, auth)
 
         event_ids = list(problem.event_id for problem in zabbix_problems)
-        zabbix_events = self.retrieve_events(url, auth, event_ids)
+        zabbix_events = [] if len(event_ids) == 0 else self.retrieve_events(url, auth, event_ids)
 
-        # TODO take ACKs into account
         rolled_up_events_per_host = {}  # host_id -> [ZabbixEvent]
         most_severe_severity_per_host = {}  # host_id -> severity int
         for zabbix_event in zabbix_events:
@@ -135,14 +138,17 @@ class Zabbix(AgentCheck):
                     rolled_up_events_per_host[host_id] = [zabbix_event]
                     most_severe_severity_per_host[host_id] = zabbix_event.trigger.priority
 
+        self.log.debug('rolled_up_events_per_host:' + str(rolled_up_events_per_host))
+        self.log.debug('most_severe_severity_per_host:' + str(most_severe_severity_per_host))
+
         # iterate all hosts to send an event per host, either in OK/PROBLEM state
         for host_id in host_ids:
+            severity = 0
+            triggers = []
+
             if host_id in rolled_up_events_per_host:
                 triggers = [event.trigger.description for event in rolled_up_events_per_host[host_id]]
                 severity = most_severe_severity_per_host[host_id]
-            else:
-                triggers = []
-                severity = 0
 
             self.event({
                 'timestamp': int(time.time()),
@@ -157,26 +163,8 @@ class Zabbix(AgentCheck):
 
         self.stop_snapshot(topology_instance)
 
-    def process_host_health_state(self, zabbix_event):
-        self.host_states.update(zabbix_event)
-        for host in zabbix_event.hosts:
-            zabbix_event = self.host_states.get_most_severe_zabbix_event(host.host_id)
-
-            triggers = "triggers:[%s]" % ','.join(zabbix_event)
-
-            self.event({
-                'timestamp': int(time.time()),
-                'source_type_name': self.SOURCE_TYPE_NAME,
-                'host': self.hostname,
-                'tags': [
-                    'host:%s' % host,
-                    'host_id:%s' % "",
-                    triggers
-                ]
-            })
-
     def process_host_topology(self, topology_instance, zabbix_host, stackstate_environment):
-        external_id = "urn:host/%s" % zabbix_host.host
+        external_id = "urn:host:/%s" % zabbix_host.host
         labels = ['zabbix']
         for host_group in zabbix_host.host_groups:
             labels.append('host group:%s' % host_group.name)
@@ -235,7 +223,6 @@ class Zabbix(AgentCheck):
 
             yield zabbix_event
 
-    # TODO pagination
     def retrieve_hosts(self, url, auth):
         self.log.debug("Retrieving hosts.")
         params = {
@@ -325,7 +312,7 @@ class Zabbix(AgentCheck):
             response = self.method_request(url, "user.login", params=params)
             return response['result']
         except Exception as e:
-            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="Failed to log in into Zabbix with provided credentials." % url)
+            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="Failed to log in into Zabbix at %s with provided credentials." % url)
             raise e
 
     def method_request(self, url, name, auth=None, params={}, request_id=1):

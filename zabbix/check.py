@@ -330,5 +330,3 @@ class Zabbix(AgentCheck):
         response.raise_for_status()
         self.log.debug("Request response: %s" % response.text)
         return response.json()
-
-

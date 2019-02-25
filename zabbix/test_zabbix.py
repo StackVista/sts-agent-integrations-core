@@ -8,7 +8,7 @@ import os
 # 3p
 
 # project
-from tests.checks.common import AgentCheckTest, Fixtures
+from tests.checks.common import AgentCheckTest
 from checks import CheckException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
@@ -189,9 +189,12 @@ class TestZabbix(AgentCheckTest):
 
     def test_zabbix_topology_hosts(self):
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
-            elif name == "host.get": return self._zabbix_host_response()
-            else: self.fail("TEST FAILED on making invalid request")
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
+            elif name == "host.get":
+                return self._zabbix_host_response()
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         self.run_check(self._config, mocks={
             'method_request': _mocked_method_request,
@@ -218,13 +221,17 @@ class TestZabbix(AgentCheckTest):
 
         labels = component['data']['labels']
         for label in ['zabbix', 'host group:Zabbix servers']:
-            if label not in labels: self.fail("Component does not have label '%s'." % label)
+            if label not in labels:
+                self.fail("Component does not have label '%s'." % label)
 
     def test_zabbix_topology_non_default_environment(self):
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
-            elif name == "host.get": return self._zabbix_host_response()
-            else: self.fail("TEST FAILED on making invalid request")
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
+            elif name == "host.get":
+                return self._zabbix_host_response()
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         config = self._config
         config['instances'][0]['stackstate_environment'] = 'MyTestEnvironment'
@@ -245,7 +252,8 @@ class TestZabbix(AgentCheckTest):
 
         labels = component['data']['labels']
         for label in ['zabbix', 'host group:Zabbix servers']:
-            if label not in labels: self.fail("Component does not have label '%s'." % label)
+            if label not in labels:
+                self.fail("Component does not have label '%s'." % label)
 
     def test_zabbix_topology_multiple_host_groups(self):
         """
@@ -255,15 +263,19 @@ class TestZabbix(AgentCheckTest):
         """
 
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
             elif name == "host.get":
                 response = self._zabbix_host_response()
-                response['result'][0]['groups'].append({
-                            "groupid": "5",
-                            "name": "MyHostGroup"
-                        })
+                response['result'][0]['groups'].append(
+                    {
+                        "groupid": "5",
+                        "name": "MyHostGroup"
+                    }
+                )
                 return response
-            else: self.fail("TEST FAILED on making invalid request")
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         self.run_check(self._config, mocks={
             'method_request': _mocked_method_request,
@@ -285,12 +297,18 @@ class TestZabbix(AgentCheckTest):
 
     def test_zabbix_problems(self):
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
-            elif name == "host.get": return self._zabbix_host_response()
-            elif name == "problem.get": return self._zabbix_problem()
-            elif name == "trigger.get": return self._zabbix_trigger()
-            elif name == "event.get": return self._zabbix_event()
-            else: self.fail("TEST FAILED on making invalid request")
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
+            elif name == "host.get":
+                return self._zabbix_host_response()
+            elif name == "problem.get":
+                return self._zabbix_problem()
+            elif name == "trigger.get":
+                return self._zabbix_trigger()
+            elif name == "event.get":
+                return self._zabbix_event()
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         self.run_check(self._config, mocks={
             'method_request': _mocked_method_request,
@@ -312,13 +330,16 @@ class TestZabbix(AgentCheckTest):
         To make this happen we need to send an event that says all is OK.
         """
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
-            elif name == "host.get": return self._zabbix_host_response()
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
+            elif name == "host.get":
+                return self._zabbix_host_response()
             elif name == "problem.get":
                 response = self._zabbix_problem()
                 response['result'] = []
                 return response
-            else: self.fail("TEST FAILED on making invalid request")
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         self.run_check(self._config, mocks={
             'method_request': _mocked_method_request,
@@ -341,8 +362,10 @@ class TestZabbix(AgentCheckTest):
         """
 
         def _mocked_method_request(url, name, auth=None, params={}, request_id=1):
-            if name == "apiinfo.version": return self._apiinfo_response()
-            elif name == "host.get": return self._zabbix_host_response()
+            if name == "apiinfo.version":
+                return self._apiinfo_response()
+            elif name == "host.get":
+                return self._zabbix_host_response()
             elif name == "problem.get":
                 response = self._zabbix_problem()
                 response['result'].append({
@@ -364,7 +387,8 @@ class TestZabbix(AgentCheckTest):
                     "suppressed": 0
                 })
                 return response
-            elif name == "trigger.get": return self._zabbix_trigger()
+            elif name == "trigger.get":
+                return self._zabbix_trigger()
             elif name == "event.get":
                 response = self._zabbix_event()
                 response['result'].append({
@@ -384,7 +408,8 @@ class TestZabbix(AgentCheckTest):
                     }
                 })
                 return response
-            else: self.fail("TEST FAILED on making invalid request")
+            else:
+                self.fail("TEST FAILED on making invalid request")
 
         self.run_check(self._config, mocks={
             'method_request': _mocked_method_request,

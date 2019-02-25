@@ -59,7 +59,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         }
         with self.assertRaises(CheckException) as context:
             self.run_check(config)
-            self.assertTrue('Static topology instance missing "components_file" value.' in context.exception)
+        self.assertTrue('Static topology instance missing "components_file" value.' in context.exception)
 
     def test_empty_component_file(self):
         config = {

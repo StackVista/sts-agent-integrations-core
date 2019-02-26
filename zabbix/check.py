@@ -15,9 +15,9 @@ from checks import AgentCheck, CheckException
 
 
 class ZabbixHost:
-    def __init__(self, hostid, host, name, host_groups):
+    def __init__(self, host_id, host, name, host_groups):
         assert(type(host_groups == list))
-        self.host_id = hostid
+        self.host_id = host_id
         self.host = host
         self.name = name
         self.host_groups = host_groups
@@ -26,7 +26,7 @@ class ZabbixHost:
         return self.__str__()
 
     def __str__(self):
-        return "ZabbixHost(hostid:%s, host:%s, name:%s, host_groups:%s.)" % (self.hostid, self.host, self.name, self.host_groups)
+        return "ZabbixHost(host_id:%s, host:%s, name:%s, host_groups:%s.)" % (self.host_id, self.host, self.name, self.host_groups)
 
 
 class ZabbixHostGroup:

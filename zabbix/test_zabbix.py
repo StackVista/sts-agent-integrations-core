@@ -320,9 +320,10 @@ class TestZabbix(AgentCheckTest):
         self.assertEqual(event['source_type_name'], 'Zabbix')
         tags = event['tags']
 
-        for tag in ['host_id:10084', 'severity:3', "triggers:['Zabbix agent on {HOST.NAME} is unreachable for 5 minutes']"]:
+        for tag in ['host_id:10084', 'severity:3', "triggers:['Zabbix agent on {HOST.NAME} is unreachable for 5 minutes']", "host:zabbix01.example.com", "host_name:Zabbix server"]:
             if tag not in tags:
-                self.fail("Event does not have tag '%s'." % tag)
+                self.fail("Event does not have tag '%s', got: %s." % (tag, tags))
+        self.assertEqual(len(tags), 5)
 
     def test_zabbix_no_problems(self):
         """
@@ -351,9 +352,10 @@ class TestZabbix(AgentCheckTest):
         self.assertEqual(event['source_type_name'], 'Zabbix')
         tags = event['tags']
 
-        for tag in ['host_id:10084', 'severity:0', "triggers:[]"]:
+        for tag in ['host_id:10084', 'severity:0', "triggers:[]", "host:zabbix01.example.com", "host_name:Zabbix server"]:
             if tag not in tags:
-                self.fail("Event does not have tag '%s'." % tag)
+                self.fail("Event does not have tag '%s', got: %s." % (tag, tags))
+        self.assertEqual(len(tags), 5)
 
     def test_zabbix_determine_most_severe_state(self):
         """
@@ -424,7 +426,10 @@ class TestZabbix(AgentCheckTest):
         for tag in [
             'host_id:10084',
             'severity:5',
-            "triggers:['Zabbix agent on {HOST.NAME} is unreachable for 5 minutes', 'My very own problem']"
+            "triggers:['Zabbix agent on {HOST.NAME} is unreachable for 5 minutes', 'My very own problem']",
+            "host:zabbix01.example.com",
+            "host_name:Zabbix server"
         ]:
             if tag not in tags:
-                self.fail("Event does not have tag '%s'." % tag)
+                self.fail("Event does not have tag '%s', got: %s." % (tag, tags))
+        self.assertEqual(len(tags), 5)

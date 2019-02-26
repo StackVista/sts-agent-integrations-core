@@ -112,13 +112,13 @@ class Zabbix(AgentCheck):
 
         self.start_snapshot(topology_instance)
 
-        host_ids = []
+        hosts = {}  # key: host_id, value: ZabbixHost
 
         # Topology, get all hosts
         for zabbix_host in self.retrieve_hosts(url, auth):
             self.process_host_topology(topology_instance, zabbix_host, stackstate_environment)
 
-            host_ids.append(zabbix_host.host_id)
+            hosts[zabbix_host.host_id] = zabbix_host
 
         # Telemetry, get all problems.
         zabbix_problems = self.retrieve_problems(url, auth)
@@ -142,7 +142,7 @@ class Zabbix(AgentCheck):
         self.log.debug('most_severe_severity_per_host:' + str(most_severe_severity_per_host))
 
         # iterate all hosts to send an event per host, either in OK/PROBLEM state
-        for host_id in host_ids:
+        for host_id, zabbix_host in hosts.iteritems():
             severity = 0
             triggers = []
 
@@ -156,6 +156,8 @@ class Zabbix(AgentCheck):
                 'host': self.hostname,
                 'tags': [
                     'host_id:%s' % host_id,
+                    'host:%s' % zabbix_host.host,
+                    'host_name:%s' % zabbix_host.name,
                     'severity:%s' % severity,
                     'triggers:%s' % triggers
                 ]

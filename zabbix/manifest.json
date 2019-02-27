@@ -1,0 +1,16 @@
+{
+  "maintainer": "help@stackstate.com",
+  "manifest_version": "0.1.0",
+  "max_agent_version": "6.0.0",
+  "min_agent_version": "5.12",
+  "name": "zabbix",
+  "short_description": "Zabbix telemetry",
+  "support": "core",
+  "supported_os": [
+    "linux",
+    "mac_os",
+    "windows"
+  ],
+  "version": "1.0.0",
+  "guid": "6e174968-3f40-eb14-cc78-a188165f9263"
+}

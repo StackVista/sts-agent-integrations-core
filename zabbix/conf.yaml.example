@@ -1,0 +1,9 @@
+# Zabbix
+init_config:
+    min_collection_interval: 60 # run every minute
+
+instances:
+  - url: http://10.0.0.1/zabbix/api_jsonrpc.php
+    user: Admin
+    password: zabbix
+    # stackstate_environment: Production

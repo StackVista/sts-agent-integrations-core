@@ -42,6 +42,7 @@ instances:
     # snapshot: true
     # polling_interval_seconds: 300
     # saved_searches_parallel: 5
+    ignore_saved_search_errors: true
     component_saved_searches:
       - name: "components"
         # Wilcard match to find component queries, can be used instead of name

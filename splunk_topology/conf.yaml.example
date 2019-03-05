@@ -42,6 +42,10 @@ instances:
     # snapshot: true
     # polling_interval_seconds: 300
     # saved_searches_parallel: 5
+
+    # make the agent less strict and allow for saved searches to be failing or missing
+    ignore_saved_search_errors: true
+
     component_saved_searches:
       - name: "components"
         # Wilcard match to find component queries, can be used instead of name

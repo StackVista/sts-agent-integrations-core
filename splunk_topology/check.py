@@ -64,6 +64,7 @@ class Instance:
             "url": self.instance_config.base_url
         }
         self.tags = instance.get('tags', [])
+        self.splunk_ignore_saved_search_errors = instance.get('ignore_saved_search_errors', 'true')
 
         self.polling_interval_seconds = int(instance.get('polling_interval_seconds', self.instance_config.default_polling_interval_seconds))
         self.saved_searches_parallel = int(instance.get('saved_searches_parallel', self.instance_config.default_saved_searches_parallel))
@@ -131,6 +132,9 @@ class SplunkTopology(AgentCheck):
 
         for (sid, saved_search) in search_ids:
             self.log.debug("Processing saved search: %s." % saved_search.name)
+            if sid is None:
+                self.log.warn("Skipping the saved search %s as it doesn't exist " % saved_search.name)
+                continue
             all_success &= self._process_saved_search(sid, saved_search, instance, start_time)
 
         return all_success
@@ -189,10 +193,11 @@ class SplunkTopology(AgentCheck):
 
         splunk_user = instance.instance_config.username
         splunk_app = saved_search.app
+        splunk_ignore_saved_search_errors = instance.splunk_ignore_saved_search_errors
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, parameters)
+        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
 
     def _extract_components(self, instance, result):
         fail_count = 0

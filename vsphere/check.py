@@ -1195,7 +1195,7 @@ class VSphereCheck(AgentCheck):
 
         vms = self._vsphere_vms(content, domain, regexes)
         hosts = self._vsphere_hosts(content, domain, regexes)
-        datacenters = self._vsphere_datacenters(content, domain, regexes)
+        datacenters = self._vsphere_datacenters(content, domain)
         datastores = self._vsphere_datastores(content, domain, regexes)
         clustercomputeresources = self._vsphere_clustercomputeresources(content, domain, regexes)
         computeresource = self._vsphere_computeresources(content, domain, regexes)

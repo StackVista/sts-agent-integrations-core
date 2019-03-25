@@ -576,3 +576,35 @@ class TestVsphereTopo(AgentCheckTest):
         # Check if the returned topology contains 6 relations for 6 VMs
         self.assertEqual(len(topo_instances[0]['relations']), 6)
         self.assertEqual(topo_instances[0]['relations'][0]['type']['name'], 'vsphere-vm-uses-datastore')
+
+    def test_get_topologyitems_with_vm_regexes(self):
+        """
+        Test if it returns the vm as per filter config
+        """
+        instance = {'name': 'vsphere_mock', 'host': "ESXi", "vm_include_only_regex": "VM"}
+        config = {}
+        self.load_check(config)
+        # self.check._is_excluded = MagicMock(return_value=False)
+
+        server_mock = MagicMock()
+        server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("vm")})
+        self.check._get_server_instance = MagicMock(return_value=server_mock)
+
+        topo_dict = self.check.get_topologyitems_sync(instance)
+        self.assertEqual(len(topo_dict["vms"]), 0)
+
+    def test_get_topologyitems_with_host_regexes(self):
+        """
+        Test if it returns the hosts as per filter config
+        """
+        instance = {'name': 'vsphere_mock', 'host': "ESXi", "host_include_only_regex": "localhost"}
+        config = {}
+        self.load_check(config)
+        # self.check._is_excluded = MagicMock(return_value=False)
+
+        server_mock = MagicMock()
+        server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("host")})
+        self.check._get_server_instance = MagicMock(return_value=server_mock)
+
+        topo_dict = self.check.get_topologyitems_sync(instance)
+        self.assertEqual(len(topo_dict["hosts"]), 1)

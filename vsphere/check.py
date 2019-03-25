@@ -1001,35 +1001,35 @@ class VSphereCheck(AgentCheck):
         for c in container.view:
             topology_tags = {}
             labels = []
-            if not self._is_excluded(c, regexes, include_only_marked):
-                hostname = c.name
-                if isinstance(c, vim.Datacenter):
-                    datastores = []
-                    for datastore in c.datastore:
-                        datastores.append(datastore.name)
-                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATACENTER
-                    topology_tags["datastores"] = datastores
-                    topology_tags["name"] = c.name
-                    topology_tags["id"] = c._moId
-                    topology_tags["layer"] = TOPOLOGY_LAYERS.DATACENTER
-                    topology_tags["domain"] = domain
+            hostname = c.name
 
-                    computeresources = []
-                    clustercomputeresources = []
+            if isinstance(c, vim.Datacenter):
+                datastores = []
+                for datastore in c.datastore:
+                    datastores.append(datastore.name)
+                topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATACENTER
+                topology_tags["datastores"] = datastores
+                topology_tags["name"] = c.name
+                topology_tags["id"] = c._moId
+                topology_tags["layer"] = TOPOLOGY_LAYERS.DATACENTER
+                topology_tags["domain"] = domain
 
-                    for computeres in c.hostFolder.childEntity:
-                        if isinstance(computeres, vim.ComputeResource):
-                            computeresources.append(computeres.name)
-                        elif isinstance(computeres, vim.CloudComputeResource):
-                            clustercomputeresources.append(computeres.name)
+                computeresources = []
+                clustercomputeresources = []
 
-                    topology_tags["computeresources"] = computeresources
-                    topology_tags["clustercomputeresources"] = clustercomputeresources
+                for computeres in c.hostFolder.childEntity:
+                    if isinstance(computeres, vim.ComputeResource):
+                        computeresources.append(computeres.name)
+                    elif isinstance(computeres, vim.CloudComputeResource):
+                        clustercomputeresources.append(computeres.name)
 
-                    add_label_pair(labels, "name", topology_tags["name"])
-                    hostname = None
-                topology_tags["labels"] = labels
-                obj_list.append(dict(mor_type="datacenter", mor=c, hostname=hostname, topo_tags=topology_tags))
+                topology_tags["computeresources"] = computeresources
+                topology_tags["clustercomputeresources"] = clustercomputeresources
+
+                add_label_pair(labels, "name", topology_tags["name"])
+                hostname = None
+            topology_tags["labels"] = labels
+            obj_list.append(dict(mor_type="datacenter", mor=c, hostname=hostname, topo_tags=topology_tags))
 
         return obj_list
 
@@ -1043,28 +1043,29 @@ class VSphereCheck(AgentCheck):
         for c in container.view:
             topology_tags = {}
             labels = []
-            if not self._is_excluded(c, regexes, include_only_marked):
-                hostname = c.name
-                if isinstance(c, vim.Datastore):
-                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATASTORE
-                    topology_tags["name"] = c.name
-                    topology_tags["accessible"] = c.summary.accessible
-                    topology_tags["capacity"] = c.summary.capacity
-                    topology_tags["type"] = c.summary.type
-                    topology_tags["url"] = c.summary.url
-                    topology_tags["layer"] = TOPOLOGY_LAYERS.DATASTORE
-                    topology_tags["domain"] = domain
+            hostname = c.name
 
-                    add_label_pair(labels, "name", topology_tags["name"])
+            if isinstance(c, vim.Datastore):
+                topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.DATASTORE
+                topology_tags["name"] = c.name
+                topology_tags["accessible"] = c.summary.accessible
+                topology_tags["capacity"] = c.summary.capacity
+                topology_tags["type"] = c.summary.type
+                topology_tags["url"] = c.summary.url
+                topology_tags["layer"] = TOPOLOGY_LAYERS.DATASTORE
+                topology_tags["domain"] = domain
 
-                    vms = []
-                    for vm in c.vm:
+                add_label_pair(labels, "name", topology_tags["name"])
+
+                vms = []
+                for vm in c.vm:
+                    if not self._is_excluded(vm, regexes, include_only_marked):
                         vms.append(vm.name)
 
-                    topology_tags["vms"] = vms
-                    hostname = None
-                topology_tags["labels"] = labels
-                obj_list.append(dict(mor_type="datastore", mor=c, hostname=hostname, topo_tags=topology_tags))
+                topology_tags["vms"] = vms
+                hostname = None
+            topology_tags["labels"] = labels
+            obj_list.append(dict(mor_type="datastore", mor=c, hostname=hostname, topo_tags=topology_tags))
 
         return obj_list
 
@@ -1093,7 +1094,8 @@ class VSphereCheck(AgentCheck):
                     host_vms = []
 
                     for vm in c.vm:
-                        host_vms.append(vm.name)
+                        if not self._is_excluded(vm, regexes, include_only_marked):
+                            host_vms.append(vm.name)
                     for ds in c.datastore:
                         host_datastores.append(ds.name)
 
@@ -1122,27 +1124,27 @@ class VSphereCheck(AgentCheck):
         for c in container.view:
             topology_tags = {}
             labels = []
-            if not self._is_excluded(c, regexes, include_only_marked):
-                hostname = c.name
+            hostname = c.name
 
-                if isinstance(c, vim.ClusterComputeResource):
-                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTERCOMPUTERESOURCE
-                    topology_tags["name"] = c.name
-                    topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
-                    topology_tags["domain"] = domain
+            if isinstance(c, vim.ClusterComputeResource):
+                topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.CLUSTERCOMPUTERESOURCE
+                topology_tags["name"] = c.name
+                topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
+                topology_tags["domain"] = domain
 
-                    datastores = []
-                    hosts = []
-                    for ds in c.datastore:
-                        datastores.append(ds.name)
-                    for host in c.host:
+                datastores = []
+                hosts = []
+                for ds in c.datastore:
+                    datastores.append(ds.name)
+                for host in c.host:
+                    if not self._is_excluded(host, regexes, include_only_marked):
                         hosts.append(host.name)
 
-                    topology_tags["hosts"] = hosts
-                    topology_tags["datastores"] = datastores
-                    add_label_pair(labels, "name", topology_tags["name"])
-                topology_tags["labels"] = labels
-                obj_list.append(dict(mor_type="clustercomputeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
+                topology_tags["hosts"] = hosts
+                topology_tags["datastores"] = datastores
+                add_label_pair(labels, "name", topology_tags["name"])
+            topology_tags["labels"] = labels
+            obj_list.append(dict(mor_type="clustercomputeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
 
         return obj_list
 
@@ -1156,28 +1158,28 @@ class VSphereCheck(AgentCheck):
         for c in container.view:
             topology_tags = {}
             labels = []
-            if not self._is_excluded(c, regexes, include_only_marked):
-                hostname = c.name
+            hostname = c.name
 
-                if isinstance(c, vim.ComputeResource):
-                    topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE
-                    topology_tags["name"] = c.name
-                    topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
-                    topology_tags["domain"] = domain
+            if isinstance(c, vim.ComputeResource):
+                topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.COMPUTERESOURCE
+                topology_tags["name"] = c.name
+                topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
+                topology_tags["domain"] = domain
 
-                    datastores = []
-                    hosts = []
+                datastores = []
+                hosts = []
 
-                    for ds in c.datastore:
-                        datastores.append(ds.name)
-                    for host in c.host:
+                for ds in c.datastore:
+                    datastores.append(ds.name)
+                for host in c.host:
+                    if not self._is_excluded(host, regexes, include_only_marked):
                         hosts.append(host.name)
 
-                    topology_tags["hosts"] = hosts
-                    topology_tags["datastores"] = datastores
-                    add_label_pair(labels, "name", topology_tags["name"])
-                topology_tags["labels"] = labels
-                obj_list.append(dict(mor_type="computeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
+                topology_tags["hosts"] = hosts
+                topology_tags["datastores"] = datastores
+                add_label_pair(labels, "name", topology_tags["name"])
+            topology_tags["labels"] = labels
+            obj_list.append(dict(mor_type="computeresource", mor=c, hostname=hostname, topo_tags=topology_tags))
 
         return obj_list
 
@@ -1186,12 +1188,17 @@ class VSphereCheck(AgentCheck):
         content = server_instance.RetrieveContent()
         domain = instance["host"]  # candidate also name
 
-        vms = self._vsphere_vms(content, domain)
-        hosts = self._vsphere_hosts(content, domain)
+        regexes = {
+            'host_include': instance.get('host_include_only_regex'),
+            'vm_include': instance.get('vm_include_only_regex')
+        }
+
+        vms = self._vsphere_vms(content, domain, regexes)
+        hosts = self._vsphere_hosts(content, domain, regexes)
         datacenters = self._vsphere_datacenters(content, domain)
-        datastores = self._vsphere_datastores(content, domain)
-        clustercomputeresources = self._vsphere_clustercomputeresources(content, domain)
-        computeresource = self._vsphere_computeresources(content, domain)
+        datastores = self._vsphere_datastores(content, domain, regexes)
+        clustercomputeresources = self._vsphere_clustercomputeresources(content, domain, regexes)
+        computeresource = self._vsphere_computeresources(content, domain, regexes)
 
         return {
             "vms": vms,

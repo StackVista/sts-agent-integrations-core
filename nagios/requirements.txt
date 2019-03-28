@@ -1,1 +1,2 @@
 # integration pip requirements
+pynag==0.9.1

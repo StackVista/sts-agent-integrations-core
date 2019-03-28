@@ -7,6 +7,9 @@ import re
 from checks import AgentCheck
 from utils.tailfile import TailFile
 
+# 3rd party lib
+from pynag import Model
+
 # fields order for each event type, as named tuples
 EVENT_FIELDS = {
     'CURRENT HOST STATE':       namedtuple('E_CurrentHostState', 'host, event_state, event_soft_hard, return_code, payload'),
@@ -53,6 +56,7 @@ RE_LINE_EXT = re.compile('^\[(\d+)\] ([^:]+): (.*)$')
 
 class Nagios(AgentCheck):
 
+    INSTANCE_TYPE = "nagios"
     NAGIOS_CONF_KEYS = [
         re.compile('^(?P<key>log_file)\s*=\s*(?P<value>.+)$'),
         re.compile('^(?P<key>host_perfdata_file_template)\s*=\s*(?P<value>.+)$'),
@@ -172,6 +176,24 @@ class Nagios(AgentCheck):
             raise Exception('No Nagios configuration file specified')
         for tailer in self.nagios_tails[instance_key]:
             tailer.check()
+        i_key = {"type": self.INSTANCE_TYPE, "conf": instance.get("nagios_conf")}
+        self.start_snapshot(i_key)
+        self.get_topology(i_key)
+        self.stop_snapshot(i_key)
+
+    def get_topology(self, instance_key):
+
+        # Get all hosts
+
+        all_hosts = Model.Host.objects.all
+        for host in all_hosts:
+            if host.host_name is None:
+                continue
+            id = host.host_name
+            type = {
+                "name": "host"
+            }
+            self.component(instance_key, id, type)
 
 
 class NagiosTailer(object):

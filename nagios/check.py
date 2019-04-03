@@ -176,7 +176,7 @@ class Nagios(AgentCheck):
             raise Exception('No Nagios configuration file specified')
         for tailer in self.nagios_tails[instance_key]:
             tailer.check()
-        i_key = {"type": self.INSTANCE_TYPE, "conf": instance.get("nagios_conf")}
+        i_key = {"type": self.INSTANCE_TYPE, "url": instance.get("nagios_conf")}
         self.start_snapshot(i_key)
         self.get_topology(i_key)
         self.stop_snapshot(i_key)
@@ -193,7 +193,11 @@ class Nagios(AgentCheck):
             type = {
                 "name": "host"
             }
-            self.component(instance_key, id, type)
+            data = {
+                "name": host.host_name.strip(),
+                "tags": "nagios-server:"+id
+            }
+            self.component(instance_key, id, type, data)
 
 
 class NagiosTailer(object):
@@ -222,7 +226,7 @@ class NagiosTailer(object):
             self.compile_file_template(file_template)
 
         self.tail = TailFile(self.log, self.log_path, self._parse_line)
-        self.gen = self.tail.tail(line_by_line=False, move_end=True)
+        self.gen = self.tail.tail(line_by_line=False, move_end=False)
         self.gen.next()
 
     def check(self):

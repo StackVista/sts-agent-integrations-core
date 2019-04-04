@@ -177,27 +177,26 @@ class Nagios(AgentCheck):
         for tailer in self.nagios_tails[instance_key]:
             tailer.check()
         i_key = {"type": self.INSTANCE_TYPE, "url": instance.get("nagios_conf")}
-        self.start_snapshot(i_key)
         self.get_topology(i_key)
-        self.stop_snapshot(i_key)
 
     def get_topology(self, instance_key):
 
         # Get all hosts
-
+        self.start_snapshot(instance_key)
         all_hosts = Model.Host.objects.all
         for host in all_hosts:
             if host.host_name is None:
                 continue
             id = host.host_name
             type = {
-                "name": "host"
+                "name": "nagios-host"
             }
             data = {
                 "name": host.host_name.strip(),
                 "tags": "nagios-server:"+id
             }
             self.component(instance_key, id, type, data)
+        self.stop_snapshot(instance_key)
 
 
 class NagiosTailer(object):

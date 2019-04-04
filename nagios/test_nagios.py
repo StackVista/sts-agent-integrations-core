@@ -6,7 +6,6 @@
 import tempfile
 import time
 import os
-import mock
 
 # 3p
 from nose.plugins.attrib import attr

@@ -6,9 +6,11 @@
 import tempfile
 import time
 import os
+import mock
 
 # 3p
 from nose.plugins.attrib import attr
+from pynag.Utils import misc
 
 # project
 from tests.checks.common import AgentCheckTest, Fixtures
@@ -415,3 +417,35 @@ class PerfDataTailerTestCase(NagiosTestCase):
             self.compare_metric(actual, expected)
 
         self.coverage_report()
+
+
+class NagiosTopologyTest(NagiosTestCase):
+
+    def test_get_topology(self):
+        """
+            Collect Nagios Host components as topology
+        """
+        instance = {"nagios_conf": "dummy/path/nagios.cfg"}
+        i_key = {"type": "nagios", "url": "192.1.1.1", "conf_path": instance.get("nagios_conf")}
+        self.load_check(instance)
+        self.check.parse_nagios_config = mock.MagicMock()
+        self.check.parse_nagios_config.return_value = {"key": "value"}
+
+        # Creates a fake nagios environment with minimal configs in /tmp/
+        self.environment = misc.FakeNagiosEnvironment()
+        # Create temporary director with minimal config and one by default host 'ok_host'
+        self.environment.create_minimal_environment()
+        # Update the global variables in pynag.Model
+        self.environment.update_model()
+
+        cfg_file = os.path.join(FIXTURE_DIR, 'fixtures/host.cfg')
+        self.environment.import_config(cfg_file)
+        self.environment.config.parse_maincfg()
+
+        self.check.get_topology(i_key)
+        instances = self.check.get_topology_instances()
+
+        # topology should return 3 components, 2 from cfg and 1 default
+        self.assertEqual(len(instances[0].get('components')), 3, "Topology has 3 host components")
+        # topology should return 1st host name as components from host.cfg
+        self.assertEqual(instances[0].get('components')[0].get('externalId'), 'prod-api-1')

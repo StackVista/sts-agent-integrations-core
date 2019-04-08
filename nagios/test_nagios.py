@@ -6,14 +6,21 @@
 import tempfile
 import time
 import os
+import mock
 
 # 3p
 from nose.plugins.attrib import attr
+from pynag.Utils import misc
 
 # project
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
+
+
+def mocked_topology(*args, **kwargs):
+    return {'instance': {'key': 'dummy'}, 'components': []}
+
 
 class NagiosTestCase(AgentCheckTest):
     CHECK_NAME = 'nagios'
@@ -52,8 +59,7 @@ class EventLogTailerTestCase(NagiosTestCase):
             events=True
         )
 
-        self.run_check(config)
-
+        self.run_check(config, mocks={"get_topology": mocked_topology})
         nagios_tailer = self.check.nagios_tails[self.nagios_cfg.name][0]
         counters = {}
 
@@ -112,12 +118,14 @@ class EventLogTailerTestCase(NagiosTestCase):
         f.flush()
 
         config = self.get_config('\n'.join(["log_file={0}".format(f.name)]), events=True)
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
+
 
         for i in range(ITERATIONS):
             f.write(x)
             f.flush()
-            self.run_check(config)
+            self.run_check(config, mocks={"get_topology": mocked_topology})
             events.extend(self.events)
         f.close()
         self.assertEquals(len(events), ITERATIONS * 503)
@@ -210,7 +218,8 @@ class PerfDataTailerTestCase(NagiosTestCase):
         config = self.get_config(
             '\n'.join(["service_perfdata_file=%s" % self.log_file.name, "service_perfdata_file_template=DATATYPE::SERVICEPERFDATA\tTIMET::$TIMET$\tHOSTNAME::$HOSTNAME$\tSERVICEDESC::$SERVICEDESC$\tSERVICEPERFDATA::$SERVICEPERFDATA$\tSERVICECHECKCOMMAND::$SERVICECHECKCOMMAND$\tHOSTSTATE::$HOSTSTATE$\tHOSTSTATETYPE::$HOSTSTATETYPE$\tSERVICESTATE::$SERVICESTATE$\tSERVICESTATETYPE::$SERVICESTATETYPE$"]),
             service_perf=True)
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Write content to log file and run check
         self._write_log(['\t'.join(data) for data in self.DB_LOG_DATA])
@@ -244,7 +253,8 @@ class PerfDataTailerTestCase(NagiosTestCase):
         config = self.get_config(
             '\n'.join(["service_perfdata_file=%s" % self.log_file.name, "service_perfdata_file_template=DATATYPE::SERVICEPERFDATA\tTIMET::$TIMET$\tHOSTNAME::$HOSTNAME$\tSERVICEDESC::$SERVICEDESC$\tSERVICEPERFDATA::$SERVICEPERFDATA$\tSERVICECHECKCOMMAND::$SERVICECHECKCOMMAND$\tHOSTSTATE::$HOSTSTATE$\tHOSTSTATETYPE::$HOSTSTATETYPE$\tSERVICESTATE::$SERVICESTATE$\tSERVICESTATETYPE::$SERVICESTATETYPE$",]),
             service_perf=True)
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Write content to log file and run check
         self._write_log(['\t'.join(data) for data in self.DISK_LOG_DATA])
@@ -277,11 +287,12 @@ class PerfDataTailerTestCase(NagiosTestCase):
         config = self.get_config(
             '\n'.join(["host_perfdata_file=%s" % self.log_file.name, "host_perfdata_file_template=DATATYPE::HOSTPERFDATA\tTIMET::$TIMET$\tHOSTNAME::$HOSTNAME$\tHOSTPERFDATA::$HOSTPERFDATA$\tHOSTCHECKCOMMAND::$HOSTCHECKCOMMAND$\tHOSTSTATE::$HOSTSTATE$\tHOSTSTATETYPE::$HOSTSTATETYPE$"]),
             host_perf=True)
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Write content to log file and run check
         self._write_log(['\t'.join(data) for data in self.HOST_LOG_DATA])
-        self.run_check(config)
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Test metric
         service_perf_data = self.HOST_LOG_DATA[0][3][14:]
@@ -315,7 +326,8 @@ class PerfDataTailerTestCase(NagiosTestCase):
             ["service_perfdata_file=%s" % perfdata_file.name, "service_perfdata_file_template=%s" % self.NAGIOS_TEST_SVC_TEMPLATE]),
             service_perf=True
         )
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         with open(self.NAGIOS_TEST_SVC, "r") as f:
             nagios_perf = f.read()
@@ -323,7 +335,7 @@ class PerfDataTailerTestCase(NagiosTestCase):
         perfdata_file.write(nagios_perf)
         perfdata_file.flush()
 
-        self.run_check(config)
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Test metrics
         expected_output = [
@@ -372,7 +384,8 @@ class PerfDataTailerTestCase(NagiosTestCase):
         config = self.get_config(
             '\n'.join(["host_perfdata_file=%s" % perfdata_file.name, "host_perfdata_file_template=%s" % self.NAGIOS_TEST_HOST_TEMPLATE]),
             host_perf=True)
-        self.run_check(config)
+
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         with open(self.NAGIOS_TEST_HOST, "r") as f:
             nagios_perf = f.read()
@@ -380,7 +393,7 @@ class PerfDataTailerTestCase(NagiosTestCase):
         perfdata_file.write(nagios_perf)
         perfdata_file.flush()
 
-        self.run_check(config)
+        self.run_check(config, mocks={"get_topology": mocked_topology})
 
         # Test metrics
         expected_output = [
@@ -404,3 +417,35 @@ class PerfDataTailerTestCase(NagiosTestCase):
             self.compare_metric(actual, expected)
 
         self.coverage_report()
+
+
+class NagiosTopologyTest(NagiosTestCase):
+
+    def test_get_topology(self):
+        """
+            Collect Nagios Host components as topology
+        """
+        instance = {"nagios_conf": "dummy/path/nagios.cfg"}
+        i_key = {"type": "nagios", "url": "192.1.1.1", "conf_path": instance.get("nagios_conf")}
+        self.load_check(instance)
+        self.check.parse_nagios_config = mock.MagicMock()
+        self.check.parse_nagios_config.return_value = {"key": "value"}
+
+        # Creates a fake nagios environment with minimal configs in /tmp/
+        self.environment = misc.FakeNagiosEnvironment()
+        # Create temporary director with minimal config and one by default host 'ok_host'
+        self.environment.create_minimal_environment()
+        # Update the global variables in pynag.Model
+        self.environment.update_model()
+
+        cfg_file = os.path.join(FIXTURE_DIR, 'fixtures/host.cfg')
+        self.environment.import_config(cfg_file)
+        self.environment.config.parse_maincfg()
+
+        self.check.get_topology(i_key)
+        instances = self.check.get_topology_instances()
+
+        # topology should return 3 components, 2 from cfg and 1 default
+        self.assertEqual(len(instances[0].get('components')), 3, "Topology has 3 host components")
+        # topology should return 1st host name as components from host.cfg
+        self.assertEqual(instances[0].get('components')[0].get('externalId'), 'prod-api-1')

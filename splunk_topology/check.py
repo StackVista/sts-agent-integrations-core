@@ -8,6 +8,7 @@ import sys
 import time
 
 from checks import AgentCheck, CheckException
+from checks.check_status import CheckData
 from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
 from utils.splunk.splunk_helper import SplunkHelper
 
@@ -83,6 +84,9 @@ class SplunkTopology(AgentCheck):
         super(SplunkTopology, self).__init__(name, init_config, agentConfig, instances)
         # Data to keep over check runs, keyed by instance url
         self.instance_data = dict()
+        self.persistence_check_name = "splunk_topology"
+        self.status = None
+        self.load_status()
 
     def check(self, instance):
         if 'url' not in instance:
@@ -126,8 +130,17 @@ class SplunkTopology(AgentCheck):
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
+
+        # don't dispatch if sids present
+        if self.status.data.get(instance.instance_config.base_url) is not None:
+            for (sid, saved_search) in self.status.data[instance.instance_config.base_url]:
+                instance.splunkHelper.finalize_sid(sid, saved_search)
+            self.status.data[instance.instance_config.base_url] = []
+            self.log.info("Finished all search ids")
+
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]
+
         all_success = True
 
         for (sid, saved_search) in search_ids:
@@ -197,7 +210,12 @@ class SplunkTopology(AgentCheck):
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
+        sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
+        if self.status.data.get(instance.instance_config.base_url) is None:
+            self.status.data[instance.instance_config.base_url] = []
+        self.status.data.get(instance.instance_config.base_url).append(sid)
+        self.status.persist(self.persistence_check_name)
+        return sid
 
     def _extract_components(self, instance, result):
         fail_count = 0
@@ -258,3 +276,15 @@ class SplunkTopology(AgentCheck):
     def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
         instance.splunkHelper.auth_session()
+
+    def clear_status(self):
+        """
+        This function is only used from test code to act as if the check is running for the first time
+        """
+        CheckData.remove_latest_status(self.persistence_check_name)
+        self.load_status()
+
+    def load_status(self):
+        self.status = CheckData.load_latest_status(self.persistence_check_name)
+        if self.status is None:
+            self.status = CheckData()

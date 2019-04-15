@@ -69,7 +69,6 @@ class Instance:
 
         self.polling_interval_seconds = int(instance.get('polling_interval_seconds', self.instance_config.default_polling_interval_seconds))
         self.saved_searches_parallel = int(instance.get('saved_searches_parallel', self.instance_config.default_saved_searches_parallel))
-
         self.last_successful_poll_epoch_seconds = None
 
     def should_poll(self, time_seconds):
@@ -136,6 +135,7 @@ class SplunkTopology(AgentCheck):
             for (sid, saved_search) in self.status.data[instance.instance_config.base_url]:
                 instance.splunkHelper.finalize_sid(sid, saved_search)
             self.status.data[instance.instance_config.base_url] = []
+            self.status.persist(self.persistence_check_name)
             self.log.info("Finished all search ids")
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
@@ -193,6 +193,9 @@ class SplunkTopology(AgentCheck):
     def _search(self, search_id, saved_search, instance):
         return instance.splunkHelper.saved_search_results(search_id, saved_search)
 
+    def _status(self):
+        return self.status
+
     def _dispatch_saved_search(self, instance, saved_search):
         """
         Initiate a saved search, returning the search id
@@ -213,7 +216,7 @@ class SplunkTopology(AgentCheck):
         sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
         if self.status.data.get(instance.instance_config.base_url) is None:
             self.status.data[instance.instance_config.base_url] = []
-        self.status.data.get(instance.instance_config.base_url).append(sid)
+        self.status.data.get(instance.instance_config.base_url).append((sid, saved_search))
         self.status.persist(self.persistence_check_name)
         return sid
 

@@ -1,17 +1,21 @@
 # stdlib
 import json
 import os
+import mock
 
 from checks import CheckException
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
+
 def _mocked_saved_searches(*args, **kwargs):
     return []
 
+
 def _mocked_auth_session(instance_key):
     return "sessionKey1"
+
 
 class TestSplunkNoTopology(AgentCheckTest):
     """
@@ -131,6 +135,56 @@ class TestSplunkTopology(AgentCheckTest):
         self.assertEquals(instances[0]["stop_snapshot"], True)
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
+    def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+
+        # mock the splunkhelper dispatch return value
+        mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="components")
+
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        first_persistent_data = self.check._status().data.get(instance.get('url'))
+
+        # mock the splunkhelper finalize call
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            # '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        }, force_reload=True)
+
+        second_persistent_data = self.check._status().data.get(instance.get('url'))
+
+        # Both persistent data should have different saved search object id as first one is finished
+        self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
 
 
 class TestSplunkNoSnapshot(AgentCheckTest):

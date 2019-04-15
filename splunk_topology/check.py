@@ -194,6 +194,7 @@ class SplunkTopology(AgentCheck):
         return instance.splunkHelper.saved_search_results(search_id, saved_search)
 
     def _status(self):
+        """ This method is mocked for testing. """
         return self.status
 
     def _dispatch_saved_search(self, instance, saved_search):
@@ -279,13 +280,6 @@ class SplunkTopology(AgentCheck):
     def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
         instance.splunkHelper.auth_session()
-
-    def clear_status(self):
-        """
-        This function is only used from test code to act as if the check is running for the first time
-        """
-        CheckData.remove_latest_status(self.persistence_check_name)
-        self.load_status()
 
     def load_status(self):
         self.status = CheckData.load_latest_status(self.persistence_check_name)

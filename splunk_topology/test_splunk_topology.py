@@ -175,7 +175,6 @@ class TestSplunkTopology(AgentCheckTest):
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
-            # '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session
@@ -183,7 +182,8 @@ class TestSplunkTopology(AgentCheckTest):
 
         second_persistent_data = self.check._status().data.get(instance.get('url'))
 
-        # Both persistent data should have different saved search object id as first one is finished
+        # The second run_check will finalize the previous saved search ids and create a new one,
+        # so we make sure this is the case
         self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
 
 

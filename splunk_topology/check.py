@@ -134,8 +134,7 @@ class SplunkTopology(AgentCheck):
         if self.status.data.get(instance.instance_config.base_url) is not None:
             for (sid, saved_search) in self.status.data[instance.instance_config.base_url]:
                 instance.splunkHelper.finalize_sid(sid, saved_search)
-            self.status.data[instance.instance_config.base_url] = []
-            self.status.persist(self.persistence_check_name)
+            self.update_persistent_status(instance)
             self.log.info("Finished all search ids")
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
@@ -215,10 +214,7 @@ class SplunkTopology(AgentCheck):
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
         sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
-        if self.status.data.get(instance.instance_config.base_url) is None:
-            self.status.data[instance.instance_config.base_url] = []
-        self.status.data.get(instance.instance_config.base_url).append((sid, saved_search))
-        self.status.persist(self.persistence_check_name)
+        self.update_persistent_status(instance, (sid, saved_search))
         return sid
 
     def _extract_components(self, instance, result):
@@ -285,3 +281,13 @@ class SplunkTopology(AgentCheck):
         self.status = CheckData.load_latest_status(self.persistence_check_name)
         if self.status is None:
             self.status = CheckData()
+
+    def update_persistent_status(self, instance, data=None):
+        if data:
+            if self.status.data.get(instance.instance_config.base_url) is None:
+                self.status.data[instance.instance_config.base_url] = []
+            self.status.data.get(instance.instance_config.base_url).append(data)
+        else:
+            self.status.data[instance.instance_config.base_url] = None
+        self.status.persist(self.persistence_check_name)
+

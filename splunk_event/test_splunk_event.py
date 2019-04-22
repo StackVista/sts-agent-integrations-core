@@ -1,6 +1,7 @@
 # stdlib
 import json
 import os
+import mock
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
@@ -136,6 +137,67 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'msg_text': None,
             'source_type_name': None
         })
+
+    @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
+    def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001/',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+
+        # mock the splunkhelper dispatch return value
+        mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="minimal_events")
+
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        first_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
+
+        # mock the splunkhelper finalize call
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=200)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        }, force_reload=True)
+
+        second_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
+        # The second run_check will finalize the previous saved search ids and create a new one,
+        # so we make sure this is the case
+        self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
+
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=404)
+
+        # Run the check 3rd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        }, force_reload=True)
+
+        third_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
+        # The third run with 404 status shouldn't delete the sid and new one will be added
+        self.assertEqual(len(third_persistent_data), 2)
 
 class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
     """

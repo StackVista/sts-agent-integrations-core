@@ -133,9 +133,9 @@ class SplunkTopology(AgentCheck):
         # don't dispatch if sids present
         if self.status.data.get(instance.instance_config.base_url) is not None:
             for (sid, saved_search) in self.status.data[instance.instance_config.base_url]:
-                instance.splunkHelper.finalize_sid(sid, saved_search)
-            self.update_persistent_status(instance, None)
-            self.log.info("Finished all search ids")
+                res_code = instance.splunkHelper.finalize_sid(sid, saved_search)
+                if res_code == 200:
+                    self.update_persistent_status(instance.instance_config.base_url, None, (sid, saved_search), 'remove')
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]
@@ -214,7 +214,7 @@ class SplunkTopology(AgentCheck):
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
         sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
-        self.update_persistent_status(instance, (sid, saved_search))
+        self.update_persistent_status(instance.instance_config.base_url, None, (sid, saved_search), 'add')
         return sid
 
     def _extract_components(self, instance, result):
@@ -282,11 +282,24 @@ class SplunkTopology(AgentCheck):
         if self.status is None:
             self.status = CheckData()
 
-    def update_persistent_status(self, instance, data):
-        if data:
-            if self.status.data.get(instance.instance_config.base_url) is None:
-                self.status.data[instance.instance_config.base_url] = []
-            self.status.data.get(instance.instance_config.base_url).append(data)
+    def update_persistent_status(self, base_url, qualifier, data, action):
+        """
+        :param base_url: base_url of the instance
+        :param qualifier: a string used for making a unique key
+        :param data: data to append, remove or assign
+        :param action: action like append, remove or assign to perform
+
+        This method persists the storage for the key when it is modified
+        """
+        key = base_url + qualifier if qualifier else base_url
+        if action == 'remove':
+            self.status.data.get(key).remove(data)
+            if not self.status.data[key]:
+                self.status.data[key] = None
+        elif action == 'add':
+            if self.status.data.get(key) is None:
+                self.status.data[key] = []
+            self.status.data.get(key).append(data)
         else:
-            self.status.data[instance.instance_config.base_url] = None
+            self.status.data[key] = data
         self.status.persist(self.persistence_check_name)

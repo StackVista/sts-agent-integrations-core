@@ -1,6 +1,7 @@
 # stdlib
 import json
 import os
+import mock
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
@@ -8,20 +9,25 @@ from checks import CheckException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
+
 def _mocked_saved_searches(*args, **kwargs):
     return []
+
 
 def _mocked_dispatch_saved_search(*args, **kwargs):
     # Sid is equal to search name
     return args[1].name
+
 
 def _mocked_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
     return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
+
 def _mocked_auth_session(instance_config):
     return "sessionKey1"
+
 
 class TestSplunkErrorResponse(AgentCheckTest):
     """
@@ -61,6 +67,76 @@ class TestSplunkErrorResponse(AgentCheckTest):
 
         self.assertEquals(len(self.service_checks), 2)
         self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+
+class TestSplunkMetric(AgentCheckTest):
+    """
+        Splunk metric check should handle already available search ids
+    """
+    CHECK_NAME = 'splunk_metric'
+
+    @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
+    def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089/',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+
+        # mock the splunkhelper dispatch return value
+        mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="minimal_metrics")
+
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        # print(dir(self.check))
+        print(self.check.status.data)
+        first_persistent_data = self.check.status.data.get(instance.get('url')+"minimal_metrics")
+
+        # mock the splunkhelper finalize call
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=200)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        }, force_reload=True)
+
+        second_persistent_data = self.check.status.data.get(instance.get('url')+"minimal_metrics")
+        # The second run_check will finalize the previous saved search ids and create a new one,
+        # so we make sure this is the case
+        self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
+
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=404)
+
+        # Run the check 3rd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        }, force_reload=True)
+
+        third_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_metrics")
+        # The third run with 404 status shouldn't delete the sid and new one will be added
+        self.assertEqual(len(third_persistent_data), 2)
 
 
 class TestSplunkEmptyMetrics(AgentCheckTest):

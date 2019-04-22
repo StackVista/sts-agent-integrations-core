@@ -171,7 +171,7 @@ class TestSplunkTopology(AgentCheckTest):
         first_persistent_data = self.check._status().data.get(instance.get('url'))
 
         # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=200)
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
@@ -181,6 +181,9 @@ class TestSplunkTopology(AgentCheckTest):
         }, force_reload=True)
 
         second_persistent_data = self.check._status().data.get(instance.get('url'))
+
+        # clear the persistent data created
+        self.check.update_persistent_status(instance.get('url'), None, None, 'clear')
 
         # The second run_check will finalize the previous saved search ids and create a new one,
         # so we make sure this is the case

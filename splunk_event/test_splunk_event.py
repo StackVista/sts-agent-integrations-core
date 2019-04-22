@@ -196,6 +196,8 @@ class TestSplunkMinimalEvents(AgentCheckTest):
         }, force_reload=True)
 
         third_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
+        # clear the persistent data created
+        self.check.update_persistent_status(instance.get('url'), "minimal_events", None, 'clear')
         # The third run with 404 status shouldn't delete the sid and new one will be added
         self.assertEqual(len(third_persistent_data), 2)
 

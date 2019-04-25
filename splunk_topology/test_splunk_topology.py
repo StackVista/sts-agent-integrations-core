@@ -3,7 +3,7 @@ import json
 import os
 import mock
 
-from checks import CheckException
+from checks import CheckException, FinalizeException
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
@@ -144,7 +144,7 @@ class TestSplunkTopology(AgentCheckTest):
             'init_config': {},
             'instances': [
                 {
-                    'url': 'http://localhost:8089',
+                    'url': 'http://localhost:8089/',
                     'username': "admin",
                     'password': "admin",
                     'component_saved_searches': [{
@@ -168,10 +168,10 @@ class TestSplunkTopology(AgentCheckTest):
             '_auth_session': _mocked_auth_session
         })
 
-        first_persistent_data = self.check._status().data.get(instance.get('url'))
+        first_persistent_data = self.check._status().data.get(instance.get('url')+"components")
 
         # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=200)
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
@@ -180,14 +180,28 @@ class TestSplunkTopology(AgentCheckTest):
             '_auth_session': _mocked_auth_session
         }, force_reload=True)
 
-        second_persistent_data = self.check._status().data.get(instance.get('url'))
-
-        # clear the persistent data created
-        self.check.update_persistent_status(instance.get('url'), None, None, 'clear')
-
-        # The second run_check will finalize the previous saved search ids and create a new one,
+        second_persistent_data = self.check._status().data.get(instance.get('url')+"components")
+        # The second run_check will finalize the previous saved search id and create a new one,
         # so we make sure this is the case
-        self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
+        self.assertEqual(first_persistent_data, second_persistent_data)
+
+        # mock the splunkhelper finalize call
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(side_effect=FinalizeException(None, "Error"))
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
+            }, force_reload=True)
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown)
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+        # clear the persistent data created
+        self.check.update_persistent_status(instance.get('url'), "components", None, 'clear')
 
 
 class TestSplunkNoSnapshot(AgentCheckTest):

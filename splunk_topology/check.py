@@ -7,7 +7,7 @@
 import sys
 import time
 
-from checks import AgentCheck, CheckException
+from checks import AgentCheck, CheckException, FinalizeException
 from checks.check_status import CheckData
 from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
 from utils.splunk.splunk_helper import SplunkHelper
@@ -131,11 +131,16 @@ class SplunkTopology(AgentCheck):
         start_time = time.time()
 
         # don't dispatch if sids present
-        if self.status.data.get(instance.instance_config.base_url) is not None:
-            for (sid, saved_search) in self.status.data[instance.instance_config.base_url]:
-                res_code = instance.splunkHelper.finalize_sid(sid, saved_search)
-                if res_code == 200:
-                    self.update_persistent_status(instance.instance_config.base_url, None, (sid, saved_search), 'remove')
+        for saved_search in saved_searches:
+            try:
+                persist_status_key = instance.instance_config.base_url + saved_search.name
+                if self.status.data.get(persist_status_key) is not None:
+                    sid = self.status.data[persist_status_key]
+                    instance.splunkHelper.finalize_sid(sid, saved_search)
+                    self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'remove')
+            except FinalizeException as e:
+                self.log.error("Got an error %s while finalizing the saved search %s".format(e.message, saved_search.name))
+                raise e
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]
@@ -214,7 +219,7 @@ class SplunkTopology(AgentCheck):
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
         sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
-        self.update_persistent_status(instance.instance_config.base_url, None, (sid, saved_search), 'add')
+        self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'add')
         return sid
 
     def _extract_components(self, instance, result):
@@ -293,14 +298,7 @@ class SplunkTopology(AgentCheck):
         """
         key = base_url + qualifier if qualifier else base_url
         if action == 'remove':
-            self.status.data.get(key).remove(data)
-            if not self.status.data[key]:
-                self.status.data[key] = None
-                self.status.data.clear()
-        elif action == 'add':
-            if self.status.data.get(key) is None:
-                self.status.data[key] = []
-            self.status.data.get(key).append(data)
+            self.status.data.pop(key, None)
         elif action == 'clear':
             self.status.data.clear()
         else:

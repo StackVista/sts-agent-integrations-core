@@ -5,7 +5,7 @@ import mock
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
-from checks import CheckException
+from checks import CheckException, FinalizeException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
@@ -172,7 +172,7 @@ class TestSplunkMinimalEvents(AgentCheckTest):
         first_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
 
         # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=200)
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
@@ -184,22 +184,24 @@ class TestSplunkMinimalEvents(AgentCheckTest):
         second_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
         # The second run_check will finalize the previous saved search ids and create a new one,
         # so we make sure this is the case
-        self.assertNotEqual(first_persistent_data[0][1], second_persistent_data[0][1])
+        self.assertEqual(first_persistent_data, second_persistent_data)
 
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=404)
+        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(side_effect=FinalizeException(500,"Internal error"))
 
-        # Run the check 3rd time and get the persistent status data
-        self.run_check(config, mocks={
-            '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches,
-            '_auth_session': _mocked_auth_session
-        }, force_reload=True)
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
+            }, force_reload=True)
+        except CheckException:
+            thrown = True
 
-        third_persistent_data = self.check.status.data.get(instance.get('url') + "minimal_events")
+        self.assertTrue(thrown)
         # clear the persistent data created
         self.check.update_persistent_status(instance.get('url'), "minimal_events", None, 'clear')
-        # The third run with 404 status shouldn't delete the sid and new one will be added
-        self.assertEqual(len(third_persistent_data), 2)
+
 
 class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
     """

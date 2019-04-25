@@ -291,8 +291,8 @@ class SplunkTopology(AgentCheck):
         """
         :param base_url: base_url of the instance
         :param qualifier: a string used for making a unique key
-        :param data: data to append, remove or assign
-        :param action: action like append, remove or assign to perform
+        :param data: value of key
+        :param action: action like add, remove or clear to perform
 
         This method persists the storage for the key when it is modified
         """

@@ -63,6 +63,12 @@ class TestSplunkTopology(AgentCheckTest):
     """
     CHECK_NAME = 'splunk_topology'
 
+    def tear_down(self, url, qualifier):
+        """
+        Clear the persistent state from the system for next time
+        """
+        self.check.update_persistent_status(url, qualifier, None, 'clear')
+
     def test_checks(self):
         self.maxDiff = None
 
@@ -157,6 +163,7 @@ class TestSplunkTopology(AgentCheckTest):
             ]
         }
         instance = config.get('instances')[0]
+        persist_status_key = instance.get('url')+"components"
 
         # mock the splunkhelper dispatch return value
         mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="components")
@@ -168,7 +175,7 @@ class TestSplunkTopology(AgentCheckTest):
             '_auth_session': _mocked_auth_session
         })
 
-        first_persistent_data = self.check._status().data.get(instance.get('url')+"components")
+        first_persistent_data = self.check._status().data.get(persist_status_key)
 
         # mock the splunkhelper finalize call
         mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
@@ -180,7 +187,7 @@ class TestSplunkTopology(AgentCheckTest):
             '_auth_session': _mocked_auth_session
         }, force_reload=True)
 
-        second_persistent_data = self.check._status().data.get(instance.get('url')+"components")
+        second_persistent_data = self.check._status().data.get(persist_status_key)
         # The second run_check will finalize the previous saved search id and create a new one,
         # so we make sure this is the case
         self.assertEqual(first_persistent_data, second_persistent_data)
@@ -200,8 +207,12 @@ class TestSplunkTopology(AgentCheckTest):
 
         self.assertTrue(thrown)
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
-        # clear the persistent data created
-        self.check.update_persistent_status(instance.get('url'), "components", None, 'clear')
+
+        # make sure the data still persists after exception raised
+        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+
+        # tear down the persistent data
+        self.tear_down(instance.get('url'), "components")
 
 
 class TestSplunkNoSnapshot(AgentCheckTest):

@@ -75,6 +75,12 @@ class TestSplunkMetric(AgentCheckTest):
     """
     CHECK_NAME = 'splunk_metric'
 
+    def tear_down(self, url, qualifier):
+        """
+        Clear the persistent state from the system for next time
+        """
+        self.check.update_persistent_status(url, qualifier, None, 'clear')
+
     @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
     def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
         self.maxDiff = None
@@ -95,6 +101,7 @@ class TestSplunkMetric(AgentCheckTest):
             ]
         }
         instance = config.get('instances')[0]
+        persist_status_key = instance.get('url') + "minimal_metrics"
 
         # mock the splunkhelper dispatch return value
         mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="minimal_metrics")
@@ -105,8 +112,7 @@ class TestSplunkMetric(AgentCheckTest):
             '_saved_searches': _mocked_saved_searches,
             '_auth_session': _mocked_auth_session
         })
-
-        first_persistent_data = self.check.status.data.get(instance.get('url')+"minimal_metrics")
+        first_persistent_data = self.check.status.data.get(persist_status_key)
 
         # mock the splunkhelper finalize call
         mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
@@ -118,9 +124,9 @@ class TestSplunkMetric(AgentCheckTest):
             '_auth_session': _mocked_auth_session
         }, force_reload=True)
 
-        second_persistent_data = self.check.status.data.get(instance.get('url')+"minimal_metrics")
+        second_persistent_data = self.check.status.data.get(persist_status_key)
         # The second run_check will finalize the previous saved search ids and create a new one,
-        # so we make sure this is the case
+        # so we make sure sid is same both time for same saved search
         self.assertEqual(first_persistent_data, second_persistent_data)
 
         mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(side_effect=FinalizeException(None, "Connection Error occured"))
@@ -136,8 +142,11 @@ class TestSplunkMetric(AgentCheckTest):
 
         self.assertTrue(thrown)
 
-        # clear the persistent data created
-        self.check.update_persistent_status(instance.get('url'), "minimal_metrics", None, 'clear')
+        # make sure the data still persists after exception raised
+        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+
+        # tear down the persistent data
+        self.tear_down(instance.get('url'), "minimal_metrics")
 
 
 class TestSplunkEmptyMetrics(AgentCheckTest):

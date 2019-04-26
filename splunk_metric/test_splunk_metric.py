@@ -81,8 +81,7 @@ class TestSplunkMetric(AgentCheckTest):
         """
         self.check.update_persistent_status(url, qualifier, None, 'clear')
 
-    @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
-    def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
+    def test_not_dispatch_sids_checks(self):
         self.maxDiff = None
 
         config = {
@@ -103,25 +102,25 @@ class TestSplunkMetric(AgentCheckTest):
         instance = config.get('instances')[0]
         persist_status_key = instance.get('url') + "minimal_metrics"
 
-        # mock the splunkhelper dispatch return value
-        mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="minimal_metrics")
-
         # Run the check first time and get the persistent status data
         self.run_check(config, mocks={
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_auth_session': _mocked_auth_session
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search
         })
         first_persistent_data = self.check.status.data.get(persist_status_key)
 
-        # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
+        def _mocked_finalize_sid_none(*args, **kwargs):
+            return None
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_auth_session': _mocked_auth_session
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_finalize_sid': _mocked_finalize_sid_none
         }, force_reload=True)
 
         second_persistent_data = self.check.status.data.get(persist_status_key)
@@ -129,13 +128,17 @@ class TestSplunkMetric(AgentCheckTest):
         # so we make sure sid is same both time for same saved search
         self.assertEqual(first_persistent_data, second_persistent_data)
 
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(side_effect=FinalizeException(None, "Connection Error occured"))
+        def _mocked_finalize_sid_exception(*args, **kwargs):
+            raise FinalizeException(None, "Error occured")
+
         thrown = False
         try:
             self.run_check(config, mocks={
                 '_search': _mocked_search,
                 '_saved_searches': _mocked_saved_searches,
-                '_auth_session': _mocked_auth_session
+                '_auth_session': _mocked_auth_session,
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_finalize_sid': _mocked_finalize_sid_exception
             }, force_reload=True)
         except CheckException:
             thrown = True

@@ -145,8 +145,7 @@ class TestSplunkTopology(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
-    @mock.patch('utils.splunk.splunk_helper.SplunkHelper')
-    def test_not_dispatch_sids_checks(self, mocked_splunk_helper):
+    def test_not_dispatch_sids_checks(self):
         self.maxDiff = None
 
         config = {

@@ -139,7 +139,7 @@ class SplunkTopology(AgentCheck):
                     instance.splunkHelper.finalize_sid(sid, saved_search)
                     self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'remove')
             except FinalizeException as e:
-                self.log.error("Got an error %s while finalizing the saved search %s".format(e.message, saved_search.name))
+                self.log.error("Got an error %s while finalizing the saved search %s" % (e.message, saved_search.name))
                 raise e
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)

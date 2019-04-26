@@ -153,6 +153,7 @@ class TestSplunkTopology(AgentCheckTest):
                     'url': 'http://localhost:8089/',
                     'username': "admin",
                     'password': "admin",
+                    'ignore_saved_search_errors': True,
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -209,7 +210,7 @@ class TestSplunkTopology(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
         # make sure the data still persists after exception raised
-        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+        self.assertIsNotNone(self.check._status().data.get(persist_status_key))
 
         # tear down the persistent data
         self.tear_down(instance.get('url'), "components")

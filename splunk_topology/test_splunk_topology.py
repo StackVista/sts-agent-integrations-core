@@ -16,6 +16,9 @@ def _mocked_saved_searches(*args, **kwargs):
 def _mocked_auth_session(instance_key):
     return "sessionKey1"
 
+def _mocked_dispatch(*args, **kwargs):
+    return args[1].name
+
 
 class TestSplunkNoTopology(AgentCheckTest):
     """
@@ -165,26 +168,25 @@ class TestSplunkTopology(AgentCheckTest):
         instance = config.get('instances')[0]
         persist_status_key = instance.get('url')+"components"
 
-        # mock the splunkhelper dispatch return value
-        mocked_splunk_helper.return_value.dispatch = mock.MagicMock(return_value="components")
-
+        def _mocked_finalize_sid_none(*args, **kwargs):
+            return None
         # Run the check first time and get the persistent status data
         self.run_check(config, mocks={
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_auth_session': _mocked_auth_session
+            '_auth_session': _mocked_auth_session,
+            '_dispatch': _mocked_dispatch
         })
 
         first_persistent_data = self.check._status().data.get(persist_status_key)
-
-        # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(return_value=None)
 
         # Run the check 2nd time and get the persistent status data
         self.run_check(config, mocks={
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_auth_session': _mocked_auth_session
+            '_auth_session': _mocked_auth_session,
+            '_dispatch': _mocked_dispatch,
+            '_finalize_sid': _mocked_finalize_sid_none
         }, force_reload=True)
 
         second_persistent_data = self.check._status().data.get(persist_status_key)
@@ -192,15 +194,17 @@ class TestSplunkTopology(AgentCheckTest):
         # so we make sure this is the case
         self.assertEqual(first_persistent_data, second_persistent_data)
 
-        # mock the splunkhelper finalize call
-        mocked_splunk_helper.return_value.finalize_sid = mock.MagicMock(side_effect=FinalizeException(None, "Error"))
+        def _mocked_finalize_sid_exception(*args, **kwargs):
+            raise FinalizeException(None, "Error occured")
 
         thrown = False
         try:
             self.run_check(config, mocks={
                 '_search': _mocked_search,
                 '_saved_searches': _mocked_saved_searches,
-                '_auth_session': _mocked_auth_session
+                '_auth_session': _mocked_auth_session,
+                '_dispatch': _mocked_dispatch,
+                '_finalize_sid': _mocked_finalize_sid_exception
             }, force_reload=True)
         except CheckException:
             thrown = True
@@ -209,7 +213,7 @@ class TestSplunkTopology(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
         # make sure the data still persists after exception raised
-        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+        self.assertIsNotNone(self.check._status().data.get(persist_status_key))
 
         # tear down the persistent data
         self.tear_down(instance.get('url'), "components")

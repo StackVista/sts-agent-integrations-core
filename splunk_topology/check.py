@@ -136,7 +136,7 @@ class SplunkTopology(AgentCheck):
                 persist_status_key = instance.instance_config.base_url + saved_search.name
                 if self.status.data.get(persist_status_key) is not None:
                     sid = self.status.data[persist_status_key]
-                    instance.splunkHelper.finalize_sid(sid, saved_search)
+                    self._finalize_sid(instance, sid, saved_search)
                     self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'remove')
             except FinalizeException as e:
                 self.log.error("Got an error %s while finalizing the saved search %s" % (e.message, saved_search.name))
@@ -218,7 +218,7 @@ class SplunkTopology(AgentCheck):
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        sid = instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
+        sid = self._dispatch(instance, saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
         self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'add')
         return sid
 
@@ -281,6 +281,14 @@ class SplunkTopology(AgentCheck):
     def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
         instance.splunkHelper.auth_session()
+
+    def _dispatch(self, instance, saved_search, splunk_user, splunk_app, _ignore_saved_search, parameters):
+        """ This method is mocked for testing. Do not change its behavior """
+        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, _ignore_saved_search, parameters)
+
+    def _finalize_sid(self, instance, sid, saved_search):
+        """ This method is mocked for testing. Do not change its behavior """
+        return instance.splunkHelper.finalize_sid(sid, saved_search)
 
     def load_status(self):
         self.status = CheckData.load_latest_status(self.persistence_check_name)

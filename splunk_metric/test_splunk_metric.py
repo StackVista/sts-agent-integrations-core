@@ -1,7 +1,6 @@
 # stdlib
 import json
 import os
-import mock
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures

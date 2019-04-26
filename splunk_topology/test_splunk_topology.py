@@ -1,7 +1,6 @@
 # stdlib
 import json
 import os
-import mock
 
 from checks import CheckException, FinalizeException
 from tests.checks.common import AgentCheckTest, Fixtures

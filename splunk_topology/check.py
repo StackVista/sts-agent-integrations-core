@@ -7,7 +7,8 @@
 import sys
 import time
 
-from checks import AgentCheck, CheckException
+from checks import AgentCheck, CheckException, FinalizeException
+from checks.check_status import CheckData
 from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
 from utils.splunk.splunk_helper import SplunkHelper
 
@@ -68,7 +69,6 @@ class Instance:
 
         self.polling_interval_seconds = int(instance.get('polling_interval_seconds', self.instance_config.default_polling_interval_seconds))
         self.saved_searches_parallel = int(instance.get('saved_searches_parallel', self.instance_config.default_saved_searches_parallel))
-
         self.last_successful_poll_epoch_seconds = None
 
     def should_poll(self, time_seconds):
@@ -83,6 +83,9 @@ class SplunkTopology(AgentCheck):
         super(SplunkTopology, self).__init__(name, init_config, agentConfig, instances)
         # Data to keep over check runs, keyed by instance url
         self.instance_data = dict()
+        self.persistence_check_name = "splunk_topology"
+        self.status = None
+        self.load_status()
 
     def check(self, instance):
         if 'url' not in instance:
@@ -126,8 +129,22 @@ class SplunkTopology(AgentCheck):
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
+
+        # don't dispatch if sids present
+        for saved_search in saved_searches:
+            try:
+                persist_status_key = instance.instance_config.base_url + saved_search.name
+                if self.status.data.get(persist_status_key) is not None:
+                    sid = self.status.data[persist_status_key]
+                    self._finalize_sid(instance, sid, saved_search)
+                    self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'remove')
+            except FinalizeException as e:
+                self.log.error("Got an error %s while finalizing the saved search %s" % (e.message, saved_search.name))
+                raise e
+
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]
+
         all_success = True
 
         for (sid, saved_search) in search_ids:
@@ -180,6 +197,10 @@ class SplunkTopology(AgentCheck):
     def _search(self, search_id, saved_search, instance):
         return instance.splunkHelper.saved_search_results(search_id, saved_search)
 
+    def _status(self):
+        """ This method is mocked for testing. """
+        return self.status
+
     def _dispatch_saved_search(self, instance, saved_search):
         """
         Initiate a saved search, returning the search id
@@ -197,7 +218,9 @@ class SplunkTopology(AgentCheck):
 
         self.log.debug("Dispatching saved search: %s." % saved_search.name)
 
-        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
+        sid = self._dispatch(instance, saved_search, splunk_user, splunk_app, splunk_ignore_saved_search_errors, parameters)
+        self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'add')
+        return sid
 
     def _extract_components(self, instance, result):
         fail_count = 0
@@ -258,3 +281,34 @@ class SplunkTopology(AgentCheck):
     def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
         instance.splunkHelper.auth_session()
+
+    def _dispatch(self, instance, saved_search, splunk_user, splunk_app, _ignore_saved_search, parameters):
+        """ This method is mocked for testing. Do not change its behavior """
+        return instance.splunkHelper.dispatch(saved_search, splunk_user, splunk_app, _ignore_saved_search, parameters)
+
+    def _finalize_sid(self, instance, sid, saved_search):
+        """ This method is mocked for testing. Do not change its behavior """
+        return instance.splunkHelper.finalize_sid(sid, saved_search)
+
+    def load_status(self):
+        self.status = CheckData.load_latest_status(self.persistence_check_name)
+        if self.status is None:
+            self.status = CheckData()
+
+    def update_persistent_status(self, base_url, qualifier, data, action):
+        """
+        :param base_url: base_url of the instance
+        :param qualifier: a string used for making a unique key
+        :param data: value of key
+        :param action: action like add, remove or clear to perform
+
+        This method persists the storage for the key when it is modified
+        """
+        key = base_url + qualifier if qualifier else base_url
+        if action == 'remove':
+            self.status.data.pop(key, None)
+        elif action == 'clear':
+            self.status.data.clear()
+        else:
+            self.status.data[key] = data
+        self.status.persist(self.persistence_check_name)

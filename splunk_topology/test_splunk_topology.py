@@ -2,16 +2,22 @@
 import json
 import os
 
-from checks import CheckException
+from checks import CheckException, FinalizeException
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
+
 def _mocked_saved_searches(*args, **kwargs):
     return []
 
+
 def _mocked_auth_session(instance_key):
     return "sessionKey1"
+
+def _mocked_dispatch(*args, **kwargs):
+    return args[1].name
+
 
 class TestSplunkNoTopology(AgentCheckTest):
     """
@@ -58,6 +64,12 @@ class TestSplunkTopology(AgentCheckTest):
     Splunk check should work with component and relation data
     """
     CHECK_NAME = 'splunk_topology'
+
+    def tear_down(self, url, qualifier):
+        """
+        Clear the persistent state from the system for next time
+        """
+        self.check.update_persistent_status(url, qualifier, None, 'clear')
 
     def test_checks(self):
         self.maxDiff = None
@@ -131,6 +143,78 @@ class TestSplunkTopology(AgentCheckTest):
         self.assertEquals(instances[0]["stop_snapshot"], True)
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_not_dispatch_sids_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089/',
+                    'username': "admin",
+                    'password': "admin",
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+        persist_status_key = instance.get('url')+"components"
+
+        def _mocked_finalize_sid_none(*args, **kwargs):
+            return None
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch': _mocked_dispatch
+        })
+
+        first_persistent_data = self.check._status().data.get(persist_status_key)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch': _mocked_dispatch,
+            '_finalize_sid': _mocked_finalize_sid_none
+        }, force_reload=True)
+
+        second_persistent_data = self.check._status().data.get(persist_status_key)
+        # The second run_check will finalize the previous saved search id and create a new one,
+        # so we make sure this is the case
+        self.assertEqual(first_persistent_data, second_persistent_data)
+
+        def _mocked_finalize_sid_exception(*args, **kwargs):
+            raise FinalizeException(None, "Error occured")
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session,
+                '_dispatch': _mocked_dispatch,
+                '_finalize_sid': _mocked_finalize_sid_exception
+            }, force_reload=True)
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown)
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+        # make sure the data still persists after exception raised
+        self.assertIsNotNone(self.check._status().data.get(persist_status_key))
+
+        # tear down the persistent data
+        self.tear_down(instance.get('url'), "components")
 
 
 class TestSplunkNoSnapshot(AgentCheckTest):

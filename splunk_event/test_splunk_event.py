@@ -4,12 +4,15 @@ import os
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
-from checks import CheckException
+from checks import CheckException, FinalizeException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
 def _mocked_saved_searches(*args, **kwargs):
     return []
+
+def _mocked_finalize_sid_none(*args, **kwargs):
+    return None
 
 def _mocked_auth_session(instance_key):
     return
@@ -93,6 +96,12 @@ class TestSplunkMinimalEvents(AgentCheckTest):
     """
     CHECK_NAME = 'splunk_event'
 
+    def tear_down(self, url, qualifier):
+        """
+        Clear the persistent state from the system for next time
+        """
+        self.check.update_persistent_status(url, qualifier, None, 'clear')
+
     def test_checks(self):
         self.maxDiff = None
 
@@ -136,6 +145,75 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'msg_text': None,
             'source_type_name': None
         })
+
+    def test_not_dispatch_sids_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001/',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+        persist_status_key = instance.get('url') + "minimal_events"
+
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search
+        })
+
+        first_persistent_data = self.check.status.data.get(persist_status_key)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_finalize_sid': _mocked_finalize_sid_none
+        }, force_reload=True)
+
+        second_persistent_data = self.check.status.data.get(persist_status_key)
+        # The second run_check will finalize the previous saved search ids and create a new one,
+        # so we make sure this is the case
+        self.assertEqual(first_persistent_data, second_persistent_data)
+
+        def _mocked_finalize_sid_exception(*args, **kwargs):
+            raise FinalizeException(None, "Error occured")
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session,
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_finalize_sid': _mocked_finalize_sid_exception
+            }, force_reload=True)
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown)
+
+        # make sure the data still persists after exception raised
+        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+
+        # tear down the persistent data
+        self.tear_down(instance.get('url'), "minimal_events")
+
 
 class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
     """
@@ -312,7 +390,8 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_polling_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run
@@ -512,7 +591,8 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run with initial time
@@ -594,7 +674,8 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         test_data["time"] = time_to_seconds('2017-03-09T00:00:00.000000+0000')
@@ -665,7 +746,8 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run with initial time
@@ -728,7 +810,8 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         self.collect_ok = False
@@ -790,7 +873,8 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_minimal_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Run the check, collect will fail
@@ -1030,7 +1114,8 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_identification_fields_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         })
         self.assertEqual(len(self.events), 0)
 
@@ -1091,7 +1176,8 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_identification_fields_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         })
         self.assertEqual(len(self.events), 0)
 

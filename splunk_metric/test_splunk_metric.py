@@ -4,24 +4,33 @@ import os
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
-from checks import CheckException
+from checks import CheckException, FinalizeException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
+
 
 def _mocked_saved_searches(*args, **kwargs):
     return []
 
+
+def _mocked_finalize_sid_none(*args, **kwargs):
+    return None
+
+
 def _mocked_dispatch_saved_search(*args, **kwargs):
     # Sid is equal to search name
     return args[1].name
+
 
 def _mocked_search(*args, **kwargs):
     # sid is set to saved search name
     sid = args[0]
     return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
+
 def _mocked_auth_session(instance_config):
     return "sessionKey1"
+
 
 class TestSplunkErrorResponse(AgentCheckTest):
     """
@@ -61,6 +70,86 @@ class TestSplunkErrorResponse(AgentCheckTest):
 
         self.assertEquals(len(self.service_checks), 2)
         self.assertEquals(self.service_checks[1]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+
+class TestSplunkMetric(AgentCheckTest):
+    """
+        Splunk metric check should handle already available search ids
+    """
+    CHECK_NAME = 'splunk_metric'
+
+    def tear_down(self, url, qualifier):
+        """
+        Clear the persistent state from the system for next time
+        """
+        self.check.update_persistent_status(url, qualifier, None, 'clear')
+
+    def test_not_dispatch_sids_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089/',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+        instance = config.get('instances')[0]
+        persist_status_key = instance.get('url') + "minimal_metrics"
+
+        # Run the check first time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search
+        })
+        first_persistent_data = self.check.status.data.get(persist_status_key)
+
+        # Run the check 2nd time and get the persistent status data
+        self.run_check(config, mocks={
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_finalize_sid': _mocked_finalize_sid_none
+        }, force_reload=True)
+
+        second_persistent_data = self.check.status.data.get(persist_status_key)
+        # The second run_check will finalize the previous saved search ids and create a new one,
+        # so we make sure sid is same both time for same saved search
+        self.assertEqual(first_persistent_data, second_persistent_data)
+
+        def _mocked_finalize_sid_exception(*args, **kwargs):
+            raise FinalizeException(None, "Error occured")
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session,
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_finalize_sid': _mocked_finalize_sid_exception
+            }, force_reload=True)
+        except CheckException:
+            thrown = True
+
+        self.assertTrue(thrown)
+
+        # make sure the data still persists after exception raised
+        self.assertIsNotNone(self.check.status.data.get(persist_status_key))
+
+        # tear down the persistent data
+        self.tear_down(instance.get('url'), "minimal_metrics")
 
 
 class TestSplunkEmptyMetrics(AgentCheckTest):
@@ -470,7 +559,8 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_polling_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run
@@ -611,7 +701,8 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run with initial time
@@ -693,7 +784,8 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         test_data["time"] = time_to_seconds('2017-03-09T00:00:00.000000+0000')
@@ -764,7 +856,8 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Initial run with initial time
@@ -827,7 +920,8 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         self.collect_ok = False
@@ -889,7 +983,8 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             '_dispatch': _mocked_dispatch_saved_search_dispatch,
             '_search': _mocked_search,
             '_current_time_seconds': _mocked_current_time_seconds,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         }
 
         # Run the check, collect will fail
@@ -1289,7 +1384,8 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         })
 
         self.assertEqual(len(self.metrics), 0)
@@ -1346,7 +1442,8 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             '_auth_session': _mocked_auth_session,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
         })
 
         self.assertEqual(len(self.metrics), 0)

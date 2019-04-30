@@ -550,6 +550,11 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
                 raise CheckException("Is broke it")
 
             earliest_time = args[5]['dispatch.earliest_time']
+
+            ignore_saved_search_flag = args[4]
+            # make sure the ignore search flag is always false
+            self.assertFalse(ignore_saved_search_flag)
+
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
             return test_data["sid"]
@@ -688,6 +693,10 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             earliest_time = args[5]['dispatch.earliest_time']
             if test_data["earliest_time"] != "":
                 self.assertEquals(earliest_time, test_data["earliest_time"])
+
+            ignore_saved_search_flag = args[4]
+            # make sure the ignore search flag is always false
+            self.assertFalse(ignore_saved_search_flag)
 
             if test_data["latest_time"] is None:
                 self.assertTrue('dispatch.latest_time' not in args[5])

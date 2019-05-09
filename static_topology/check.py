@@ -26,9 +26,11 @@ class StaticTopology(AgentCheck):
             relation_file = instance['relations_file'] if 'relations_file' in instance else None
             delimiter = instance['delimiter']
             instance_key = {"type": "StaticTopology", "url": component_file}
+            self.start_snapshot(instance_key)
             self.handle_component_csv(instance_key, component_file, delimiter, instance_tags)
             if relation_file:
                 self.handle_relation_csv(instance_key, relation_file, delimiter, instance_tags)
+            self.stop_snapshot(instance_key)
         else:
             raise CheckException('Static topology instance only supports type CSV.')
 

@@ -123,6 +123,28 @@ class TestStaticCSVTopology(AgentCheckTest):
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
                     'component.csv': ['id,name,type', '1,name1,type1', '2,name2,type2'],
                     'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_snapshot(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertTrue(instances[0]['start_snapshot'], msg='start_snapshot was not set to True')
+        self.assertTrue(instances[0]['stop_snapshot'], msg='stop_snapshot was not set to True')
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type', '1,name1,type1', '2,name2,type2'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
     def test_topology_with_instance_tags(self, mock):
         config = {
             'init_config': {},

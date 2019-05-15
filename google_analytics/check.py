@@ -6,10 +6,10 @@ Collects metrics from the Analytics API.
 # the following try/except block will make the custom check compatible with any Agent version
 try:
     # first, try to import the base class from old versions of the Agent...
-    from checks import AgentCheck, CheckException
+    from checks import AgentCheck
 except ImportError:
     # ...if the above failed, the check is running in Agent version 6 or later
-    from datadog_checks.checks import AgentCheck, CheckException
+    from datadog_checks.checks import AgentCheck
 
 from google.oauth2 import service_account
 import googleapiclient.discovery

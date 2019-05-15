@@ -1,0 +1,190 @@
+{
+  "kind": "analytics#realtimeData",
+  "rows": [
+    [
+      "01",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "01",
+      "/booker/selection.outbound.connections",
+      "2"
+    ],
+    [
+      "01",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "2"
+    ],
+    [
+      "01",
+      "/booker/selection.outbound.detail",
+      "1"
+    ],
+    [
+      "05",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "2"
+    ],
+    [
+      "05",
+      "/booker/selection.outbound.detail",
+      "1"
+    ],
+    [
+      "06",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "06",
+      "/booker/selection.outbound.connections",
+      "2"
+    ],
+    [
+      "06",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "1"
+    ],
+    [
+      "11",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "1"
+    ],
+    [
+      "12",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "1"
+    ],
+    [
+      "13",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "1"
+    ],
+    [
+      "14",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "14",
+      "/booker/selection.outbound.connections",
+      "2"
+    ],
+    [
+      "14",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "2"
+    ],
+    [
+      "14",
+      "/booker/selection.outbound.detail",
+      "1"
+    ],
+    [
+      "15",
+      "/booker/selection.outbound",
+      "2"
+    ],
+    [
+      "15",
+      "/booker/selection.outbound.connections",
+      "4"
+    ],
+    [
+      "15",
+      "/booker/selection.outbound.connections/bookingSummaryModal",
+      "1"
+    ],
+    [
+      "15",
+      "/booker/selection.outbound.detail",
+      "2"
+    ],
+    [
+      "21",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "21",
+      "/booker/selection.outbound.connections",
+      "1"
+    ],
+    [
+      "21",
+      "/booker/selection.outbound.detail",
+      "2"
+    ],
+    [
+      "26",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "26",
+      "/booker/selection.outbound.connections",
+      "2"
+    ],
+    [
+      "26",
+      "/booker/selection.outbound.detail",
+      "1"
+    ],
+    [
+      "27",
+      "/booker/selection.outbound",
+      "1"
+    ],
+    [
+      "27",
+      "/booker/selection.outbound.connections",
+      "1"
+    ],
+    [
+      "27",
+      "/booker/selection.outbound.connections/exitDetails",
+      "1"
+    ]
+  ],
+  "totalResults": 29,
+  "totalsForAllResults": {
+    "rt:pageviews": "42"
+  },
+  "columnHeaders": [
+    {
+      "dataType": "STRING",
+      "columnType": "DIMENSION",
+      "name": "rt:minutesAgo"
+    },
+    {
+      "dataType": "STRING",
+      "columnType": "DIMENSION",
+      "name": "rt:pagePath"
+    },
+    {
+      "dataType": "INTEGER",
+      "columnType": "METRIC",
+      "name": "rt:pageviews"
+    }
+  ],
+  "query": {
+    "metrics": [
+      "rt:pageviews"
+    ],
+    "max-results": 1000,
+    "ids": "ga:12345678",
+    "filters": "rt:pagePath=~^/booker/selection.outbound",
+    "dimensions": "rt:minutesAgo,rt:pagePath"
+  },
+  "profileInfo": {
+    "webPropertyId": "UA-1234567-12",
+    "internalWebPropertyId": "12345678",
+    "tableId": "realtime:12345678",
+    "profileId": "12345678",
+    "profileName": "MyView",
+    "accountId": "1234567"
+  },
+  "id": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&dimensions=rt:minutesAgo,rt:pagePath&metrics=rt:pageviews&filters=rt:pagePath%3D~%5E/booker/selection.outbound",
+  "selfLink": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&dimensions=rt:minutesAgo,rt:pagePath&metrics=rt:pageviews&filters=rt:pagePath%3D~%5E/booker/selection.outbound"
+}

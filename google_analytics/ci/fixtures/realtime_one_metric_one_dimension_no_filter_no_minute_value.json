@@ -1,0 +1,141 @@
+{
+  "kind": "analytics#realtimeData",
+  "rows": [
+    [
+      "00",
+      "46"
+    ],
+    [
+      "02",
+      "55"
+    ],
+    [
+      "03",
+      "52"
+    ],
+    [
+      "04",
+      "23"
+    ],
+    [
+      "05",
+      "1"
+    ],
+    [
+      "06",
+      "3"
+    ],
+    [
+      "07",
+      "1"
+    ],
+    [
+      "08",
+      "3"
+    ],
+    [
+      "09",
+      "4"
+    ],
+    [
+      "10",
+      "8"
+    ],
+    [
+      "11",
+      "9"
+    ],
+    [
+      "12",
+      "3"
+    ],
+    [
+      "13",
+      "5"
+    ],
+    [
+      "14",
+      "7"
+    ],
+    [
+      "17",
+      "2"
+    ],
+    [
+      "20",
+      "13"
+    ],
+    [
+      "21",
+      "62"
+    ],
+    [
+      "22",
+      "70"
+    ],
+    [
+      "23",
+      "15"
+    ],
+    [
+      "24",
+      "22"
+    ],
+    [
+      "25",
+      "20"
+    ],
+    [
+      "26",
+      "22"
+    ],
+    [
+      "27",
+      "41"
+    ],
+    [
+      "28",
+      "54"
+    ],
+    [
+      "29",
+      "56"
+    ]
+  ],
+  "totalResults": 25,
+  "totalsForAllResults": {
+    "rt:pageviews": "637"
+  },
+  "columnHeaders": [
+    {
+      "dataType": "STRING",
+      "columnType": "DIMENSION",
+      "name": "rt:minutesAgo"
+    },
+    {
+      "dataType": "INTEGER",
+      "columnType": "METRIC",
+      "name": "rt:pageviews"
+    }
+  ],
+  "query": {
+    "metrics": [
+      "rt:pageviews"
+    ],
+    "max-results": 1000,
+    "ids": "ga:12345678",
+    "dimensions": "rt:minutesAgo"
+  },
+  "profileInfo": {
+    "webPropertyId": "UA-1234567-12",
+    "internalWebPropertyId": "12345678",
+    "tableId": "realtime:12345678",
+    "profileId": "12345678",
+    "profileName": "MyView",
+    "accountId": "1234567"
+  },
+  "id": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&dimensions=rt:minutesAgo&metrics=rt:pageviews",
+  "selfLink": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&dimensions=rt:minutesAgo&metrics=rt:pageviews"
+}
+
+

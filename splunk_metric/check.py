@@ -59,7 +59,7 @@ class SplunkMetric(SplunkTelemetryBase):
             "default_metric_value_field": "value",
             'default_initial_history_time_seconds': 0,
             'default_max_restart_history_seconds': 86400,
-            'default_max_query_chunk_seconds': 3600,
+            'default_max_query_chunk_seconds': 300,
             'default_initial_delay_seconds': 0,
             'default_unique_key_fields': ["_bkt", "_cd"],
             'default_app': "search",

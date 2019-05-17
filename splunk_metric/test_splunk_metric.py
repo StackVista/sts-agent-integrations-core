@@ -1580,9 +1580,9 @@ class TestSplunkDefaults(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
 
 
-class TestSplunkConfigMaxQueryChunkSec(AgentCheckTest):
+class TestSplunkConfigMaxQueryChunkSecHistory(AgentCheckTest):
     """
-    Splunk metric check should use the max restart time parameter
+    Splunk metric check should use the max query chunk sec in past mode
     """
     CHECK_NAME = 'splunk_metric'
 
@@ -1592,7 +1592,7 @@ class TestSplunkConfigMaxQueryChunkSec(AgentCheckTest):
         config = {
             'init_config': {
                 'default_restart_history_time_seconds': 3600,
-                'default_max_query_chunk_seconds': 3600,
+                'default_max_query_chunk_seconds': 300,
                 'default_initial_history_time_seconds': 86400,
                 'unique_key_fields': None
             },
@@ -1646,7 +1646,7 @@ class TestSplunkConfigMaxQueryChunkSec(AgentCheckTest):
         test_data["earliest_time"] = '2017-03-08T00:00:00.000000+0000'
         self.run_check(config, mocks=test_mocks)
         last_observed_timestamp = self.check.status.data.get('http://localhost:13001').get('metrics')
-        # make sure the window is of max_query_chunk_seconds and last_observed_time_stamp is dispatch latest time
+        # make sure the window is of max_query_chunk_seconds and last_observed_time_stamp is dispatch latest time - 1
         self.assertEqual(last_observed_timestamp, time_to_seconds('2017-03-08T00:04:59.000000+0000'))
         self.assertEqual(len(self.metrics), 1)
 
@@ -1656,5 +1656,70 @@ class TestSplunkConfigMaxQueryChunkSec(AgentCheckTest):
         self.run_check(config, mocks=test_mocks, force_reload=True)
         self.assertEqual(len(self.metrics), 2)
         last_observed_timestamp = self.check.status.data.get('http://localhost:13001').get('metrics')
-        # make sure the window is of max_query_chunk_seconds and last_observed_time_stamp is dispatch latest time
+        # make sure the window is of max_query_chunk_seconds and last_observed_time_stamp is dispatch latest time -1
         self.assertEqual(last_observed_timestamp, time_to_seconds('2017-03-08T11:04:59.000000+0000'))
+
+class TestSplunkConfigMaxQueryChunkSecLive(AgentCheckTest):
+    """
+    Splunk metric check should use the max query chunk sec in live mode
+    """
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {
+                'default_restart_history_time_seconds': 3600,
+                'default_max_query_chunk_seconds': 300,
+                'unique_key_fields': None
+            },
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "metrics",
+                        "parameters": {},
+                        'max_query_chunk_seconds': 300,
+                        'unique_key_fields': None
+                    }],
+                    'tags': ["checktag:checktagvalue"]
+                }
+            ]
+        }
+
+        # Used to validate which searches have been executed
+        test_data = {
+            "time": 0,
+            "earliest_time": ""
+        }
+
+        def _mocked_current_time_seconds():
+            return test_data["time"]
+
+        def _mocked_dispatch_saved_search_dispatch(*args, **kwargs):
+            earliest_time = args[5]['dispatch.earliest_time']
+            if test_data["earliest_time"] != "":
+                self.assertEquals(earliest_time, test_data["earliest_time"])
+
+            return "minimal_metrics"
+
+        test_mocks = {
+            '_auth_session': _mocked_auth_session,
+            '_dispatch': _mocked_dispatch_saved_search_dispatch,
+            '_search': _mocked_search,
+            '_current_time_seconds': _mocked_current_time_seconds,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        }
+
+        # Initial run with initial history time
+        test_data["time"] = time_to_seconds('2017-03-08T11:58:00.000000+0000')
+        test_data["earliest_time"] = '2017-03-08T11:58:00.000000+0000'
+        self.run_check(config, mocks=test_mocks)
+        self.assertEqual(len(self.metrics), 2)
+        last_observed_timestamp = self.check.status.data.get('http://localhost:13001').get('metrics')
+        # make sure the last_observed_time_stamp is metrics last observed timestamp in live mode
+        self.assertEqual(last_observed_timestamp, time_to_seconds('2017-03-08T12:00:00.000000+0000'))

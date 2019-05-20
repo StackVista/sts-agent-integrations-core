@@ -577,7 +577,7 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
 
         # respect earliest_time
         test_data["sid"] = "poll1"
-        test_data["earliest_time"] = '2017-03-08T18:29:59.000000+0000'
+        test_data["earliest_time"] = '2017-03-08T18:30:00.000000+0000'
         self.run_check(config, mocks=test_mocks)
         self.assertEqual(len(self.metrics), 1)
         self.assertEqual([e[2] for e in self.metrics], [31])
@@ -1003,7 +1003,7 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
         self.assertEqual(len(self.metrics), 2)
 
         # Make sure we advance the start time
-        test_data["earliest_time"] = '2017-03-08T12:00:00.000000+0000'
+        test_data["earliest_time"] = '2017-03-08T12:00:01.000000+0000'
         self.run_check(config, mocks=test_mocks)
 
 

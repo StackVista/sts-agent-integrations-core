@@ -26,7 +26,7 @@ init_config:
   default_max_restart_history_seconds: 86400
 
   # Maximum size of chunks when querying historical data from splunk
-  default_max_query_chunk_seconds: 3600
+  default_max_query_chunk_seconds: 300
 
   # Delay before starting polling events after starting
   # default_initial_delay_seconds: 600

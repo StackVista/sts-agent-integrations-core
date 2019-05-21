@@ -722,15 +722,17 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
         self.assertEqual(len(self.metrics), 0)
 
         # Restart check and recover data
-        test_data["time"] = time_to_seconds('2017-03-08T12:00:00.000000+0000')
-        for slice_num in range(0, 11):
-            test_data["earliest_time"] = '2017-03-08T%s:00:01.000000+0000' % (str(slice_num).zfill(2))
-            test_data["latest_time"] = '2017-03-08T%s:00:01.000000+0000' % (str(slice_num + 1).zfill(2))
+        test_data["time"] = time_to_seconds('2017-03-08T01:00:05.000000+0000')
+        for slice_num in range(0, 12):
+            test_data["earliest_time"] = '2017-03-08T00:%s:01.000000+0000' % (str(slice_num*5).zfill(2))
+            test_data["latest_time"] = '2017-03-08T00:%s:01.000000+0000' % (str((slice_num + 1) * 5).zfill(2))
+            if slice_num == 11:
+                test_data["latest_time"] = '2017-03-08T01:00:01.000000+0000'
             self.run_check(config, mocks=test_mocks, force_reload=slice_num == 0)
             self.assertTrue(self.continue_after_commit, "As long as we are not done with history, the check should continue")
 
         # Now continue with real-time polling (earliest time taken from last event or last restart chunk)
-        test_data["earliest_time"] = '2017-03-08T11:00:01.000000+0000'
+        test_data["earliest_time"] = '2017-03-08T01:00:01.000000+0000'
         test_data["latest_time"] = None
         self.run_check(config, mocks=test_mocks)
         self.assertFalse(self.continue_after_commit, "As long as we are not done with history, the check should continue")

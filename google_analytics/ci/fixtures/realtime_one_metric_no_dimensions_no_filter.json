@@ -1,0 +1,36 @@
+{
+  "kind": "analytics#realtimeData",
+  "rows": [
+    [
+      "2"
+    ]
+  ],
+  "totalResults": 1,
+  "totalsForAllResults": {
+    "rt:activeUsers": "2"
+  },
+  "columnHeaders": [
+    {
+      "dataType": "INTEGER",
+      "columnType": "METRIC",
+      "name": "rt:activeUsers"
+    }
+  ],
+  "query": {
+    "metrics": [
+      "rt:activeUsers"
+    ],
+    "max-results": 1000,
+    "ids": "ga:12345678"
+  },
+  "profileInfo": {
+    "webPropertyId": "UA-1234567-12",
+    "internalWebPropertyId": "12345678",
+    "tableId": "realtime:12345678",
+    "profileId": "12345678",
+    "profileName": "MyView",
+    "accountId": "1234567"
+  },
+  "id": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&metrics=rt:activeUsers",
+  "selfLink": "https://www.googleapis.com/analytics/v3/data/realtime?ids=ga:12345678&metrics=rt:activeUsers"
+}

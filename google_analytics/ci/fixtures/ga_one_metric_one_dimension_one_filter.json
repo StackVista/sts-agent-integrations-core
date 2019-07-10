@@ -1,0 +1,49 @@
+{
+  "kind": "analytics#gaData",
+  "rows": [
+    [
+      "/booker/confirmation",
+      "11"
+    ]
+  ],
+  "containsSampledData": false,
+  "profileInfo": {
+    "webPropertyId": "UA-1234567-12",
+    "internalWebPropertyId": "12345678",
+    "tableId": "realtime:12345678",
+    "profileId": "12345678",
+    "profileName": "MyView",
+    "accountId": "1234567"
+  },
+  "itemsPerPage": 1000,
+  "totalsForAllResults": {
+    "ga:pageviews": "11"
+  },
+  "columnHeaders": [
+    {
+      "dataType": "STRING",
+      "columnType": "DIMENSION",
+      "name": "ga:pagePath"
+    },
+    {
+      "dataType": "INTEGER",
+      "columnType": "METRIC",
+      "name": "ga:pageviews"
+    }
+  ],
+  "query": {
+    "max-results": 1000,
+    "dimensions": "ga:pagePath",
+    "start-date": "2daysAgo",
+    "start-index": 1,
+    "ids": "ga:12345678",
+    "metrics": [
+      "ga:pageviews"
+    ],
+    "filters": "ga:pagePath==/booker_v3/confirmation",
+    "end-date": "1daysAgo"
+  },
+  "totalResults": 1,
+  "id": "https://www.googleapis.com/analytics/v3/data/ga?ids=ga:12345678&dimensions=ga:pagePath&metrics=ga:pageviews&filters=ga:pagePath%3D%3D/booker_v3/confirmation&start-date=2daysAgo&end-date=1daysAgo",
+  "selfLink": "https://www.googleapis.com/analytics/v3/data/ga?ids=ga:12345678&dimensions=ga:pagePath&metrics=ga:pageviews&filters=ga:pagePath%3D%3D/booker_v3/confirmation&start-date=2daysAgo&end-date=1daysAgo"
+}

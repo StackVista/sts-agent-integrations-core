@@ -10,7 +10,6 @@
 import requests
 import logging
 import time
-import re
 
 from checks import AgentCheck, CheckException
 
@@ -169,7 +168,10 @@ class Zabbix(AgentCheck):
     def process_host_topology(self, topology_instance, zabbix_host, stackstate_environment):
         external_id = "urn:host:/%s" % zabbix_host.host
         url = topology_instance.get('url')
-        instance_url = re.search(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", url).group(0)
+        if 'http'in url or 'https' in url:
+            instance_url = url.split("//")[1].split("/")[0]
+        else:
+            instance_url = url.split("/")[0]
         labels = ['zabbix', 'instance_url:%s' % instance_url]
         for host_group in zabbix_host.host_groups:
             labels.append('host group:%s' % host_group.name)

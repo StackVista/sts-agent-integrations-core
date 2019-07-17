@@ -168,6 +168,209 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertEqual(len(instances[0]['relations']), 1)
         self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 2)
 
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,labels', '1,name1,type1,label1', '2,name2,type2,'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_labels(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 1)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,labels', '1,name1,type1,"label1,label2"', '2,name2,type2,"label1,label2,label3"'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_multiple_labels(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 3)
+        self.assertIn("label1", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("label2", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("label1", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("label2", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("label3", instances[0]['components'][1]['data']['labels'])
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,identifiers', '1,name1,type1,id1','2,name2,type2,'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_identifier(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['identifiers']), 1)
+        self.assertEqual(len(instances[0]['components'][1]['data']['identifiers']), 0)
+        self.assertIn("id1", instances[0]['components'][0]['data']['identifiers'])
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,identifiers', '1,name1,type1,"id1,id2"','2,name2,type2,"id1,id2,id3"'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_multiple_identifiers(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['identifiers']), 2)
+        self.assertEqual(len(instances[0]['components'][1]['data']['identifiers']), 3)
+        self.assertIn("id1", instances[0]['components'][0]['data']['identifiers'])
+        self.assertIn("id2", instances[0]['components'][0]['data']['identifiers'])
+        self.assertIn("id1", instances[0]['components'][1]['data']['identifiers'])
+        self.assertIn("id2", instances[0]['components'][1]['data']['identifiers'])
+        self.assertIn("id3", instances[0]['components'][1]['data']['identifiers'])
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,labels', '1,name1,type1,label1', '2,name2,type2,'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_labels_and_instance_tags(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ',',
+                    'tags': ['tag1', 'tag2']
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 3)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 2)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,environments', '1,name1,type1,env1', '2,name2,type2,'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_environments(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][0]['data']['environments']), 1)
+        self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
+        self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
+        self.assertIn("Unspecified", instances[0]['components'][1]['data']['environments'])
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
+    @mock.patch('codecs.open',
+                side_effect=lambda location, mode, encoding: MockFileReader(location, {
+                    'component.csv': ['id,name,type,environments', '1,name1,type1,"env1,env2"', '2,name2,type2'],
+                    'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
+    def test_topology_with_multiple_environments(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][0]['data']['environments']), 2)
+        self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
+        self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
+        self.assertIn("env2", instances[0]['components'][0]['data']['environments'])
+        self.assertIn("Unspecified", instances[0]['components'][1]['data']['environments'])
+
+        self.assertEqual(len(instances[0]['relations']), 1)
+        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+
     @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
         'component.csv': ['NOID,name,type'],
         'relation.csv': []}))

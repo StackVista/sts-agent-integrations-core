@@ -42,7 +42,7 @@ class StaticTopology(AgentCheck):
         COMPONENT_NAME_FIELD = 'name'
 
         with codecs.open(filelocation, mode='r', encoding="utf-8-sig") as csvfile:
-            reader = csv.reader(csvfile, delimiter=delimiter, quotechar='|')
+            reader = csv.reader(csvfile, delimiter=delimiter, quotechar='"')
 
             header_row = next(reader, None)
             if header_row is None:
@@ -62,7 +62,25 @@ class StaticTopology(AgentCheck):
 
             for row in reader:
                 data = dict(zip(header_row, row))
-                data['labels'] = instance_tags
+
+                # label processing
+                labels = data.get('labels', "")
+                labels = labels.split(',') if labels else []
+                labels.extend(instance_tags)
+                data['labels'] = labels
+
+                # environment processing
+                environments = data.get('environments', "Unspecified")
+                # environments column may be in the row but may be empty/unspecified for that row, defaulting
+                environments = environments.split(',') if environments else ["Unspecified"]
+                data['environments'] = environments
+
+                # identifiers processing
+                identifiers = data.get('identifiers', "")
+                # identifiers column may be in the row but may be empty/unspecified for that row, defaulting
+                identifiers = identifiers.split(',') if identifiers else []
+                data['identifiers'] = identifiers
+
                 self.component(instance_key=instance_key, id=row[id_idx], type={"name": row[type_idx]}, data=data)
 
     def handle_relation_csv(self, instance_key, filelocation, delimiter, instance_tags):

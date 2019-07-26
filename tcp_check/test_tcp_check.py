@@ -118,17 +118,22 @@ class TCPCheckTest(AgentCheckTest):
 
         expected_tags = ["instance:DownService", "target_host:127.0.0.1", "port:65530"]
         self.assertServiceCheckCritical("tcp.can_connect", tags=expected_tags)
+        self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         expected_tags = ["instance:DownService2", "target_host:126.0.0.1", "port:65530", "test1"]
         self.assertServiceCheckCritical("tcp.can_connect", tags=expected_tags)
+        self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         expected_tags = ["instance:UpService", "target_host:datadoghq.com", "port:80", "test2"]
         self.assertServiceCheckOK("tcp.can_connect", tags=expected_tags)
+        self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         expected_tags = ["instance:response_time", "target_host:datadoghq.com", "port:80", "test3"]
         self.assertServiceCheckOK("tcp.can_connect", tags=expected_tags)
+        self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         expected_tags = ["instance:response_time", "url:datadoghq.com:80", "test3"]
         self.assertMetric("network.tcp.response_time", tags=expected_tags)
+        self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         self.coverage_report()

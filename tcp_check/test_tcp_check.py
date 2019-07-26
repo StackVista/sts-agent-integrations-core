@@ -87,24 +87,6 @@ class TCPCheckTest(AgentCheckTest):
                         .format(len(getattr(self.check, attribute)), count, i,
                                 getattr(self.check, attribute)))
 
-    def test_event_deprecation(self):
-        """
-        Deprecate events usage for service checks.
-        """
-        # Run the check
-        self.run_check(CONFIG_EVENTS)
-
-        # Overrides self.service_checks attribute when values are available
-        self.warnings = self.wait_for_async('get_warnings', 'warnings', len(CONFIG_EVENTS['instances']))
-
-        # Assess warnings
-        self.assertWarning(
-            "Using events for service checks is deprecated in "
-            "favor of monitors and will be removed in future versions of the "
-            "StackState Agent.",
-            count=len(CONFIG_EVENTS['instances'])
-        )
-
     def test_check(self):
         """
         Check coverage.

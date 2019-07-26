@@ -134,6 +134,7 @@ class TCPCheckTest(AgentCheckTest):
 
         expected_tags = ["instance:response_time", "url:datadoghq.com:80", "test3"]
         self.assertMetric("network.tcp.response_time", tags=expected_tags)
+        expected_tags = ["instance:response_time", "target_host:datadoghq.com", "port:80", "test3"]
         self.assertMetric("network.tcp.can_connect", tags=expected_tags)
 
         self.coverage_report()

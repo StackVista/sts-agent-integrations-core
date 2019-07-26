@@ -77,11 +77,8 @@ class TCPCheck(NetworkCheck):
             if "timed out" in str(e):
 
                 # The connection timed out becase it took more time than the system tcp stack allows
-                self.log.warning(
-                    'The connection timed out because it took more time '
-                    'than the system tcp stack allows. You might want to '
-                    'change this setting to allow longer timeouts'
-                )
+                self.log.warning("The connection timed out because it took more time than the system tcp stack "
+                                 "allows. You might want to change this setting to allow longer timeouts")
                 self.log.info("System tcp timeout. Assuming that the checked system is down")
                 return Status.DOWN, """Socket error: %s.
                  The connection timed out after %s ms because it took more time than the system tcp stack allows.
@@ -96,11 +93,8 @@ class TCPCheck(NetworkCheck):
             return Status.DOWN, "%s. Connection failed after %s ms" % (str(e), length)
 
         if response_time:
-            self.gauge(
-                'network.tcp.response_time',
-                time.time() - start,
-                tags=['url:%s:%s' % (instance.get('host', None), port), 'instance:%s' % instance.get('name')]
-                + custom_tags,)
+            self.gauge('network.tcp.response_time', time.time() - start, tags=['url:%s:%s' %
+                        (instance.get('host', None), port), 'instance:%s' % instance.get('name')] + custom_tags,)
 
         self.log.debug("%s:%s is UP" % (addr, port))
         return Status.UP, "UP"

@@ -61,6 +61,21 @@ class TestStaticCSVTopology(AgentCheckTest):
             self.run_check(config)
         self.assertTrue('Static topology instance missing "components_file" value.' in context.exception)
 
+    def test_omitted_relation_file(self):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': '/dev/null',
+                    'delimiter': ';'
+                }
+            ]
+        }
+        with self.assertRaises(CheckException) as context:
+            self.run_check(config)
+        self.assertTrue('Static topology instance missing "relations_file" value.' in context.exception)
+
     def test_empty_component_file(self):
         config = {
             'init_config': {},
@@ -162,11 +177,15 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 4)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 4)
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][1]['data']['labels'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 2)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -188,11 +207,15 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 1)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 3)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][1]['data']['labels'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -214,16 +237,20 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 3)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 4)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 5)
         self.assertIn("label1", instances[0]['components'][0]['data']['labels'])
         self.assertIn("label2", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
         self.assertIn("label1", instances[0]['components'][1]['data']['labels'])
         self.assertIn("label2", instances[0]['components'][1]['data']['labels'])
         self.assertIn("label3", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][1]['data']['labels'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -250,7 +277,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertIn("id1", instances[0]['components'][0]['data']['identifiers'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -281,7 +308,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertIn("id3", instances[0]['components'][1]['data']['identifiers'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -304,11 +331,15 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 3)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 5)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 4)
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][1]['data']['labels'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 2)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -330,15 +361,19 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 0)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.component:component.csv", instances[0]['components'][1]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][1]['data']['labels'])
         self.assertEqual(len(instances[0]['components'][0]['data']['environments']), 1)
         self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
         self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
         self.assertIn("Production", instances[0]['components'][1]['data']['environments'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
@@ -360,8 +395,10 @@ class TestStaticCSVTopology(AgentCheckTest):
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(len(instances[0]['components']), 2)
-        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 0)
-        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 0)
+        self.assertEqual(len(instances[0]['components'][0]['data']['labels']), 2)
+        self.assertEqual(len(instances[0]['components'][1]['data']['labels']), 2)
+        self.assertIn("csv.component:component.csv", instances[0]['components'][0]['data']['labels'])
+        self.assertIn("csv.relation:relation.csv", instances[0]['components'][0]['data']['labels'])
         self.assertEqual(len(instances[0]['components'][0]['data']['environments']), 2)
         self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
         self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
@@ -369,7 +406,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertIn("Production", instances[0]['components'][1]['data']['environments'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
-        self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
+        self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 
     @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
         'component.csv': ['NOID,name,type'],
@@ -381,6 +418,7 @@ class TestStaticCSVTopology(AgentCheckTest):
                 {
                     'type': 'csv',
                     'components_file': 'component.csv',
+                    'relations_file': 'relations.csv',
                     'delimiter': ','
                 }
             ]
@@ -401,6 +439,7 @@ class TestStaticCSVTopology(AgentCheckTest):
                 {
                     'type': 'csv',
                     'components_file': 'component.csv',
+                    'relations_file': 'relations.csv',
                     'delimiter': ','
                 }
             ]
@@ -421,6 +460,7 @@ class TestStaticCSVTopology(AgentCheckTest):
                 {
                     'type': 'csv',
                     'components_file': 'component.csv',
+                    'relations_file': 'relations.csv',
                     'delimiter': ','
                 }
             ]

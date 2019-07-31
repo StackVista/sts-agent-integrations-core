@@ -16,6 +16,8 @@ class StaticTopology(AgentCheck):
     def check(self, instance):
         if 'components_file' not in instance:
             raise CheckException('Static topology instance missing "components_file" value.')
+        if 'relations_file' not in instance:
+            raise CheckException('Static topology instance missing "relations_file" value.')
         if 'type' not in instance:
             raise CheckException('Static topology instance missing "type" value.')
 
@@ -23,9 +25,10 @@ class StaticTopology(AgentCheck):
 
         if instance['type'].lower() == "csv":
             component_file = instance['components_file']
-            relation_file = instance['relations_file'] if 'relations_file' in instance else None
+            relation_file = instance['relations_file']
             delimiter = instance['delimiter']
             instance_key = {"type": "StaticTopology", "url": component_file}
+            instance_tags.extend(["csv.component:%s" % component_file, "csv.relation:%s" % relation_file])
             self.start_snapshot(instance_key)
             self.handle_component_csv(instance_key, component_file, delimiter, instance_tags)
             if relation_file:
@@ -108,7 +111,6 @@ class StaticTopology(AgentCheck):
 
             for row in reader:
                 data = dict(zip(header_row, row))
-                data['labels'] = instance_tags
                 self.relation(instance_key=instance_key,
                               source_id=row[source_id_idx],
                               target_id=row[target_id_idx],

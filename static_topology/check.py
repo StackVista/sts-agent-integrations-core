@@ -70,9 +70,9 @@ class StaticTopology(AgentCheck):
                 data['labels'] = labels
 
                 # environment processing
-                environments = data.get('environments', "Unspecified")
-                # environments column may be in the row but may be empty/unspecified for that row, defaulting
-                environments = environments.split(',') if environments else ["Unspecified"]
+                environments = data.get('environments', "Production")
+                # environments column may be in the row but may be empty/unspecified for that row, defaulting to Production
+                environments = environments.split(',') if environments else ["Production"]
                 data['environments'] = environments
 
                 # identifiers processing

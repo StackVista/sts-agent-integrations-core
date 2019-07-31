@@ -335,7 +335,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertEqual(len(instances[0]['components'][0]['data']['environments']), 1)
         self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
         self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
-        self.assertIn("Unspecified", instances[0]['components'][1]['data']['environments'])
+        self.assertIn("Production", instances[0]['components'][1]['data']['environments'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
         self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)
@@ -366,7 +366,7 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertEqual(len(instances[0]['components'][1]['data']['environments']), 1)
         self.assertIn("env1", instances[0]['components'][0]['data']['environments'])
         self.assertIn("env2", instances[0]['components'][0]['data']['environments'])
-        self.assertIn("Unspecified", instances[0]['components'][1]['data']['environments'])
+        self.assertIn("Production", instances[0]['components'][1]['data']['environments'])
 
         self.assertEqual(len(instances[0]['relations']), 1)
         self.assertEqual(len(instances[0]['relations'][0]['data']['labels']), 0)

@@ -390,7 +390,6 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertIn("env2", instances[0]['components'][0]['data']['environments'])
         self.assertIn("Production", instances[0]['components'][1]['data']['environments'])
 
-
         self.assertEqual(len(instances[0]['relations']), 1)
         self.assertNotIn('labels', instances[0]['relations'][0]['data'])
 

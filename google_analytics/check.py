@@ -9,7 +9,7 @@ try:
     from checks import AgentCheck
 except ImportError:
     # ...if the above failed, the check is running in Agent version 6 or later
-    from datadog_checks.checks import AgentCheck
+    from stackstate_checks.checks import AgentCheck
 
 from google.oauth2 import service_account
 import googleapiclient.discovery

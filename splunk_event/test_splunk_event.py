@@ -1009,7 +1009,7 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
                     'url': 'http://localhost:13001',
                     'username': "admin",
                     'password': "admin",
-                    'ignore_saved_search_errors': 'true',
+                    'ignore_saved_search_errors': True,
                     'saved_searches': [{
                         "match": "metric*",
                         "parameters": {}

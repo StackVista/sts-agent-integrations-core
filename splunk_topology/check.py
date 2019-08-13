@@ -65,7 +65,7 @@ class Instance:
             "url": self.instance_config.base_url
         }
         self.tags = instance.get('tags', [])
-        self.splunk_ignore_saved_search_errors = instance.get('ignore_saved_search_errors', 'true')
+        self.splunk_ignore_saved_search_errors = instance.get('ignore_saved_search_errors', False)
 
         self.polling_interval_seconds = int(instance.get('polling_interval_seconds', self.instance_config.default_polling_interval_seconds))
         self.saved_searches_parallel = int(instance.get('saved_searches_parallel', self.instance_config.default_saved_searches_parallel))

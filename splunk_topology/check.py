@@ -65,7 +65,7 @@ class Instance:
             "url": self.instance_config.base_url
         }
         self.tags = instance.get('tags', [])
-        self.splunk_ignore_saved_search_errors = instance.get('ignore_saved_search_errors', 'true')
+        self.splunk_ignore_saved_search_errors = instance.get('ignore_saved_search_errors', False)
 
         self.polling_interval_seconds = int(instance.get('polling_interval_seconds', self.instance_config.default_polling_interval_seconds))
         self.saved_searches_parallel = int(instance.get('saved_searches_parallel', self.instance_config.default_saved_searches_parallel))
@@ -125,7 +125,10 @@ class SplunkTopology(AgentCheck):
         except Exception as e:
             self._clear_topology(instance_key, clear_in_snapshot=True)
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))
-            raise CheckException("Splunk topology failed with message: %s" % e), None, sys.exc_info()[2]
+            self.log.exception("Splunk topology exception: %s" % str(e))
+            if not instance.splunk_ignore_saved_search_errors:
+                raise CheckException("Splunk topology failed with message: %s" % e), None, sys.exc_info()[2]
+            self.log.warning("Ignoring Splunk topology exception as ignore_saved_search_errors flag is true.")
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
@@ -139,8 +142,10 @@ class SplunkTopology(AgentCheck):
                     self._finalize_sid(instance, sid, saved_search)
                     self.update_persistent_status(instance.instance_config.base_url, saved_search.name, sid, 'remove')
             except FinalizeException as e:
-                self.log.error("Got an error %s while finalizing the saved search %s" % (e.message, saved_search.name))
-                raise e
+                self.log.exception("Got an error %s while finalizing the saved search %s" % (e.message, saved_search.name))
+                if not instance.splunk_ignore_saved_search_errors:
+                    raise e
+                self.log.warning("Ignoring finalize exception as ignore_saved_search_errors flag is true.")
 
         search_ids = [(self._dispatch_saved_search(instance, saved_search), saved_search)
                       for saved_search in saved_searches]

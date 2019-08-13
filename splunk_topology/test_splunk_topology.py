@@ -739,6 +739,48 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
 
+class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
+    """
+    Splunk topology check should ignore exception when getting an exception from saved searches
+    """
+    CHECK_NAME = 'splunk_topology'
+
+    def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'ignore_saved_search_errors': True,
+                    'component_saved_searches': [{
+                        "name": "error",
+                        "element_type": "component",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_saved_searches(*args, **kwargs):
+            raise Exception("Boom")
+
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                '_saved_searches': _mocked_saved_searches
+            })
+        except CheckException:
+            thrown = True
+        self.assertFalse(thrown)
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+
 
 class TestTopologyDataIsClearedOnFailure(AgentCheckTest):
     """

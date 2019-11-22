@@ -1,0 +1,14 @@
+# Static telemetry from file
+init_config:
+    # run every 5 minutes
+    min_collection_interval: 300
+
+instances:
+  - type: csv
+    events_file: /path/to/events.csv
+    delimiter: ';'
+
+    # optional: value of defined column will be used as the event's timestamp.
+    # value has to be a Unix epoch timestamp in seconds
+    # if omitted, the current wall clock time will be used
+    timestamp_field: 'datetime_epoch'

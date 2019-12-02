@@ -24,7 +24,7 @@ class Cloudera(AgentCheck):
         self.instance_key = None
 
     def check(self, instance):
-        self.url, port, user, password, api_version, verify_ssl = self._get_config(instance)
+        self.url, user, password, api_version, verify_ssl = self._get_config(instance)
 
         if not user:
             raise Exception('Cloudera Manager user name is required.')
@@ -39,8 +39,7 @@ class Cloudera(AgentCheck):
             cm_client.configuration.verify_ssl = True
 
         # Construct base URL for API
-        # TODO what to do when we have no port
-        api_url = self.url + ':' + str(port) + '/api/' + api_version
+        api_url = '{0}/api/{1}'.format(self.url, api_version)
 
         self.tags = ['instance_url: {}'.format(self.url)]
 
@@ -73,7 +72,7 @@ class Cloudera(AgentCheck):
             host_api_instance = cm_client.HostsResourceApi(api_client)
             host_api_response = host_api_instance.read_hosts(view='full')
             for host_data in host_api_response.items:
-                self.component(self.instance_key, host_data.host_id, 'host', self._dict_from_cls(host_data))
+                self.component(self.instance_key, host_data.host_id, {'name': 'host'}, self._dict_from_cls(host_data))
                 self.event(self._create_event_data(host_data.host_id, host_data.entity_status))
         except ApiException as e:
             e.request_name = 'ClustersResourceApi > read_hosts'
@@ -84,7 +83,7 @@ class Cloudera(AgentCheck):
             cluster_api_instance = cm_client.ClustersResourceApi(api_client)
             cluster_api_response = cluster_api_instance.read_clusters(view='full')
             for cluster_data in cluster_api_response.items:
-                self.component(self.instance_key, cluster_data.name, 'cluster', self._dict_from_cls(cluster_data))
+                self.component(self.instance_key, cluster_data.name, {'name': 'cluster'}, self._dict_from_cls(cluster_data))
                 self.event(self._create_event_data(cluster_data.name, cluster_data.entity_status))
                 hosts_api_response = cluster_api_instance.list_hosts(cluster_data.name)
                 for host_data in hosts_api_response.items:
@@ -99,7 +98,7 @@ class Cloudera(AgentCheck):
             services_api_instance = cm_client.ServicesResourceApi(api_client)
             resp = services_api_instance.read_services(cluster_name, view='full')
             for service_data in resp.items:
-                self.component(self.instance_key, service_data.name, 'service', self._dict_from_cls(service_data))
+                self.component(self.instance_key, service_data.name, {'name': 'service'}, self._dict_from_cls(service_data))
                 self.event(self._create_event_data(service_data.name, service_data.entity_status))
                 self.relation(self.instance_key, service_data.name, cluster_name, {'name': 'runs on'}, {})
                 self._collect_roles(api_client, cluster_name, service_data.name)
@@ -112,7 +111,7 @@ class Cloudera(AgentCheck):
             roles_api_instance = cm_client.RolesResourceApi(api_client)
             roles_api_response = roles_api_instance.read_roles(cluster_name, service_name, view='full')
             for role_data in roles_api_response.items:
-                self.component(self.instance_key, role_data.name, 'role', self._dict_from_cls(role_data))
+                self.component(self.instance_key, role_data.name, {'name': 'role'}, self._dict_from_cls(role_data))
                 self.event(self._create_event_data(role_data.name, role_data.entity_status))
                 self.relation(self.instance_key, role_data.name, service_name, {'name': 'executes'}, {})
         except ApiException as e:
@@ -122,16 +121,15 @@ class Cloudera(AgentCheck):
     @staticmethod
     def _get_config(instance):
         url = instance.get('url', '')
-        port = instance.get('port', 0)
         api_version = instance.get('api_version', '')
         user = instance.get('username', '')
         password = str(instance.get('password', ''))
         verify_ssl = _is_affirmative(instance.get('verify_ssl'))
-        return url, port, user, password, api_version, verify_ssl
+        return url, user, password, api_version, verify_ssl
 
     def _dict_from_cls(self, cls):
         data = dict((key, str(value)) for (key, value) in cls.__dict__.items())
-        data.update({'cloudera-instance': urlparse(self.url).netloc})
+        data.update({'cloudera-instance': self.url})
         return data
 
     def _create_event_data(self, name, status):
@@ -147,7 +145,7 @@ class Cloudera(AgentCheck):
 
 if __name__ == '__main__':
     initialize_logging('cloudera')
-    check, instances = Cloudera.from_yaml('/Users/hruhek/docker/sts-cloudera/cloudera.yaml')
+    check, instances = Cloudera.from_yaml('/Users/hruhek/vagrant/stackagent-v1/cloudera.yaml')
     for instance in instances:
         print "\nRunning the check against url: %s" % (instance['url'])
         check.check(instance)

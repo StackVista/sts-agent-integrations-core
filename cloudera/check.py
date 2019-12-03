@@ -22,6 +22,7 @@ class Cloudera(AgentCheck):
         self.url = None
         self.tags = None
         self.instance_key = None
+        self.roles = None
 
     def check(self, instance):
         self.url, user, password, api_version, verify_ssl = self._get_config(instance)
@@ -35,8 +36,7 @@ class Cloudera(AgentCheck):
         # Configure HTTP basic authorization: basic
         cm_client.configuration.username = user
         cm_client.configuration.password = password
-        if verify_ssl:
-            cm_client.configuration.verify_ssl = True
+        cm_client.configuration.verify_ssl = verify_ssl
 
         # Construct base URL for API
         api_url = '{0}/api/{1}'.format(self.url, api_version)
@@ -44,6 +44,8 @@ class Cloudera(AgentCheck):
         self.tags = ['instance_url: {}'.format(self.url)]
 
         self.instance_key = {'type': self.INSTANCE_TYPE, 'url': self.url}
+
+        self.roles = []
         try:
             api_client = cm_client.ApiClient(api_url)
 
@@ -64,30 +66,20 @@ class Cloudera(AgentCheck):
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message=msg, tags=self.tags)
 
     def _collect_topology(self, api_client):
-        self._collect_hosts(api_client)
         self._collect_cluster(api_client)
-
-    def _collect_hosts(self, api_client):
-        try:
-            host_api_instance = cm_client.HostsResourceApi(api_client)
-            host_api_response = host_api_instance.read_hosts(view='full')
-            for host_data in host_api_response.items:
-                self.component(self.instance_key, host_data.host_id, {'name': 'host'}, self._dict_from_cls(host_data))
-                self.event(self._create_event_data(host_data.host_id, host_data.entity_status))
-        except ApiException as e:
-            e.request_name = 'ClustersResourceApi > read_hosts'
-            raise e
+        self._collect_hosts(api_client)
 
     def _collect_cluster(self, api_client):
         try:
             cluster_api_instance = cm_client.ClustersResourceApi(api_client)
             cluster_api_response = cluster_api_instance.read_clusters(view='full')
             for cluster_data in cluster_api_response.items:
-                self.component(self.instance_key, cluster_data.name, {'name': 'cluster'}, self._dict_from_cls(cluster_data))
+                cluster_url = urlparse(cluster_data.cluster_url).netloc
+                data = self._dict_from_cls(cluster_data)
+                data['identifiers'] = ['urn:clouderacluster:/{}'.format(cluster_data.name),
+                                       'urn:clouderacluster:/{}'.format(cluster_url.split('.')[0])]
+                self.component(self.instance_key, cluster_data.name, {'name': 'cluster'}, data)
                 self.event(self._create_event_data(cluster_data.name, cluster_data.entity_status))
-                hosts_api_response = cluster_api_instance.list_hosts(cluster_data.name)
-                for host_data in hosts_api_response.items:
-                    self.relation(self.instance_key, cluster_data.name, host_data.host_id, {'name': 'is hosted on'}, {})
                 self._collect_services(api_client, cluster_data.name)
         except ApiException as e:
             e.request_name = 'ClustersResourceApi > read_clusters'
@@ -98,9 +90,10 @@ class Cloudera(AgentCheck):
             services_api_instance = cm_client.ServicesResourceApi(api_client)
             resp = services_api_instance.read_services(cluster_name, view='full')
             for service_data in resp.items:
-                self.component(self.instance_key, service_data.name, {'name': 'service'}, self._dict_from_cls(service_data))
+                self.component(self.instance_key, service_data.name, {'name': 'service'},
+                               self._dict_from_cls(service_data))
                 self.event(self._create_event_data(service_data.name, service_data.entity_status))
-                self.relation(self.instance_key, service_data.name, cluster_name, {'name': 'runs on'}, {})
+                self.relation(self.instance_key, cluster_name, service_data.name, {'name': 'runs on'}, {})
                 self._collect_roles(api_client, cluster_name, service_data.name)
         except ApiException as e:
             e.request_name = 'ServicesResourceApi > read_services'
@@ -113,9 +106,27 @@ class Cloudera(AgentCheck):
             for role_data in roles_api_response.items:
                 self.component(self.instance_key, role_data.name, {'name': 'role'}, self._dict_from_cls(role_data))
                 self.event(self._create_event_data(role_data.name, role_data.entity_status))
-                self.relation(self.instance_key, role_data.name, service_name, {'name': 'executes'}, {})
+                self.relation(self.instance_key, service_name, role_data.name, {'name': 'executes'}, {})
+                self.roles.append(role_data.name)
         except ApiException as e:
             e.request_name = 'RolesResourceApi > read_roles'
+            raise e
+
+    def _collect_hosts(self, api_client):
+        try:
+            host_api_instance = cm_client.HostsResourceApi(api_client)
+            host_api_response = host_api_instance.read_hosts(view='full')
+            for host_data in host_api_response.items:
+                data = self._dict_from_cls(host_data)
+                hostname = host_data.hostname.split('.')[0]
+                data['identifiers'] = ['urn:host:/{}'.format(hostname), host_data.host_id]
+                self.component(self.instance_key, hostname, {'name': 'host'}, data)
+                self.event(self._create_event_data(hostname, host_data.entity_status))
+                for role in host_data.role_refs:
+                    if role.role_name in self.roles:
+                        self.relation(self.instance_key, role.role_name, hostname, {'name': 'is hosted on'}, {})
+        except ApiException as e:
+            e.request_name = 'ClustersResourceApi > read_hosts'
             raise e
 
     @staticmethod

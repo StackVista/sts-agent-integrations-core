@@ -139,7 +139,7 @@ class Cloudera(AgentCheck):
         return url, user, password, api_version, verify_ssl
 
     def _dict_from_cls(self, cls):
-        data = dict((key, str(value)) for (key, value) in cls.__dict__.items())
+        data = dict((key.lstrip('_'), str(value)) for (key, value) in cls.__dict__.items())
         data.update({'cloudera-instance': self.url})
         return data
 

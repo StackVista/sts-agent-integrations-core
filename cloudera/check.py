@@ -42,10 +42,9 @@ class Cloudera(AgentCheck):
         api_url = '{0}/api/{1}'.format(self.url, api_version)
 
         self.tags = ['instance_url: {}'.format(self.url)]
-
         self.instance_key = {'type': self.INSTANCE_TYPE, 'url': self.url}
-
         self.roles = []
+
         try:
             api_client = cm_client.ApiClient(api_url)
 
@@ -76,6 +75,7 @@ class Cloudera(AgentCheck):
             for cluster_data in cluster_api_response.items:
                 cluster_url = urlparse(cluster_data.cluster_url).netloc
                 data = self._dict_from_cls(cluster_data)
+                data['name'] = cluster_data.display_name
                 data['identifiers'] = ['urn:clouderacluster:/{}'.format(cluster_data.name),
                                        'urn:clouderacluster:/{}'.format(cluster_url.split('.')[0])]
                 self.component(self.instance_key, cluster_data.name, {'name': 'cluster'}, data)

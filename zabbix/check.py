@@ -86,6 +86,7 @@ class Zabbix(AgentCheck):
     SERVICE_CHECK_NAME = SOURCE_TYPE_NAME = "Zabbix"
     log = logging.getLogger('Zabbix')
     begin_epoch = None  # start to listen to events from epoch timestamp
+    ssl_verify = True
 
     def check(self, instance):
         """
@@ -99,6 +100,7 @@ class Zabbix(AgentCheck):
             raise CheckException('Missing API password in configuration.')
 
         stackstate_environment = instance.get('stackstate_environment', 'Production')
+        self.ssl_verify = instance.get('ssl_verify', True)
 
         url = instance['url']
 
@@ -333,8 +335,9 @@ class Zabbix(AgentCheck):
         if auth:
             payload['auth'] = auth
 
+        self.log.debug("Request to URL: %s" % url)
         self.log.debug("Request payload: %s" % payload)
-        response = requests.get(url, json=payload)
+        response = requests.get(url, json=payload, verify=self.ssl_verify)
         response.raise_for_status()
         self.log.debug("Request response: %s" % response.text)
         return response.json()

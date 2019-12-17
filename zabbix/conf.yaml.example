@@ -6,4 +6,5 @@ instances:
   - url: http://10.0.0.1/zabbix/api_jsonrpc.php
     user: Admin
     password: zabbix
+    # ssl_verify: true
     # stackstate_environment: Production

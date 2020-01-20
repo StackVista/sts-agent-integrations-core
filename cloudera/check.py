@@ -11,7 +11,7 @@ from cm_client.rest import ApiException
 from config import initialize_logging
 
 
-class Cloudera(AgentCheck):
+class ClouderaCheck(AgentCheck):
     INSTANCE_TYPE = 'cloudera'
     SERVICE_CHECK_NAME = 'cloudera.can_connect'
     EVENT_TYPE = 'cloudera.entity_status'
@@ -179,7 +179,7 @@ def get_config(instance):
 
 if __name__ == '__main__':
     initialize_logging('cloudera')
-    check, instances = Cloudera.from_yaml('/Users/hruhek/vagrant/stackagent-v1/cloudera.yaml')
+    check, instances = ClouderaCheck.from_yaml('/Users/hruhek/vagrant/stackagent-v1/cloudera.yaml')
     for instance in instances:
         print "\nRunning the check against url: %s" % (instance['url'])
         check.check(instance)

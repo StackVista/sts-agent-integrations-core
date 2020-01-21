@@ -1113,15 +1113,15 @@ class TestSplunkContinue(AgentCheckTest):
         def _mocked_check_exception_search(*args, **kwargs):
             sid = args[0]
             if sid == "components12":
-                raise CheckException("maximum retries reached for saved search "+ str(sid))
+                raise CheckException("maximum retries reached for saved search " + str(sid))
             return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
         self.run_check(config, mocks={
-                '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': _mocked_check_exception_search,
-                '_saved_searches': _mocked_saved_searches,
-                '_auth_session': _mocked_auth_session
-            })
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_check_exception_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         # Even second saved search failed but topology reported from first saved search
@@ -1157,17 +1157,17 @@ class TestSplunkContinue(AgentCheckTest):
         def _mocked_check_exception_search(*args, **kwargs):
             sid = args[0]
             if sid == "components12":
-                raise CheckException("maximum retries reached for saved search "+ str(sid))
+                raise CheckException("maximum retries reached for saved search " + str(sid))
             return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
         thrown = False
         try:
             self.run_check(config, mocks={
-                    '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                    '_search': _mocked_check_exception_search,
-                    '_saved_searches': _mocked_saved_searches,
-                    '_auth_session': _mocked_auth_session
-                })
-        except Exception as e:
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_check_exception_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
+            })
+        except Exception:
             # Catch exception thrown from check as the ignore_saved_search_errors flag is False
             thrown = True
 
@@ -1205,7 +1205,7 @@ class TestSplunkContinue(AgentCheckTest):
         def _mocked_check_exception_search(*args, **kwargs):
             sid = args[0]
             if sid == "components12":
-                raise CheckException("maximum retries reached for saved search "+ str(sid))
+                raise CheckException("maximum retries reached for saved search " + str(sid))
             return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
 
         def _mocked_extract_components(*args, **kwargs):

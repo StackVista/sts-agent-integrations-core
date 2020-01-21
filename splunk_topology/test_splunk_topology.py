@@ -1084,3 +1084,148 @@ class TestSplunkDefaults(AgentCheckTest):
         })
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
+
+
+class TestSplunkContinue(AgentCheckTest):
+    CHECK_NAME = 'splunk_topology'
+
+    def test_check_exception_continue(self):
+        """
+        When 1 saved search fails with Check Exception, the code should continue and send topology.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'ignore_saved_search_errors': True,
+                    'component_saved_searches': [
+                        {"name": "components", "search_max_retry_count": 0, "parameters": {}},
+                        {"name": "components12", "search_max_retry_count": 0, "parameters": {}}
+                    ],
+                    'relation_saved_searches': []
+                }
+            ]
+        }
+
+        def _mocked_check_exception_search(*args, **kwargs):
+            sid = args[0]
+            if sid == "components12":
+                raise CheckException("maximum retries reached for saved search "+ str(sid))
+            return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+
+        self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_check_exception_search,
+                '_saved_searches': _mocked_saved_searches,
+                '_auth_session': _mocked_auth_session
+            })
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        # Even second saved search failed but topology reported from first saved search
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEquals(len(instances[0]['relations']), 0)
+        # second saved search throws a check exception for maximum retries data and report a service check
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        # check if still the check continued and finished
+        self.assertEqual(instances[0]["stop_snapshot"], True)
+        self.assertEqual(instances[0]["start_snapshot"], True)
+
+    def test_check_exception__false_continue(self):
+        """
+        When 1 saved search fails with Check Exception, the code should break and clear the whole topology.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'ignore_saved_search_errors': False,
+                    'component_saved_searches': [
+                        {"name": "components", "search_max_retry_count": 0, "parameters": {}},
+                        {"name": "components12", "search_max_retry_count": 0, "parameters": {}}
+                    ],
+                    'relation_saved_searches': []
+                }
+            ]
+        }
+
+        def _mocked_check_exception_search(*args, **kwargs):
+            sid = args[0]
+            if sid == "components12":
+                raise CheckException("maximum retries reached for saved search "+ str(sid))
+            return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+        thrown = False
+        try:
+            self.run_check(config, mocks={
+                    '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                    '_search': _mocked_check_exception_search,
+                    '_saved_searches': _mocked_saved_searches,
+                    '_auth_session': _mocked_auth_session
+                })
+        except Exception as e:
+            # Catch exception thrown from check as the ignore_saved_search_errors flag is False
+            thrown = True
+
+        self.assertTrue(thrown, "maximum retries reached for saved search components12")
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        # Even first saved search reported topology but not sent because the ignore_saved_search_errors flag was False
+        self.assertEqual(len(instances[0]['components']), 0)
+        self.assertEquals(len(instances[0]['relations']), 0)
+        # second saved search throws a check exception for maximum retries data and report a service check
+        self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
+
+
+    def test_check_exception_fail_count_continue(self):
+        """
+        When both saved search fails with Check Exception, the code should continue and send topology.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': "admin",
+                    'password': "admin",
+                    'ignore_saved_search_errors': True,
+                    'component_saved_searches': [
+                        {"name": "components", "search_max_retry_count": 0, "parameters": {}},
+                        {"name": "components12", "search_max_retry_count": 0, "parameters": {}}
+                    ],
+                    'relation_saved_searches': []
+                }
+            ]
+        }
+
+        def _mocked_check_exception_search(*args, **kwargs):
+            sid = args[0]
+            if sid == "components12":
+                raise CheckException("maximum retries reached for saved search "+ str(sid))
+            return [json.loads(Fixtures.read_file("%s.json" % sid, sdk_dir=FIXTURE_DIR))]
+
+        def _mocked_extract_components(*args, **kwargs):
+            return 2
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_check_exception_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_extract_components': _mocked_extract_components,
+            '_auth_session': _mocked_auth_session
+        })
+        instance = self.check.get_topology_instances()
+        self.assertEqual(len(instance), 1)
+        # first saved search throws an exception for incomplete data and report a service check
+        self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[0]['message'], "All result of saved search 'components' contained incomplete data")
+        # second saved search throws a check exception for maximum retries and report a service check
+        self.assertEquals(self.service_checks[1]['status'], 1, "service check should have status AgentCheck.WARNING")
+        self.assertEquals(self.service_checks[1]['message'], "maximum retries reached for saved search components12")
+        # check if the check continued and finished
+        self.assertEqual(instance[0]["stop_snapshot"], True)
+        self.assertEqual(instance[0]["start_snapshot"], True)

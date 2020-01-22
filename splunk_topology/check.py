@@ -123,12 +123,11 @@ class SplunkTopology(AgentCheck):
             if instance.snapshot:
                 self.stop_snapshot(instance_key)
         except Exception as e:
-            self._clear_topology(instance_key, clear_in_snapshot=True)
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))
             self.log.exception("Splunk topology exception: %s" % str(e))
             if not instance.splunk_ignore_saved_search_errors:
+                self._clear_topology(instance_key, clear_in_snapshot=True)
                 raise CheckException("Splunk topology failed with message: %s" % e), None, sys.exc_info()[2]
-            self.log.warning("Ignoring Splunk topology exception as ignore_saved_search_errors flag is true.")
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
@@ -164,31 +163,48 @@ class SplunkTopology(AgentCheck):
     def _process_saved_search(self, search_id, saved_search, instance, start_time):
         count = 0
         fail_count = 0
-        responses = self._search(search_id, saved_search, instance)
 
-        for response in responses:
-            for message in response['messages']:
-                if message['type'] != "FATAL" and message['type'] != "INFO":
-                    self.log.info("Received unhandled message, got: " + str(message))
+        try:
+            responses = self._search(search_id, saved_search, instance)
 
-            count += len(response["results"])
-            # process components and relations
-            if saved_search.element_type == "component":
-                fail_count += self._extract_components(instance, response)
-            elif saved_search.element_type == "relation":
-                fail_count += self._extract_relations(instance, response)
+            for response in responses:
+                for message in response['messages']:
+                    if message['type'] != "FATAL" and message['type'] != "INFO":
+                        self.log.info("Received unhandled message for saved search %s, got: %s" % (saved_search.name, message))
 
-        self.log.debug(
-            "Saved search done: %s in time %d with results %d of which %d failed" % (saved_search.name, time.time() - start_time, count, fail_count))
+                count += len(response["results"])
+                # process components and relations
+                if saved_search.element_type == "component":
+                    fail_count += self._extract_components(instance, response)
+                elif saved_search.element_type == "relation":
+                    fail_count += self._extract_relations(instance, response)
 
-        if fail_count is not 0:
-            if (fail_count is not count) and (count is not 0):
-                msg = "The saved search '%s' contained %d incomplete %s records" % (saved_search.name, fail_count, saved_search.element_type)
-                self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=msg)
-                self.log.warn(msg)
-                return False
-            elif count is not 0:
-                raise CheckException("All result of saved search '%s' contained incomplete data" % saved_search.name)
+            self.log.debug(
+                "Saved search done: %s in time %d with results %d of which %d failed" % (saved_search.name, time.time() - start_time, count, fail_count))
+
+            if fail_count is not 0:
+                if (fail_count is not count) and (count is not 0):
+                    msg = "The saved search '%s' contained %d incomplete %s records" % (saved_search.name, fail_count, saved_search.element_type)
+                    self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=msg)
+                    self.log.warn(msg)
+                    return False
+                elif count is not 0:
+                    raise CheckException("All result of saved search '%s' contained incomplete data" % saved_search.name)
+
+        except CheckException as e:
+            if not instance.splunk_ignore_saved_search_errors:
+                self.log.error("Received Check exception while processing saved search " + saved_search.name)
+                raise e
+            self.log.warning("Check exception occured %s while processing saved search name %s" % (e.message, saved_search.name))
+            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=str(e))
+            return False
+        except Exception as e:
+            if not instance.splunk_ignore_saved_search_errors:
+                self.log.error("Received an exception while processing saved search " + saved_search.name)
+                raise e
+            self.log.warning("Got an error %s while processing saved search name %s" % (e.message, saved_search.name))
+            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=str(e))
+            return False
 
         return True
 

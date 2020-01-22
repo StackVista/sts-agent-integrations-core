@@ -1126,6 +1126,12 @@ class TestSplunkContinue(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         # Even second saved search failed but topology reported from first saved search
         self.assertEqual(len(instances[0]['components']), 2)
+        # Check if all components came from first saved search
+        self.assertEqual(instances[0]['components'][0]['externalId'], "vm_2_1")
+        self.assertEqual(instances[0]['components'][0]['type']['name'], "vm")
+        self.assertEqual(instances[0]['components'][1]['externalId'], "server_2")
+        self.assertEqual(instances[0]['components'][1]['type']['name'], "server")
+
         self.assertEquals(len(instances[0]['relations']), 0)
         # second saved search throws a check exception for maximum retries data and report a service check
         self.assertEquals(self.service_checks[0]['status'], 1, "service check should have status AgentCheck.WARNING")
@@ -1180,7 +1186,6 @@ class TestSplunkContinue(AgentCheckTest):
         # second saved search throws a check exception for maximum retries data and report a service check
         self.assertEquals(self.service_checks[0]['status'], 2, "service check should have status AgentCheck.CRITICAL")
 
-
     def test_check_exception_fail_count_continue(self):
         """
         When both saved search fails with Check Exception, the code should continue and send topology.
@@ -1226,6 +1231,9 @@ class TestSplunkContinue(AgentCheckTest):
         # second saved search throws a check exception for maximum retries and report a service check
         self.assertEquals(self.service_checks[1]['status'], 1, "service check should have status AgentCheck.WARNING")
         self.assertEquals(self.service_checks[1]['message'], "maximum retries reached for saved search components12")
+        # Both saved search failed so there should be no components and relations
+        self.assertEqual(len(instance[0]['components']), 0)
+        self.assertEqual(len(instance[0]['relations']), 0)
         # check if the check continued and finished
         self.assertEqual(instance[0]["stop_snapshot"], True)
         self.assertEqual(instance[0]["start_snapshot"], True)

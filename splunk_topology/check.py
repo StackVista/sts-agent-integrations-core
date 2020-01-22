@@ -196,6 +196,7 @@ class SplunkTopology(AgentCheck):
             if not instance.splunk_ignore_saved_search_errors:
                 raise e
             self.log.warning("Ignoring Check exception as ignore_saved_search_errors flag is true.")
+            self.log.exception("Splunk process saved search exception: %s" % str(e))
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=str(e))
 
         return True

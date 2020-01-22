@@ -1139,7 +1139,7 @@ class TestSplunkContinue(AgentCheckTest):
         self.assertEqual(instances[0]["stop_snapshot"], True)
         self.assertEqual(instances[0]["start_snapshot"], True)
 
-    def test_check_exception__false_continue(self):
+    def test_check_exception_false_continue(self):
         """
         When 1 saved search fails with Check Exception, the code should break and clear the whole topology.
         """

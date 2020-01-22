@@ -128,7 +128,6 @@ class SplunkTopology(AgentCheck):
             if not instance.splunk_ignore_saved_search_errors:
                 self._clear_topology(instance_key, clear_in_snapshot=True)
                 raise CheckException("Splunk topology failed with message: %s" % e), None, sys.exc_info()[2]
-            self.log.warning("Ignoring Splunk topology exception as ignore_saved_search_errors flag is true.")
 
     def _dispatch_and_await_search(self, instance, saved_searches):
         start_time = time.time()
@@ -171,7 +170,7 @@ class SplunkTopology(AgentCheck):
             for response in responses:
                 for message in response['messages']:
                     if message['type'] != "FATAL" and message['type'] != "INFO":
-                        self.log.info("Received unhandled message, got: " + str(message))
+                        self.log.info("Received unhandled message for saved search %s, got: %s" % (saved_search.name, message))
 
                 count += len(response["results"])
                 # process components and relations
@@ -194,10 +193,18 @@ class SplunkTopology(AgentCheck):
 
         except CheckException as e:
             if not instance.splunk_ignore_saved_search_errors:
+                self.log.error("Received Check exception while processing saved search " + saved_search.name)
                 raise e
-            self.log.warning("Ignoring Check exception as ignore_saved_search_errors flag is true.")
-            self.log.exception("Splunk process saved search exception: %s" % str(e))
+            self.log.warning("Check exception occured %s while processing saved search name %s" % (e.message, saved_search.name))
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=str(e))
+            return False
+        except Exception as e:
+            if not instance.splunk_ignore_saved_search_errors:
+                self.log.error("Received an exception while processing saved search " + saved_search.name)
+                raise e
+            self.log.warning("Got an error %s while processing saved search name %s" % (e.message, saved_search.name))
+            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.WARNING, tags=instance.tags, message=str(e))
+            return False
 
         return True
 

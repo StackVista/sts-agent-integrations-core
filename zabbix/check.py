@@ -86,7 +86,6 @@ class Zabbix(AgentCheck):
     SERVICE_CHECK_NAME = SOURCE_TYPE_NAME = "Zabbix"
     log = logging.getLogger('Zabbix')
     begin_epoch = None  # start to listen to events from epoch timestamp
-    ssl_verify = True
 
     def check(self, instance):
         """

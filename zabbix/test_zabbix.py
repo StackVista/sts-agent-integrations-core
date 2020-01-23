@@ -10,6 +10,7 @@ import os
 # project
 from tests.checks.common import AgentCheckTest
 from checks import CheckException
+import mock
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
@@ -433,3 +434,31 @@ class TestZabbix(AgentCheckTest):
             if tag not in tags:
                 self.fail("Event does not have tag '%s', got: %s." % (tag, tags))
         self.assertEqual(len(tags), 5)
+
+    def validate_requests_ssl_verify_setting(self, config_to_use, expected_verify_value):
+        """
+        Helper for testing whether the yaml setting ssl_verify is respected by mocking requests.get
+        Mocking all the Zabbix functions that talk HTTP via requests.get, excluding the function `check_connection`
+        Function check_connection is the first function that talks HTTP.
+        """
+        with mock.patch('requests.get') as mock_get:
+            self.run_check(config_to_use, mocks={
+                'login': lambda url, user, password: "dummyauthtoken",
+                'retrieve_hosts': lambda x, y: [],
+                'retrieve_problems': lambda url, auth: [],
+                'retrieve_events': lambda url, auth, event_ids: []
+            })
+            mock_get.assert_called_once_with('http://host/zabbix/api_jsonrpc.php', json={'params': {}, 'jsonrpc': '2.0', 'method': 'apiinfo.version', 'id': 1}, verify=expected_verify_value)
+
+    def test_zabbix_respect_false_ssl_verify(self):
+        config = self._config
+        config['instances'][0]['ssl_verify'] = False
+        self.validate_requests_ssl_verify_setting(config, False)
+
+    def test_zabbix_respect_true_ssl_verify(self):
+        config = self._config
+        config['instances'][0]['ssl_verify'] = True
+        self.validate_requests_ssl_verify_setting(config, True)
+
+    def test_zabbix_respect_default_ssl_verify(self):
+        self.validate_requests_ssl_verify_setting(self._config, True)

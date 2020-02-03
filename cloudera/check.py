@@ -175,15 +175,3 @@ def get_config(instance):
     password = str(instance.get('password', ''))
     verify_ssl = is_affirmative(instance.get('verify_ssl'))
     return url, user, password, api_version, verify_ssl
-
-
-if __name__ == '__main__':
-    initialize_logging('cloudera')
-    check, instances = ClouderaCheck.from_yaml('/Users/hruhek/vagrant/stackagent-v1/cloudera.yaml')
-    for instance in instances:
-        print "\nRunning the check against url: %s" % (instance['url'])
-        check.check(instance)
-        if check.has_events():
-            print 'Events: %s' % (check.get_events())
-        print 'Metrics: %s' % (check.get_metrics())
-        print check.get_topology_instances()

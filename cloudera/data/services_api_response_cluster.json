@@ -1,0 +1,495 @@
+{
+    "_items": [
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "HBase",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HBASE_MASTER_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HBASE_REGION_SERVERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hbase",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hbase/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hbase",
+            "_snapshot_policies": null,
+            "_type": "HBASE",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Solr",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "SOLR_SOLR_SERVERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "solr",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/solr/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/solr",
+            "_snapshot_policies": null,
+            "_type": "SOLR",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Key-Value Store Indexer",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "KS_INDEXER_HBASE_INDEXERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "ks_indexer",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/ks_indexer/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/ks_indexer",
+            "_snapshot_policies": null,
+            "_type": "KS_INDEXER",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "YARN (MR2 Included)",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "YARN_JOBHISTORY_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "YARN_NODE_MANAGERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "YARN_RESOURCEMANAGERS_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "YARN_USAGE_AGGREGATION_HEALTH",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "yarn",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/yarn/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/yarn",
+            "_snapshot_policies": null,
+            "_type": "YARN",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Spark",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "SPARK_ON_YARN_SPARK_ON_YARN_SPARK_YARN_HISTORY_SERVER_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "spark_on_yarn",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/spark_on_yarn/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/spark_on_yarn",
+            "_snapshot_policies": null,
+            "_type": "SPARK_ON_YARN",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Hive",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HIVE_HIVEMETASTORES_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVE_HIVESERVER2S_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hive",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hive/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hive",
+            "_snapshot_policies": null,
+            "_type": "HIVE",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Impala",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "IMPALA_CATALOGSERVER_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALA_IMPALADS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALA_STATESTORE_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "impala",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/impala/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/impala",
+            "_snapshot_policies": null,
+            "_type": "IMPALA",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Oozie",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "OOZIE_OOZIE_SERVERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "oozie",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/oozie/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/oozie",
+            "_snapshot_policies": null,
+            "_type": "OOZIE",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "Hue",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HUE_HUE_SERVERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HUE_LOAD_BALANCER_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hue",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hue/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hue",
+            "_snapshot_policies": null,
+            "_type": "HUE",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "ZooKeeper",
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_CANARY_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVERS_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "zookeeper",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/zookeeper/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/zookeeper",
+            "_snapshot_policies": null,
+            "_type": "ZOOKEEPER",
+            "py/object": "cm_client.models.api_service.ApiService"
+        },
+        {
+            "_client_config_staleness_status": "FRESH",
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_display_name": "HDFS",
+            "_entity_status": "BAD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_BLOCKS_WITH_CORRUPT_REPLICAS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_CANARY_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_DATA_NODES_HEALTHY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_FREE_SPACE_REMAINING",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_HA_NAMENODE_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_MISSING_BLOCKS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HDFS_UNDER_REPLICATED_BLOCKS",
+                    "_summary": "BAD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "BAD",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hdfs",
+            "_replication_schedules": null,
+            "_role_config_groups": null,
+            "_role_instances_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hdfs/instances",
+            "_roles": null,
+            "_service_state": "STARTED",
+            "_service_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/serviceRedirect/hdfs",
+            "_snapshot_policies": null,
+            "_type": "HDFS",
+            "py/object": "cm_client.models.api_service.ApiService"
+        }
+    ],
+    "py/object": "cm_client.models.api_service_list.ApiServiceList"
+}

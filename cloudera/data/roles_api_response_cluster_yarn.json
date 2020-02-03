@@ -1,0 +1,337 @@
+{
+    "_items": [
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": "ACTIVE",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_GC_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "RESOURCE_MANAGER_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "yarn-RESOURCEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "yarn-RESOURCEMANAGER-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/yarn-RESOURCEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "yarn",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "RESOURCEMANAGER",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "NODEMANAGER_LOCAL_DATA_DIRECTORIES_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODEMANAGER_LOG_DIRECTORIES_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODEMANAGER_RECOVERY_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_CONNECTIVITY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_GC_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_HEALTH_CHECKER",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "NODE_MANAGER_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "yarn-NODEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "yarn-NODEMANAGER-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/yarn-NODEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "yarn",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "NODEMANAGER",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_GC_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "JOBHISTORY_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "yarn-JOBHISTORY-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "yarn-JOBHISTORY-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/yarn-JOBHISTORY-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "yarn",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "JOBHISTORY",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        }
+    ],
+    "py/object": "cm_client.models.api_role_list.ApiRoleList"
+}

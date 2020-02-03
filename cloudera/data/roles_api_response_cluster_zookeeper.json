@@ -1,0 +1,139 @@
+{
+    "_items": [
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_CONNECTION_COUNT",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_DATA_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_DATA_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_GC_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_MAX_LATENCY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_OUTSTANDING_REQUESTS",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_QUORUM_MEMBERSHIP",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "ZOOKEEPER_SERVER_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "zookeeper-SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "zookeeper-SERVER-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/zookeeper-SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "zookeeper",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "SERVER",
+            "_zoo_keeper_server_mode": "STANDALONE",
+            "py/object": "cm_client.models.api_role.ApiRole"
+        }
+    ],
+    "py/object": "cm_client.models.api_role_list.ApiRoleList"
+}

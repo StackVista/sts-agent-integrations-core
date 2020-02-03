@@ -1,0 +1,270 @@
+{
+    "_items": [
+        {
+            "_cluster_ref": {
+                "_cluster_name": "cluster",
+                "_display_name": null,
+                "py/object": "cm_client.models.api_cluster_ref.ApiClusterRef"
+            },
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_entity_status": "GOOD_HEALTH",
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HOST_AGENT_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_AGENT_PARCEL_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_AGENT_PROCESS_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_AVAILABLE_ENTROPY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_CLOCK_OFFSET",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_DNS_RESOLUTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_MEMORY_SWAPPING",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_NETWORK_FRAME_ERRORS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_NETWORK_INTERFACES_SLOW_MODE",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HOST_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+            "_host_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/hostRedirect/b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+            "_hostname": "ip-172-31-40-176.eu-west-1.compute.internal",
+            "_ip_address": "172.31.40.176",
+            "_last_heartbeat": "2019-12-13T07:23:06.113Z",
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_num_cores": 8.0,
+            "_num_physical_cores": 8.0,
+            "_rack_id": "/default",
+            "_role_refs": [
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "zookeeper-SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "zookeeper",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "spark_on_yarn-GATEWAY-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "spark_on_yarn",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "spar40365358-SPARK_YARN_HISTORY_SERVER-9a9f45a8b62a82886a95eb326",
+                    "_service_name": "spark_on_yarn",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "impala-CATALOGSERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "impala",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": null,
+                    "_role_name": "mgmt-REPORTSMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "mgmt",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": null,
+                    "_role_name": "mgmt-EVENTSERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "mgmt",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "oozie-OOZIE_SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "oozie",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "impala-STATESTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "impala",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": null,
+                    "_role_name": "mgmt-HOSTMONITOR-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "mgmt",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hdfs-DATANODE-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hdfs",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "yarn-NODEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "yarn",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hdfs-SECONDARYNAMENODE-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hdfs",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hive-HIVEMETASTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hive",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hive-HIVESERVER2-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hive",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "impala-IMPALAD-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "impala",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hbase-MASTER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hbase",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hue-HUE_LOAD_BALANCER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hue",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hdfs-BALANCER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hdfs",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "yarn-JOBHISTORY-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "yarn",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "ks_indexer-HBASE_INDEXER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "ks_indexer",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hue-HUE_SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hue",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hive-GATEWAY-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hive",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "yarn-RESOURCEMANAGER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "yarn",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hbase-REGIONSERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hbase",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "solr-SOLR_SERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "solr",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": "cluster",
+                    "_role_name": "hdfs-NAMENODE-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "hdfs",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": null,
+                    "_role_name": "mgmt-ALERTPUBLISHER-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "mgmt",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                },
+                {
+                    "_cluster_name": null,
+                    "_role_name": "mgmt-SERVICEMONITOR-9a9f45a8b62a82886a95eb326d42fd3e",
+                    "_service_name": "mgmt",
+                    "py/object": "cm_client.models.api_role_ref.ApiRoleRef"
+                }
+            ],
+            "_total_phys_mem_bytes": 33566633984.0,
+            "py/object": "cm_client.models.api_host.ApiHost"
+        }
+    ],
+    "py/object": "cm_client.models.api_host_list.ApiHostList"
+}

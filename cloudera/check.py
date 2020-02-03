@@ -1,4 +1,4 @@
-# (C) Datadog, Inc. 2019
+# (C) StackState, Inc. 2019
 # All rights reserved
 # Licensed under Simplified BSD License (see LICENSE)
 import json
@@ -6,9 +6,9 @@ import logging
 import time
 
 import cm_client
-from checks import AgentCheck, _is_affirmative
+from checks import AgentCheck
 from cm_client.rest import ApiException
-from config import initialize_logging
+from config import initialize_logging, _is_affirmative as is_affirmative
 
 
 class ClouderaCheck(AgentCheck):
@@ -173,7 +173,7 @@ def get_config(instance):
     api_version = instance.get('api_version', '')
     user = instance.get('username', '')
     password = str(instance.get('password', ''))
-    verify_ssl = _is_affirmative(instance.get('verify_ssl'))
+    verify_ssl = is_affirmative(instance.get('verify_ssl'))
     return url, user, password, api_version, verify_ssl
 
 

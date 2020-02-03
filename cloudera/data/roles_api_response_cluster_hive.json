@@ -1,0 +1,245 @@
+{
+    "_items": [
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "NONE",
+            "_ha_status": null,
+            "_health_checks": [],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hive-GATEWAY-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "hive-GATEWAY-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "NA",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/hive-GATEWAY-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "hive",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "GATEWAY",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_CANARY_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_PAUSE_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVEMETASTORE_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hive-HIVEMETASTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "hive-HIVEMETASTORE-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/hive-HIVEMETASTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "hive",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "HIVEMETASTORE",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_DOWNLOADED_RESOURCES_DIRECTORY_FREE_SPACE",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_EXEC_LOCAL_SCRATCH_DIRECTORY_FREE_SPACE",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_PAUSE_DURATION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "HIVESERVER2_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "hive-HIVESERVER2-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "hive-HIVESERVER2-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/hive-HIVESERVER2-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "hive",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "HIVESERVER2",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        }
+    ],
+    "py/object": "cm_client.models.api_role_list.ApiRoleList"
+}

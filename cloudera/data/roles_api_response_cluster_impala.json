@@ -1,0 +1,344 @@
+{
+    "_items": [
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_MEMORY_RSS_HEALTH",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "STATESTORE_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "impala-STATESTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "impala-STATESTORE-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/impala-STATESTORE-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "impala",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "STATESTORE",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_CONNECTIVITY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_MEMORY_RSS_HEALTH",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "CATALOGSERVER_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "impala-CATALOGSERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "impala-CATALOGSERVER-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/impala-CATALOGSERVER-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "impala",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "CATALOGSERVER",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        },
+        {
+            "_commission_state": "COMMISSIONED",
+            "_config": null,
+            "_config_stale": null,
+            "_config_staleness_status": "FRESH",
+            "_entity_status": "GOOD_HEALTH",
+            "_ha_status": null,
+            "_health_checks": [
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_CONNECTIVITY",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_FILE_DESCRIPTOR",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_FRONTEND_CONNECTIONS",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_HEAP_DUMP_DIRECTORY_FREE_SPACE",
+                    "_summary": "NOT_AVAILABLE",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_HOST_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_LOG_DIRECTORY_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_MEMORY_RSS_HEALTH",
+                    "_summary": "DISABLED",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_QUERY_MONITORING_STATUS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_READY_STATUS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_SCM_HEALTH",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_SCRATCH_DIRECTORIES_FREE_SPACE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_SWAP_MEMORY_USAGE",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_UNEXPECTED_EXITS",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                },
+                {
+                    "_explanation": null,
+                    "_name": "IMPALAD_WEB_METRIC_COLLECTION",
+                    "_summary": "GOOD",
+                    "_suppressed": false,
+                    "py/object": "cm_client.models.api_health_check.ApiHealthCheck"
+                }
+            ],
+            "_health_summary": "GOOD",
+            "_host_ref": {
+                "_host_id": "b5aa7302-3d1c-4b8d-9f7c-3491b4e5ddcf",
+                "_hostname": null,
+                "py/object": "cm_client.models.api_host_ref.ApiHostRef"
+            },
+            "_maintenance_mode": false,
+            "_maintenance_owners": [],
+            "_name": "impala-IMPALAD-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_role_config_group_ref": {
+                "_role_config_group_name": "impala-IMPALAD-BASE",
+                "py/object": "cm_client.models.api_role_config_group_ref.ApiRoleConfigGroupRef"
+            },
+            "_role_state": "STARTED",
+            "_role_url": "http://ip-172-31-40-176.eu-west-1.compute.internal:7180/cmf/roleRedirect/impala-IMPALAD-9a9f45a8b62a82886a95eb326d42fd3e",
+            "_service_ref": {
+                "_cluster_name": "cluster",
+                "_peer_name": null,
+                "_service_display_name": null,
+                "_service_name": "impala",
+                "_service_type": null,
+                "py/object": "cm_client.models.api_service_ref.ApiServiceRef"
+            },
+            "_type": "IMPALAD",
+            "_zoo_keeper_server_mode": null,
+            "py/object": "cm_client.models.api_role.ApiRole"
+        }
+    ],
+    "py/object": "cm_client.models.api_role_list.ApiRoleList"
+}

@@ -7,10 +7,14 @@ import re
 import ssl
 import time
 import traceback
+import urllib3
 
 # 3p
 from pyVim import connect
 from pyVmomi import vim  # pylint: disable=E0611
+import requests
+from vmware.vapi.vsphere.client import create_vsphere_client
+from com.vmware.vapi.std_client import DynamicID
 
 # project
 from config import _is_affirmative
@@ -961,6 +965,20 @@ class VSphereCheck(AgentCheck):
 
         self.gauge('vsphere.vm.count', vm_count, tags=["vcenter_server:%s" % instance.get('name')])
 
+    def extract_tags(self, object_type, object_id):
+        sts_identifiers = []
+        labels = []
+        dynamic_id = DynamicID(type=object_type, id=object_id)
+        tag_ids = self.client.tagging.TagAssociation.list_attached_tags(dynamic_id)
+        for tag_id in tag_ids:
+            tag_model = self.client.tagging.Tag.get(tag_id)
+            category = self.client.tagging.Category.get(tag_model.category_id)
+            if category.name.lower() == "stackstate-identifier":
+                sts_identifiers.append(tag_model.name.lower())
+            else:
+                add_label_pair(labels, category.name.lower(), tag_model.name.lower())
+        return sts_identifiers, labels
+
     def _vsphere_vms(self, content, domain="Unspecified", regexes=None, include_only_marked=False):
         obj_list = []
         container = content.viewManager.CreateContainerView(
@@ -970,7 +988,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-            labels = []
+
             if not self._is_excluded(c, regexes, include_only_marked):
                 hostname = c.name
 
@@ -980,6 +998,9 @@ class VSphereCheck(AgentCheck):
                     topology_tags["datastore"] = c.datastore[0]._moId
                     topology_tags["layer"] = TOPOLOGY_LAYERS.VM
                     topology_tags["domain"] = domain
+
+                    sts_identifiers, labels = self.extract_tags("VirtualMachine", c._moId)
+                    topology_tags["identifiers"] = sts_identifiers
 
                     add_label_pair(labels, "name", topology_tags["name"])
                     add_label_pair(labels, "guestId", c.config.guestId)
@@ -1000,7 +1021,6 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-            labels = []
             hostname = c.name
 
             if isinstance(c, vim.Datacenter):
@@ -1013,6 +1033,9 @@ class VSphereCheck(AgentCheck):
                 topology_tags["id"] = c._moId
                 topology_tags["layer"] = TOPOLOGY_LAYERS.DATACENTER
                 topology_tags["domain"] = domain
+
+                sts_identifiers, labels = self.extract_tags("Datacenter", c._moId)
+                topology_tags["identifiers"] = sts_identifiers
 
                 computeresources = []
                 clustercomputeresources = []
@@ -1055,6 +1078,9 @@ class VSphereCheck(AgentCheck):
                 topology_tags["layer"] = TOPOLOGY_LAYERS.DATASTORE
                 topology_tags["domain"] = domain
 
+                sts_identifiers, labels = self.extract_tags("Datastore", c._moId)
+                topology_tags["identifiers"] = sts_identifiers
+
                 add_label_pair(labels, "name", topology_tags["name"])
 
                 vms = []
@@ -1078,7 +1104,6 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-            labels = []
             if not self._is_excluded(c, regexes, include_only_marked):
                 hostname = c.name
 
@@ -1090,6 +1115,10 @@ class VSphereCheck(AgentCheck):
                     topology_tags["topo_type"] = VSPHERE_COMPONENT_TYPE.HOST
                     topology_tags["layer"] = TOPOLOGY_LAYERS.HOST
                     topology_tags["domain"] = domain
+
+                    sts_identifiers, labels = self.extract_tags("HostSystem", c._moId)
+                    topology_tags["identifiers"] = sts_identifiers
+
                     host_datastores = []
                     host_vms = []
 
@@ -1123,7 +1152,6 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-            labels = []
             hostname = c.name
 
             if isinstance(c, vim.ClusterComputeResource):
@@ -1131,6 +1159,9 @@ class VSphereCheck(AgentCheck):
                 topology_tags["name"] = c.name
                 topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
                 topology_tags["domain"] = domain
+
+                sts_identifiers, labels = self.extract_tags("ClusterComputeResource", c._moId)
+                topology_tags["identifiers"] = sts_identifiers
 
                 datastores = []
                 hosts = []
@@ -1157,7 +1188,6 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-            labels = []
             hostname = c.name
 
             if isinstance(c, vim.ComputeResource):
@@ -1165,6 +1195,9 @@ class VSphereCheck(AgentCheck):
                 topology_tags["name"] = c.name
                 topology_tags["layer"] = TOPOLOGY_LAYERS.COMPUTERESOURCE
                 topology_tags["domain"] = domain
+
+                sts_identifiers, labels = self.extract_tags("ComputeResource", c._moId)
+                topology_tags["identifiers"] = sts_identifiers
 
                 datastores = []
                 hosts = []
@@ -1183,8 +1216,22 @@ class VSphereCheck(AgentCheck):
 
         return obj_list
 
+    def vsphere_client_connect(self, instance):
+        session = requests.session()
+        session.verify = False
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+        # Connect to vSphere client
+        self.client = create_vsphere_client(
+            server=instance.get('host'),
+            username=instance.get('username'),
+            password=instance.get('password'),
+            session=session)
+
+
     def get_topologyitems_sync(self, instance):
         server_instance = self._get_server_instance(instance)
+        self.vsphere_client_connect(instance)
         content = server_instance.RetrieveContent()
         domain = instance["host"]  # candidate also name
 

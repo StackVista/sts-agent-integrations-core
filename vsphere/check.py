@@ -988,7 +988,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
-
+            labels = []
             if not self._is_excluded(c, regexes, include_only_marked):
                 hostname = c.name
 
@@ -1021,6 +1021,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
+            labels = []
             hostname = c.name
 
             if isinstance(c, vim.Datacenter):
@@ -1104,6 +1105,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
+            labels = []
             if not self._is_excluded(c, regexes, include_only_marked):
                 hostname = c.name
 
@@ -1152,6 +1154,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
+            labels = []
             hostname = c.name
 
             if isinstance(c, vim.ClusterComputeResource):
@@ -1188,6 +1191,7 @@ class VSphereCheck(AgentCheck):
 
         for c in container.view:
             topology_tags = {}
+            labels = []
             hostname = c.name
 
             if isinstance(c, vim.ComputeResource):

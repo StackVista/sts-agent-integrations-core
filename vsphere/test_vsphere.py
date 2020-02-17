@@ -10,10 +10,50 @@ from mock import Mock, MagicMock
 from pyVmomi import vim  # pylint: disable=E0611
 import simplejson as json
 
+
+import requests
+from vmware.vapi.bindings.stub import ApiClient
+from vmware.vapi.lib.connect import get_requests_connector
+from vmware.vapi.stdlib.client.factories import StubConfigurationFactory
+
+from vmware.vapi.vsphere.client import StubFactory
+from com.vmware.cis.tagging_client import TagModel, CategoryModel
+
 # datadog
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
+
+
+def vsphere_client():
+    stub_config = StubConfigurationFactory.new_std_configuration(
+        get_requests_connector(session=requests.session(), url='https://localhost/vapi'))
+    stub_factory = StubFactory(stub_config)
+    client = ApiClient(stub_factory)
+    return client
+
+
+class VsphereTag(TagModel):
+    """
+    Helper, generate a mocked TagModel from the given attributes.
+    """
+    def __init__(self, id, name, category_id):
+        self.name = name
+        self.description = "stackstate defined atributes"
+        self.category_id = category_id
+        self.id = id
+        super(VsphereTag, self).__init__(self.id, self.category_id, self.name, self.description)
+
+
+class VsphereCategory(CategoryModel):
+    """
+    Helper, generate a mocked CategoryModel from the given attributes.
+    """
+    def __init__(self, id, name):
+        self.name = name
+        self.description = "stackstate category"
+        self.id = id
+        super(VsphereCategory, self).__init__(self.id, self.name, self.description)
 
 class MockedMOR(Mock):
     """
@@ -350,11 +390,11 @@ class TestVsphereTopo(AgentCheckTest):
         config = MockedMOR(guestId='ubuntu64Guest', guestFullName='Ubuntu Linux (64-bit)', hardware=vm_config_hardware)
 
         datastore = MockedMOR(spec='Datastore', _moId="54183927-04f91918-a72a-6805ca147c55", name="WDC1TB")
-        virtualmachine = MockedMOR(spec="VirtualMachine", name="Ubuntu", datastore=[datastore], config=config)
-        host = MockedMOR(spec="HostSystem", name="localhost.localdomain", datastore=[datastore], vm=[virtualmachine])
-        computeresource = MockedMOR(spec="ComputeResource", name="localhost", datastore=[datastore], host=[host])
+        virtualmachine = MockedMOR(spec="VirtualMachine", name="Ubuntu", datastore=[datastore], config=config, _moId="vm-12")
+        host = MockedMOR(spec="HostSystem", name="localhost.localdomain", datastore=[datastore], vm=[virtualmachine], _moId="host-1")
+        computeresource = MockedMOR(spec="ComputeResource", name="localhost", datastore=[datastore], host=[host], _moId="cr-1")
         clustercomputeresource = MockedMOR(spec="ClusterComputeResource", name="local",
-                                           datastore=[datastore], host=[host])
+                                           datastore=[datastore], host=[host], _moId="ccr-12")
 
         datacenter = MockedMOR(spec="Datacenter", name="da-Datacenter", _moId="54183347-04d231918",
                                hostFolder=MockedMOR(childEntity=[computeresource]), datastore=[datastore])
@@ -387,11 +427,23 @@ class TestVsphereTopo(AgentCheckTest):
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
 
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns empty list of tags
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=[])
+
+        # assign the vsphere client object to the vsphere check client object
+        self.check.client = client
+
         content_mock = self.mock_content("vm")
         obj_list = self.check._vsphere_vms(content_mock, "ESXi")
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['hostname'], 'Ubuntu')
+
+        # check there should be no tags and labels extracted from vspher client
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 0)
 
         # Check if labels are added
         self.assertTrue(obj_list[0]['topo_tags']["labels"])
@@ -414,8 +466,31 @@ class TestVsphereTopo(AgentCheckTest):
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
 
+        # mock the CategoryModel and TagModel for response
+        category = VsphereCategory('345', 'stackstate-label')
+        tags = VsphereTag('123', 'vishal-test', '345')
+
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=['123'])
+        # get method of Tag returns a TagModel object which is returned
+        client.tagging.Tag.get = MagicMock(return_value=tags)
+        # get method of Category returns a CategoryModel object which is returned
+        client.tagging.Category.get = MagicMock(return_value=category)
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
         content_mock = self.mock_content("dc")
         obj_list = self.check._vsphere_datacenters(content_mock, "ESXi")
+
+        # expect a label coming from Tagging model of datacenter
+        expected_name_label = obj_list[0]['topo_tags']["labels"][0]
+        self.assertEqual(expected_name_label, 'stackstate-label:vishal-test')
+        # identifier should be empty
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 0)
 
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(type(obj_list[0]['topo_tags']['datastores']), list)
@@ -429,6 +504,21 @@ class TestVsphereTopo(AgentCheckTest):
         config = {}
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
+
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=[])
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
+        content_mock = self.mock_content("dc")
+        obj_list = self.check._vsphere_datacenters(content_mock, "ESXi")
+
+        # expect an empty identifier list
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 0)
 
         content_mock = self.mock_content("ds")
         obj_list = self.check._vsphere_datastores(content_mock, "ESXi")
@@ -447,8 +537,30 @@ class TestVsphereTopo(AgentCheckTest):
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
 
+        # mock the CategoryModel and TagModel for response
+        category = VsphereCategory('345', 'stackstate-identifier')
+        tags = VsphereTag('123', 'vishal-test', '345')
+
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=['123'])
+        # get method of Tag returns a TagModel object which is returned
+        client.tagging.Tag.get = MagicMock(return_value=tags)
+        # get method of Category returns a CategoryModel object which is returned
+        client.tagging.Category.get = MagicMock(return_value=category)
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
         content_mock = self.mock_content("host")
         obj_list = self.check._vsphere_hosts(content_mock, "ESXi")
+
+        # one identifier expected
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 1)
+        self.assertEqual(obj_list[0]['topo_tags']['identifiers'][0], "vishal-test")
+
         # Check if host has tags name and topo_type
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['topo_tags']['name'], 'localhost.localdomain')
@@ -466,8 +578,21 @@ class TestVsphereTopo(AgentCheckTest):
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
 
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=[])
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
         content_mock = self.mock_content("cluster")
         obj_list = self.check._vsphere_clustercomputeresources(content_mock, "ESXi")
+
+        # expect an empty identifier list
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 0)
+
         # Check if clustercomputeresources has tags name and topo_type
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['topo_tags']['name'], 'local')
@@ -484,8 +609,21 @@ class TestVsphereTopo(AgentCheckTest):
         self.load_check(config)
         self.check._is_excluded = MagicMock(return_value=False)
 
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=[])
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
         content_mock = self.mock_content("compute")
         obj_list = self.check._vsphere_computeresources(content_mock, "ESXi")
+
+        # expect an empty identifier list
+        self.assertEqual(len(obj_list[0]['topo_tags']['identifiers']), 0)
+
         # Check if computeresources has tags name and topo_type
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(obj_list[0]['topo_tags']['name'], 'localhost')
@@ -520,8 +658,32 @@ class TestVsphereTopo(AgentCheckTest):
         server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("vm")})
         self.check._get_server_instance = MagicMock(return_value=server_mock)
 
+        # mock the vpshere client connect
+        self.check.vsphere_client_connect = MagicMock()
+
+        # mock the CategoryModel and TagModel for response
+        category = VsphereCategory('345', 'stackstate-identifier')
+        tags = VsphereTag('123', 'vishal-test', '345')
+
+        # get the client
+        client = vsphere_client()
+
+        # list_attached_tags method returns list of tags ids of type string
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=['123'])
+        # get method of Tag returns a TagModel object which is returned
+        client.tagging.Tag.get = MagicMock(return_value=tags)
+        # get method of Category returns a CategoryModel object which is returned
+        client.tagging.Category.get = MagicMock(return_value=category)
+
+        # assign the vsphere client object to the check vsphere client object
+        self.check.client = client
+
         topo_dict = self.check.get_topologyitems_sync(instance)
         self.assertEqual(len(topo_dict["vms"]), 1)
+
+        # Check if stackstate-identifier are as expected from vsphere tags and coming in identifiers section
+        self.assertEqual(len(topo_dict["vms"][0]['topo_tags']['identifiers']), 1)
+        self.assertEqual(topo_dict["vms"][0]['topo_tags']['identifiers'][0], 'vishal-test')
 
         # Check if tags are as expected
         self.assertEqual(topo_dict["vms"][0]['topo_tags']['name'], 'Ubuntu')
@@ -590,6 +752,9 @@ class TestVsphereTopo(AgentCheckTest):
         server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("vm")})
         self.check._get_server_instance = MagicMock(return_value=server_mock)
 
+        # mock the vpshere client connect
+        self.check.vsphere_client_connect = MagicMock()
+
         topo_dict = self.check.get_topologyitems_sync(instance)
         self.assertEqual(len(topo_dict["vms"]), 0)
 
@@ -606,5 +771,13 @@ class TestVsphereTopo(AgentCheckTest):
         server_mock.configure_mock(**{'RetrieveContent.return_value': self.mock_content("host")})
         self.check._get_server_instance = MagicMock(return_value=server_mock)
 
+        # mock the vpshere client connect
+        self.check.vsphere_client_connect = MagicMock()
+        # get the client
+        client = vsphere_client()
+        client.tagging.TagAssociation.list_attached_tags = MagicMock(return_value=[])
+        self.check.client = client
+
         topo_dict = self.check.get_topologyitems_sync(instance)
         self.assertEqual(len(topo_dict["hosts"]), 1)
+        self.assertEqual(len(topo_dict["hosts"][0]['topo_tags']['identifiers']), 0)

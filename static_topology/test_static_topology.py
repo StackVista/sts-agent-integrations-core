@@ -377,7 +377,7 @@ class TestStaticCSVTopology(AgentCheckTest):
 
     @mock.patch('codecs.open',
                 side_effect=lambda location, mode, encoding: MockFileReader(location, {
-                    'component.csv': ['id,name,type,environments', '1,name1,type1,"env1,env2"', '2,name2,type2'],
+                    'component.csv': ['id,name,type,environments', '1,name1,type1,"env1,env2"', '2,name2,type2,'],
                     'relation.csv': ['sourceid,targetid,type', '1,2,type']}))
     def test_topology_with_multiple_environments(self, mock):
         config = {
@@ -472,6 +472,50 @@ class TestStaticCSVTopology(AgentCheckTest):
         self.assertEquals('CSV header type not found in component csv.', str(context.exception))
 
     @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'components.csv': ['id,name,type', 'id1,name1,type1', ''],
+        'relations.csv': ['sourceid,targetid,type']}))
+    def test_handle_empty_component_line(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'components.csv',
+                    'relations_file': 'relations.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 1)
+        self.assertEqual(len(instances[0]['relations']), 0)
+
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'components.csv': ['id,name,type,othervalue', 'id1,name1,type1,othervalue', 'id2,name2,type2'],
+        'relations.csv': ['sourceid,targetid,type']}))
+    def test_handle_incomplete_component_line(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'components.csv',
+                    'relations_file': 'relations.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 1)
+        self.assertEqual(len(instances[0]['relations']), 0)
+
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
         'component.csv': ['id,name,type'],
         'relation.csv': ['NOSOURCEID,targetid,type']}))
     def test_missing_relation_sourceid_field(self, mock):
@@ -492,44 +536,88 @@ class TestStaticCSVTopology(AgentCheckTest):
 
         self.assertEquals('CSV header sourceid not found in relation csv.', str(context.exception))
 
-        @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
-            'component.csv': ['id,name,type'],
-            'relation.csv': ['sourceid,NOTARGETID,type']}))
-        def test_missing_relation_targetid_field(self, mock):
-            config = {
-                'init_config': {},
-                'instances': [
-                    {
-                        'type': 'csv',
-                        'components_file': 'component.csv',
-                        'relations_file': 'relation.csv',
-                        'delimiter': ','
-                    }
-                ]
-            }
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'component.csv': ['id,name,type'],
+        'relation.csv': ['sourceid,NOTARGETID,type']}))
+    def test_missing_relation_targetid_field(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
 
-            with self.assertRaises(CheckException) as context:
-                self.run_check(config)
+        with self.assertRaises(CheckException) as context:
+            self.run_check(config)
 
-            self.assertEquals('CSV header targetid not found in relation csv.', str(context.exception))
+        self.assertEquals('CSV header targetid not found in relation csv.', str(context.exception))
 
-        @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
-            'component.csv': ['id,name,type'],
-            'relation.csv': ['sourceid,targetid,NOTYPE']}))
-        def test_missing_relation_type_field(self, mock):
-            config = {
-                'init_config': {},
-                'instances': [
-                    {
-                        'type': 'csv',
-                        'components_file': 'component.csv',
-                        'relations_file': 'relation.csv',
-                        'delimiter': ','
-                    }
-                ]
-            }
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'component.csv': ['id,name,type'],
+        'relation.csv': ['sourceid,targetid,NOTYPE']}))
+    def test_missing_relation_type_field(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'component.csv',
+                    'relations_file': 'relation.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
 
-            with self.assertRaises(CheckException) as context:
-                self.run_check(config)
+        with self.assertRaises(CheckException) as context:
+            self.run_check(config)
 
-            self.assertEquals('CSV header type not found in relation csv.', str(context.exception))
+        self.assertEquals('CSV header type not found in relation csv.', str(context.exception))
+
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'components.csv': ['id,name,type', 'id1,name1,type1', 'id2,name2,type2'],
+        'relations.csv': ['sourceid,targetid,type', 'id1,id2,uses', '']}))
+    def test_handle_empty_relation_line(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'components.csv',
+                    'relations_file': 'relations.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['relations']), 1)
+
+    @mock.patch('codecs.open', side_effect=lambda location, mode, encoding: MockFileReader(location, {
+        'components.csv': ['id,name,type', 'id1,name1,type1', 'id2,name2,type2'],
+        'relations.csv': ['sourceid,targetid,type,othervalue', 'id1,id2,uses,othervalue', 'id2,id3,uses']}))
+    def test_handle_incomplete_relation_line(self, mock):
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'type': 'csv',
+                    'components_file': 'components.csv',
+                    'relations_file': 'relations.csv',
+                    'delimiter': ','
+                }
+            ]
+        }
+
+        self.run_check(config)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(len(instances[0]['components']), 2)
+        self.assertEqual(len(instances[0]['relations']), 1)

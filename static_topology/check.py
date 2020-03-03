@@ -62,9 +62,13 @@ class StaticTopology(AgentCheck):
                     raise CheckException('CSV header %s not found in component csv.' % field)
             id_idx = header_row.index(COMPONENT_ID_FIELD)
             type_idx = header_row.index(COMPONENT_TYPE_FIELD)
+            header_row_number_of_fields = len(header_row)
 
             for row in reader:
                 data = dict(zip(header_row, row))
+                if len(data) != header_row_number_of_fields:
+                    self.log.warn("Skipping row because number of fields do not match header row, got: %s" % row)
+                    continue
 
                 # label processing
                 labels = data.get('labels', "")
@@ -108,9 +112,14 @@ class StaticTopology(AgentCheck):
             source_id_idx = header_row.index(RELATION_SOURCE_ID_FIELD)
             target_id_idx = header_row.index(RELATION_TARGET_ID_FIELD)
             type_idx = header_row.index(RELATION_TYPE_FIELD)
+            header_row_number_of_fields = len(header_row)
 
             for row in reader:
                 data = dict(zip(header_row, row))
+                if len(data) != header_row_number_of_fields:
+                    self.log.warn("Skipping row because number of fields do not match header row, got: %s" % row)
+                    continue
+
                 self.relation(instance_key=instance_key,
                               source_id=row[source_id_idx],
                               target_id=row[target_id_idx],

@@ -33,8 +33,12 @@ class TestSplunkNoTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [],
                     'relation_saved_searches': []
                 }
@@ -79,8 +83,12 @@ class TestSplunkTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -152,8 +160,12 @@ class TestSplunkTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -231,8 +243,12 @@ class TestSplunkNoSnapshot(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'snapshot': False,
                     'component_saved_searches': [{
                         "name": "components",
@@ -282,8 +298,12 @@ class TestSplunkMinimalTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "minimal_components",
                         "element_type": "component",
@@ -353,8 +373,12 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "incomplete_components",
                         "element_type": "component",
@@ -406,8 +430,12 @@ class TestSplunkPartiallyIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "partially_incomplete_components",
                         "element_type": "component",
@@ -484,8 +512,12 @@ class TestSplunkPartiallyIncompleteAndIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "element_type": "component",
@@ -555,8 +587,12 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components_fast",
                         "element_type": "component",
@@ -571,8 +607,12 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
                 },
                 {
                     'url': 'http://remotehost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'polling_interval_seconds': 30,
                     'component_saved_searches': [{
                         "name": "components_slow",
@@ -670,8 +710,12 @@ class TestSplunkTopologyErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "error",
                         "element_type": "component",
@@ -712,8 +756,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "error",
                         "element_type": "component",
@@ -753,8 +801,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [{
                         "name": "error",
@@ -796,8 +848,12 @@ class TestTopologyDataIsClearedOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': 1,
                     'component_saved_searches': [{
                         "name": "components",
@@ -856,8 +912,12 @@ class TestSplunkWildcardTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'polling_interval_seconds': 0,
                     'component_saved_searches': [{
                         "match": "comp.*",
@@ -924,8 +984,12 @@ class TestSplunkTopologyRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'component_saved_searches': [
                         {"name": "savedsearch1", "element_type": "component", "parameters": {}},
@@ -972,8 +1036,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components"
                     }],
@@ -1012,8 +1080,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components"
                     }],
@@ -1052,8 +1124,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {
@@ -1098,8 +1174,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},
@@ -1148,8 +1228,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': False,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},
@@ -1195,8 +1279,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},

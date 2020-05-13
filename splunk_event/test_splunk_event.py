@@ -31,8 +31,12 @@ class TestSplunkErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "error",
                         "parameters": {}
@@ -72,8 +76,12 @@ class TestSplunkEmptyEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -110,8 +118,12 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -154,8 +166,12 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_events",
                         "parameters": {}
@@ -229,8 +245,12 @@ class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -278,8 +298,12 @@ class TestSplunkFullEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -348,8 +372,12 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "poll",
                         "parameters": {},
@@ -438,8 +466,12 @@ class TestSplunkDelayFirstTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -494,8 +526,12 @@ class TestSplunkDeduplicateEventsInTheSameRun(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "duplicates",
                         "parameters": {}
@@ -556,8 +592,12 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -645,8 +685,12 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -723,8 +767,12 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -789,8 +837,12 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {},
@@ -852,8 +904,12 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {},
@@ -913,8 +969,12 @@ class TestSplunkWildcardSearches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "even*",
                         "parameters": {}
@@ -967,8 +1027,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "even*",
                         "parameters": {}
@@ -1007,8 +1071,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'saved_searches': [{
                         "match": "metric*",
@@ -1075,8 +1143,12 @@ class TestSplunkEventRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'saved_searches': [
                         {"name": "savedsearch1", "parameters": {}},
@@ -1123,8 +1195,12 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "selective_events",
                         "parameters": {},
@@ -1185,8 +1261,12 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "all_events",
                         "parameters": {},
@@ -1247,8 +1327,12 @@ class TestSplunkEventIndividualDispatchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1302,8 +1386,12 @@ class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1358,8 +1446,12 @@ class TestSplunkEventSearchFullFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1407,8 +1499,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events"
                     }],
@@ -1446,8 +1542,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events"
                     }],
@@ -1486,8 +1586,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {

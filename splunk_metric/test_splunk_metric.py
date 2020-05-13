@@ -46,8 +46,12 @@ class TestSplunkErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "error",
                         "parameters": {}
@@ -92,8 +96,12 @@ class TestSplunkMetric(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -166,8 +174,12 @@ class TestSplunkEmptyMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {}
@@ -199,8 +211,12 @@ class TestSplunkMinimalMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -244,8 +260,12 @@ class TestSplunkPartiallyIncompleteMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "partially_incomplete_metrics",
                         "parameters": {}
@@ -288,8 +308,12 @@ class TestSplunkFullMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "full_metrics",
                         "parameters": {}
@@ -342,8 +366,12 @@ class TestSplunkAlternativeFieldsMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "alternative_fields_metrics",
                         "metric_name_field": "mymetric",
@@ -389,8 +417,12 @@ class TestSplunkFixedMetricNAme(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "alternative_fields_metrics",
                         "metric_name": "custommetric",
@@ -436,8 +468,12 @@ class TestSplunkWarningOnMissingFields(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "incomplete_metrics",
                         "parameters": {}
@@ -471,8 +507,12 @@ class TestSplunkSameDataMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "duplicate_metrics",
                         "parameters": {}
@@ -516,8 +556,12 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "poll",
                         "parameters": {},
@@ -607,8 +651,12 @@ class TestSplunkDelayFirstTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -666,8 +714,12 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -755,8 +807,12 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -833,8 +889,12 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -899,8 +959,12 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {},
@@ -962,8 +1026,12 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {},
@@ -1023,8 +1091,12 @@ class TestSplunkWildcardSearches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "minimal_*",
                         "parameters": {}
@@ -1077,8 +1149,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "metric*",
                         "parameters": {}
@@ -1116,8 +1192,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'saved_searches': [{
                         "match": "metric*",
@@ -1157,8 +1237,12 @@ class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*metrics",
                         "parameters": {}
@@ -1228,8 +1312,12 @@ class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*metrics",
                         "parameters": {}
@@ -1301,8 +1389,12 @@ class TestSplunkMetricSearchFullFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "full_metrics",
                         "parameters": {}
@@ -1351,8 +1443,12 @@ class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'saved_searches': [
                         {"name": "savedsearch1", "parameters": {}},
@@ -1399,8 +1495,12 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics_identification_fields_selective",
                         "parameters": {},
@@ -1456,8 +1556,12 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics_identification_fields_all",
                         "parameters": {},
@@ -1512,8 +1616,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics"
                     }],
@@ -1552,8 +1660,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics"
                     }],
@@ -1592,8 +1704,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {
@@ -1641,8 +1757,12 @@ class TestSplunkConfigMaxQueryChunkSecHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics",
                         "parameters": {},
@@ -1719,8 +1839,12 @@ class TestSplunkConfigMaxQueryChunkSecLive(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics",
                         "parameters": {},

@@ -33,7 +33,7 @@ env:
     - SDK_TESTING=true
     - BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache
     - DD_AGENT_BRANCH=stac-8627-splunk-token
-    - EXTRAS_BRANCH=master
+    - EXTRAS_BRANCH=stac-0-upgrade-ntp
     - JMXFETCH_URL="https://s3-eu-west-1.amazonaws.com/sts-jmxfetch"
     - REQ_LOCALS="$TRAVIS_BUILD_DIR,$HOME/dd-agent,$HOME/integrations-extras"
   matrix:

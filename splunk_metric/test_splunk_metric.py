@@ -2024,8 +2024,8 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
         }
 
         self.load_check(config)
-        self.check.status.data.clear()
         self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_metric")
 
         def _mocked_valid_token(*args):
             return True, 0
@@ -2054,5 +2054,7 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             time=1488974400.0,
             value=2,
             tags=[])
+
         # clear the in memory token
         self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")

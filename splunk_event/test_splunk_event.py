@@ -1757,8 +1757,8 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
         }
 
         self.load_check(config)
-        self.check.status.data.clear()
         self.check.status.data['http://localhost:13001token'] = 'dsvljbfovjsdvkj'
+        self.check.status.persist("splunk_event")
 
         def _mocked_valid_token(*args):
             return True, 0
@@ -1793,5 +1793,6 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             'msg_text': None,
             'source_type_name': None
         })
-        # clear the in memory token
+        # clear the in memory token and persist
         self.check.status.data.clear()
+        self.check.status.persist("splunk_event")

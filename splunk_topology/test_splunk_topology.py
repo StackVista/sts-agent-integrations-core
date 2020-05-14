@@ -1482,8 +1482,8 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         }
 
         self.load_check(config)
-        self.check.status.data.clear()
         self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_topology")
 
         def _mocked_valid_token(*args):
             return True, 0
@@ -1532,3 +1532,4 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
         # clear the in memory token
         self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")

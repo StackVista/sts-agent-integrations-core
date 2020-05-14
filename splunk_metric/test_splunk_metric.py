@@ -2024,8 +2024,8 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
         }
 
         self.load_check(config)
-        memory_token = self.check.status.data.get('http://localhost:13001token')
-        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
 
         def _mocked_valid_token(*args):
             return True, 0

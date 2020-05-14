@@ -126,7 +126,7 @@ class SplunkTopology(AgentCheck):
                     self.log.debug("Creating a new token from first initial token")
                     # Since this is first time when check starts with initial token,
                     # we need to validate and create the new token
-                    if not self._is_valid_token(instance, authentication["token"])[0]:
+                    if self._is_valid_token(instance, authentication["token"])[0]:
                         new_token = self._create_auth_token(instance, authentication["token"])
                         self.update_token_memory(instance.instance_config.base_url, new_token)
                     else:

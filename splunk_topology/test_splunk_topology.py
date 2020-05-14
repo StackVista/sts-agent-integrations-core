@@ -15,6 +15,7 @@ def _mocked_saved_searches(*args, **kwargs):
 def _mocked_auth_session(instance_key):
     return "sessionKey1"
 
+
 def _mocked_dispatch(*args, **kwargs):
     return args[1].name
 
@@ -1325,3 +1326,209 @@ class TestSplunkContinue(AgentCheckTest):
         # check if the check continued and finished
         self.assertEqual(instance[0]["stop_snapshot"], True)
         self.assertEqual(instance[0]["start_snapshot"], True)
+
+
+class TestSplunkTokenBasedAuth(AgentCheckTest):
+
+    CHECK_NAME = 'splunk_topology'
+
+    def test_check_valid_initial_token(self):
+        """
+            Splunk topology check should work with valid initial token
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_is_valid_token': _mocked_valid_token,
+            '_create_auth_token': _mocked_create_token
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:8089token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_check_invalid_initial_token(self):
+        """
+            Splunk check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'ignore_saved_search_errors': True,
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return False, -2
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_is_valid_token': _mocked_valid_token
+        })
+
+        instances = self.check.get_topology_instances()
+
+        self.assertEqual(len(instances), 1)
+        # there should be no topology as the check stopped while validating token
+        self.assertEqual(len(instances[0]['components']), 0)
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2,
+                          "Initial Token is expired, Please renew your token or use the valid token.")
+
+    def test_check_in_memory_token(self):
+        """
+            Splunk check should work with in memory token already present
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.load_check(config)
+        memory_token = self.check.status.data.get('http://localhost:8089token')
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_is_valid_token': _mocked_valid_token,
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:8089token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()

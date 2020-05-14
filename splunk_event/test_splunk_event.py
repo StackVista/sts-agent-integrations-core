@@ -1617,3 +1617,182 @@ class TestSplunkDefaults(AgentCheckTest):
             '_saved_searches': _mocked_saved_searches
         })
         self.assertEqual(len(self.events), 2)
+
+
+class TestSplunkEventsWithTokenAuth(AgentCheckTest):
+    """
+    Splunk event check should process minimal response correctly
+    """
+    CHECK_NAME = 'splunk_event'
+
+    def test_checks_with_valid_token(self):
+        """
+            Splunk event check should work with valid initial token
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_is_valid_token': _mocked_valid_token,
+            '_create_auth_token': _mocked_create_token,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        print(self.check.status.data)
+
+    def test_checks_with_invalid_token(self):
+        """
+            Splunk check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return False, -1
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_is_valid_token': _mocked_valid_token,
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_minimal_search,
+                '_saved_searches': _mocked_saved_searches
+            })
+        except CheckException:
+            check = True
+
+        # Since Token is not valid, check will stop and raise CheckException
+        self.assertTrue(check)
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2,
+                          "Initial Token is expired, Please renew your token or use the valid token.")
+
+    def test_checks_with_memory_token(self):
+        """
+            Splunk event check should work with memory token and not use initial token
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        print(self.check.status.data)
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        self.run_check(config, mocks={
+            '_is_valid_token': _mocked_valid_token,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        # clear the in memory token
+        self.check.status.data.clear()

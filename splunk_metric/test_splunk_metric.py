@@ -1889,3 +1889,170 @@ class TestSplunkConfigMaxQueryChunkSecLive(AgentCheckTest):
         last_observed_timestamp = self.check.status.data.get('http://localhost:13001').get('metrics')
         # make sure the last_observed_time_stamp is metrics last observed timestamp in live mode
         self.assertEqual(last_observed_timestamp, time_to_seconds('2017-03-08T12:00:00.000000+0000'))
+
+
+class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks_with_valid_token(self):
+        """
+            Splunk metric check should work with valid initial token
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_is_valid_token': _mocked_valid_token,
+            '_create_auth_token': _mocked_create_token,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        print(self.check.status.data)
+
+    def test_checks_with_invalid_token(self):
+        """
+            Splunk metric check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_valid_token(*args):
+            return False, -2
+
+        check = False
+        try:
+
+            self.run_check(config, mocks={
+                '_is_valid_token': _mocked_valid_token,
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches
+            })
+        except CheckException:
+            check = True
+
+        # Since Token is not valid, check will stop and raise CheckException
+        self.assertTrue(check)
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2,
+                          "Initial Token is expired, Please renew your token or use the valid token.")
+
+    def test_checks_with_memory_token(self):
+        """
+            Splunk metric check should work with memory token and not use initial token
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin"
+                        },
+                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        def _mocked_valid_token(*args):
+            return True, 0
+
+        self.run_check(config, mocks={
+            '_is_valid_token': _mocked_valid_token,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        # clear the in memory token
+        self.check.status.data.clear()

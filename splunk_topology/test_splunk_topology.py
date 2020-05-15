@@ -153,6 +153,158 @@ class TestSplunkTopology(AgentCheckTest):
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
 
+    def test_checks_backward_compatibility(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': 'admin',
+                    'password': 'admin',
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "relations",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                u"description": u"Some relation",
+                u"_time": u"2017-03-06T15:10:57.000+00:00",
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_checks_backward_compatibility_with_new_conf(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': 'admin',
+                    'password': 'admin',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "relations",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                u"description": u"Some relation",
+                u"_time": u"2017-03-06T15:10:57.000+00:00",
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
     def test_not_dispatch_sids_checks(self):
         self.maxDiff = None
 
@@ -1336,7 +1488,6 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         """
             Splunk topology check should work with valid initial token
         """
-        self.maxDiff = None
 
         config = {
             'init_config': {},
@@ -1344,10 +1495,12 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:8089',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'component_saved_searches': [{
                         "name": "components",
@@ -1359,8 +1512,11 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
 
         def _mocked_create_token(*args):
             return "dsvljbfovjsdvkj"
@@ -1369,11 +1525,12 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_is_valid_token': _mocked_valid_token,
-            '_create_auth_token': _mocked_create_token
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal
         })
 
-        initial_token = config['instances'][0].get('authentication').get('token')
+        initial_token = config['instances'][0].get('authentication').get('token_auth').get('initial_token')
         memory_token = self.check.status.data.get('http://localhost:8089token')
         self.assertNotEqual(initial_token, memory_token)
         self.assertEqual(memory_token, "dsvljbfovjsdvkj")
@@ -1419,12 +1576,13 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:8089',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
-                    'ignore_saved_search_errors': True,
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -1435,30 +1593,29 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return False, -2
+        def _mocked_is_token_expired(*args):
+            return True
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_is_valid_token': _mocked_valid_token
+            'is_token_expired': _mocked_is_token_expired,
         })
 
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
         instances = self.check.get_topology_instances()
-
         self.assertEqual(len(instances), 1)
         # there should be no topology as the check stopped while validating token
         self.assertEqual(len(instances[0]['components']), 0)
-        # Invalid token should throw a service check with proper message
-        self.assertEquals(self.service_checks[0]['status'], 2,
-                          "Initial Token is expired, Please renew your token or use the valid token.")
 
     def test_check_in_memory_token(self):
         """
             Splunk check should work with in memory token already present
         """
-        self.maxDiff = None
 
         config = {
             'init_config': {},
@@ -1466,10 +1623,12 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:8089',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'component_saved_searches': [{
                         "name": "components",
@@ -1485,14 +1644,18 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
         self.check.status.persist("splunk_topology")
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return False
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_is_valid_token': _mocked_valid_token,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal
         })
 
         initial_token = config['instances'][0].get('authentication').get('token')
@@ -1530,6 +1693,320 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         self.assertEquals(instances[0]["stop_snapshot"], True)
 
         self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk topology check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        },
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk topology check should fail and raise exception when name param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'audience': "admin",
+                            'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        },
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        check = False
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.name" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk topology check should prefer Token based authentication over Basic auth mechanism
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal,
+            '_create_auth_token': _mocked_create_token
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:8089token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")
+
+    def test_check_token_renewed_when_almost_expired(self):
+        """
+            Token should be renewed when it's almost about to expire or say 10 days before.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_topology")
+        initial_memory_token = "dsvljbfovjsdvkj"
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "new.token.generated.when.memory.token.about.to.expire"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal,
+            '_create_auth_token': _mocked_create_token
+        })
+
+        new_memory_token = self.check.status.data.get('http://localhost:8089token')
+        self.assertNotEqual(new_memory_token, initial_memory_token)
+        self.assertEqual(new_memory_token, "new.token.generated.when.memory.token.about.to.expire")
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type": "splunk", "url": "http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk topology check should fail when memory token is expired itself.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_topology")
+
+        def _mocked_is_token_expired(*args):
+            return True
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+
         # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_topology")

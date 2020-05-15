@@ -1907,10 +1907,12 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "minimal_metrics",
@@ -1921,18 +1923,22 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
 
         def _mocked_create_token(*args):
             return "dsvljbfovjsdvkj"
 
         self.run_check(config, mocks={
-            '_is_valid_token': _mocked_valid_token,
-            '_create_auth_token': _mocked_create_token,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal
         })
 
         initial_token = config['instances'][0].get('authentication').get('token')
@@ -1951,7 +1957,10 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             time=1488974400.0,
             value=2,
             tags=[])
-        print(self.check.status.data)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
 
     def test_checks_with_invalid_token(self):
         """
@@ -1963,10 +1972,12 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "minimal_metrics",
@@ -1977,26 +1988,23 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return False, -2
+        def _mocked_is_token_expired(*args):
+            return True
 
-        check = False
-        try:
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+        })
 
-            self.run_check(config, mocks={
-                '_is_valid_token': _mocked_valid_token,
-                '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': _mocked_search,
-                '_saved_searches': _mocked_saved_searches
-            })
-        except CheckException:
-            check = True
-
-        # Since Token is not valid, check will stop and raise CheckException
-        self.assertTrue(check)
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
         # Invalid token should throw a service check with proper message
-        self.assertEquals(self.service_checks[0]['status'], 2,
-                          "Initial Token is expired, Please renew your token or use the valid token.")
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
 
     def test_checks_with_memory_token(self):
         """
@@ -2009,10 +2017,12 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "minimal_metrics",
@@ -2027,15 +2037,18 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
         self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
         self.check.status.persist("splunk_metric")
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return False
 
         self.run_check(config, mocks={
-            '_is_valid_token': _mocked_valid_token,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            '_finalize_sid': _mocked_finalize_sid_none
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal
         })
 
         initial_token = config['instances'][0].get('authentication').get('token')
@@ -2055,6 +2068,278 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             value=2,
             tags=[])
 
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk metric check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk metric instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk metric check should fail and raise exception when name param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        check = False
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.name" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk metric check should prefer Token based authentication over Basic auth mechanism
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_token_renewed_when_almost_expired(self):
+        """
+            Token should be renewed when it's almost about to expire or say 10 days before.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_metric")
+        initial_memory_token = "dsvljbfovjsdvkj"
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "new.token.generated.when.memory.token.about.to.expire"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal,
+            '_create_auth_token': _mocked_create_token
+        })
+
+        new_memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(new_memory_token, initial_memory_token)
+        self.assertEqual(new_memory_token, "new.token.generated.when.memory.token.about.to.expire")
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk metric check should fail when memory token is expired itself.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_metric")
+
+        def _mocked_is_token_expired(*args):
+            return True
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
         # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_metric")

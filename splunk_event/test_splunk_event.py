@@ -1635,10 +1635,12 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "events",
@@ -1649,15 +1651,19 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
 
         def _mocked_create_token(*args):
             return "dsvljbfovjsdvkj"
 
         self.run_check(config, mocks={
-            '_is_valid_token': _mocked_valid_token,
+            'is_token_expired': _mocked_is_token_expired,
             '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_minimal_search,
             '_saved_searches': _mocked_saved_searches
@@ -1685,7 +1691,9 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             'msg_text': None,
             'source_type_name': None
         })
-        print(self.check.status.data)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
 
     def test_checks_with_invalid_token(self):
         """
@@ -1697,10 +1705,12 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "events",
@@ -1711,26 +1721,23 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_valid_token(*args):
-            return False, -1
+        def _mocked_is_token_expired(*args):
+            return True
 
-        check = False
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+        })
 
-        try:
-            self.run_check(config, mocks={
-                '_is_valid_token': _mocked_valid_token,
-                '_dispatch_saved_search': _mocked_dispatch_saved_search,
-                '_search': _mocked_minimal_search,
-                '_saved_searches': _mocked_saved_searches
-            })
-        except CheckException:
-            check = True
-
-        # Since Token is not valid, check will stop and raise CheckException
-        self.assertTrue(check)
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
         # Invalid token should throw a service check with proper message
-        self.assertEquals(self.service_checks[0]['status'], 2,
-                          "Initial Token is expired, Please renew your token or use the valid token.")
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
 
     def test_checks_with_memory_token(self):
         """
@@ -1742,10 +1749,12 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
                 {
                     'url': 'http://localhost:13001',
                     'authentication': {
-                        'basic_auth': {
-                            'username': "admin"
-                        },
-                        'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
                     },
                     'saved_searches': [{
                         "name": "events",
@@ -1760,11 +1769,15 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
         self.check.status.data['http://localhost:13001token'] = 'dsvljbfovjsdvkj'
         self.check.status.persist("splunk_event")
 
-        def _mocked_valid_token(*args):
-            return True, 0
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return False
 
         self.run_check(config, mocks={
-            '_is_valid_token': _mocked_valid_token,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal,
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_minimal_search,
             '_saved_searches': _mocked_saved_searches,

@@ -49,12 +49,13 @@ init_config:
 instances:
   - url: "https://localhost:8089"
 
-    # username: "admin" # deprecated
-    # password: "admin" # deprecated
+    # username: "admin" ## deprecated; use basic_auth.username under authentication section
+    # password: "admin" ## deprecated; use basic_auth.password under authentication section
 
     # verify_ssl_certificate: false
 
-    ## new authentication structure either token or basic auth will be used.
+    ## Integration supports either basic authentication or token based authentication.
+    ## Token based authentication is preferred before basic authentication.
     authentication:
       basic_auth:
         username: "admin"
@@ -70,12 +71,12 @@ instances:
         ## JWT audience used for purpose of token
         # audience: "search"
 
-        ## token_expiration_days also works only in token based authentication and this value used to set expiry days for
-        ## create a new token after first initial token is provided. By default the value is 90 days. The token is renewed
-        ## 1 day before the expiry right now.
+        ## When a token is about to expire, a new token is requested from Splunk. The validity of the newly requested
+        ## token is requested to be `token_expiration_days` days. After `renewal_days` days the token will be renewed
+        ## for another `token_expiration_days` days.
         # token_expiration_days: 90
 
-        ## the number of days before when token should refresh, by default it's 10 days
+        ## the number of days before when token should refresh, by default it's 10 days.
         # renewal_days: 10
 
     # saved_searches_parallel: 3

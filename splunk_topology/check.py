@@ -85,6 +85,7 @@ class SplunkTopology(AgentCheck):
         self.instance_data = dict()
         self.persistence_check_name = "splunk_topology"
         self.status = None
+        self.initial_token_flag = True
         self.load_status()
 
     def check(self, instance):
@@ -121,7 +122,6 @@ class SplunkTopology(AgentCheck):
         instance = self.instance_data[instance["url"]]
         current_time_epoch_seconds = self._current_time_seconds()
         instance_key = instance.instance_key
-        initial_token_flag = True
 
         if not instance.should_poll(current_time_epoch_seconds):
             return
@@ -141,9 +141,10 @@ class SplunkTopology(AgentCheck):
                     msg = "Current in use authentication token is expired. Please provide a valid token in the YAML " \
                           "and restart the Agent"
                     raise TokenExpiredException(msg)
-                if self.need_renewal(instance, token, initial_token_flag):
+                if self.need_renewal(instance, token, self.initial_token_flag):
                     new_token = self._create_auth_token(instance, token)
                     self.update_token_memory(instance.instance_config.base_url, new_token)
+                    self.initial_token_flag = False
             else:
                 self.log.debug("Using basic authentication mechanism")
                 self._auth_session(instance)

@@ -2,7 +2,7 @@
 import json
 import os
 
-from checks import CheckException, FinalizeException
+from checks import CheckException, FinalizeException, TokenExpiredException
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
@@ -1512,28 +1512,15 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_is_token_expired(*args):
+        def _mocked_token_auth_session(*args):
             return False
-
-        def _mocked_need_renewal(*args):
-            return True
-
-        def _mocked_create_token(*args):
-            return "dsvljbfovjsdvkj"
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
-            '_create_auth_token': _mocked_create_token,
-            'need_renewal': _mocked_need_renewal
+            '_token_auth_session': _mocked_token_auth_session
         })
-
-        initial_token = config['instances'][0].get('authentication').get('token_auth').get('initial_token')
-        memory_token = self.check.status.data.get('http://localhost:8089token')
-        self.assertNotEqual(initial_token, memory_token)
-        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
 
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
@@ -1593,14 +1580,15 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_is_token_expired(*args):
-            return True
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
+            '_token_auth_session': _mocked_token_auth_session
         })
 
         msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
@@ -1611,91 +1599,6 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         self.assertEqual(len(instances), 1)
         # there should be no topology as the check stopped while validating token
         self.assertEqual(len(instances[0]['components']), 0)
-
-    def test_check_in_memory_token(self):
-        """
-            Splunk check should work with in memory token already present
-        """
-
-        config = {
-            'init_config': {},
-            'instances': [
-                {
-                    'url': 'http://localhost:8089',
-                    'authentication': {
-                        'token_auth': {
-                            'name': "admin",
-                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
-                            'audience': "search",
-                            'renewal_days': 10
-                        }
-                    },
-                    'component_saved_searches': [{
-                        "name": "components",
-                        "parameters": {}
-                    }],
-                    'relation_saved_searches': [],
-                    'tags': ['mytag', 'mytag2']
-                }
-            ]
-        }
-
-        self.load_check(config)
-        self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
-        self.check.status.persist("splunk_topology")
-
-        def _mocked_is_token_expired(*args):
-            return False
-
-        def _mocked_need_renewal(*args):
-            return False
-
-        self.run_check(config, mocks={
-            '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
-            'need_renewal': _mocked_need_renewal
-        })
-
-        initial_token = config['instances'][0].get('authentication').get('token')
-        memory_token = self.check.status.data.get('http://localhost:8089token')
-        self.assertNotEqual(initial_token, memory_token)
-        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
-
-        instances = self.check.get_topology_instances()
-        self.assertEqual(len(instances), 1)
-        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
-
-        self.assertEqual(instances[0]['components'][0], {
-            "externalId": u"vm_2_1",
-            "type": {"name": u"vm"},
-            "data": {
-                u"running": True,
-                u"_time": u"2017-03-06T14:55:54.000+00:00",
-                "label.label1Key": "label1Value",
-                "tags": ['result_tag1', 'mytag', 'mytag2']
-            }
-        })
-
-        self.assertEqual(instances[0]['components'][1], {
-            "externalId": u"server_2",
-            "type": {"name": u"server"},
-            "data": {
-                u"description": u"My important server 2",
-                u"_time": u"2017-03-06T14:55:54.000+00:00",
-                "label.label2Key": "label2Value",
-                "tags": ['result_tag2', 'mytag', 'mytag2']
-            }
-        })
-
-        self.assertEquals(instances[0]["start_snapshot"], True)
-        self.assertEquals(instances[0]["stop_snapshot"], True)
-
-        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
-        # clear the in memory token
-        self.check.status.data.clear()
-        self.check.status.persist("splunk_topology")
 
     def test_check_audience_param_not_set(self):
         """
@@ -1806,125 +1709,19 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
             ]
         }
 
-        def _mocked_is_token_expired(*args):
+        def _mocked_token_auth_session(*args):
             return False
-
-        def _mocked_need_renewal(*args):
-            return True
-
-        def _mocked_create_token(*args):
-            return "dsvljbfovjsdvkj"
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
-            'need_renewal': _mocked_need_renewal,
-            '_create_auth_token': _mocked_create_token
+            '_token_auth_session': _mocked_token_auth_session
         })
-
-        initial_token = config['instances'][0].get('authentication').get('token')
-        memory_token = self.check.status.data.get('http://localhost:8089token')
-        self.assertNotEqual(initial_token, memory_token)
-        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
 
         instances = self.check.get_topology_instances()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
-
-        self.assertEqual(instances[0]['components'][0], {
-            "externalId": u"vm_2_1",
-            "type": {"name": u"vm"},
-            "data": {
-                u"running": True,
-                u"_time": u"2017-03-06T14:55:54.000+00:00",
-                "label.label1Key": "label1Value",
-                "tags": ['result_tag1', 'mytag', 'mytag2']
-            }
-        })
-
-        self.assertEqual(instances[0]['components'][1], {
-            "externalId": u"server_2",
-            "type": {"name": u"server"},
-            "data": {
-                u"description": u"My important server 2",
-                u"_time": u"2017-03-06T14:55:54.000+00:00",
-                "label.label2Key": "label2Value",
-                "tags": ['result_tag2', 'mytag', 'mytag2']
-            }
-        })
-
-        self.assertEquals(instances[0]["start_snapshot"], True)
-        self.assertEquals(instances[0]["stop_snapshot"], True)
-
-        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
-        # clear the in memory token
-        self.check.status.data.clear()
-        self.check.status.persist("splunk_topology")
-
-    def test_check_token_renewed_when_almost_expired(self):
-        """
-            Token should be renewed when it's almost about to expire or say 10 days before.
-        """
-
-        config = {
-            'init_config': {},
-            'instances': [
-                {
-                    'url': 'http://localhost:8089',
-                    'authentication': {
-                        'basic_auth': {
-                            'username': "admin",
-                            'password': "admin"
-                        },
-                        'token_auth': {
-                            'name': "api-admin",
-                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
-                            'audience': "admin",
-                            'renewal_days': 10
-                        }
-                    },
-                    'component_saved_searches': [{
-                        "name": "components",
-                        "parameters": {}
-                    }],
-                    'relation_saved_searches': [],
-                    'tags': ['mytag', 'mytag2']
-                }
-            ]
-        }
-
-        self.load_check(config)
-        self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
-        self.check.status.persist("splunk_topology")
-        initial_memory_token = "dsvljbfovjsdvkj"
-
-        def _mocked_is_token_expired(*args):
-            return False
-
-        def _mocked_need_renewal(*args):
-            return True
-
-        def _mocked_create_token(*args):
-            return "new.token.generated.when.memory.token.about.to.expire"
-
-        self.run_check(config, mocks={
-            '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
-            'need_renewal': _mocked_need_renewal,
-            '_create_auth_token': _mocked_create_token
-        })
-
-        new_memory_token = self.check.status.data.get('http://localhost:8089token')
-        self.assertNotEqual(new_memory_token, initial_memory_token)
-        self.assertEqual(new_memory_token, "new.token.generated.when.memory.token.about.to.expire")
-
-        instances = self.check.get_topology_instances()
-        self.assertEqual(len(instances), 1)
-        self.assertEqual(instances[0]['instance'], {"type": "splunk", "url": "http://localhost:8089"})
 
         self.assertEqual(instances[0]['components'][0], {
             "externalId": u"vm_2_1",
@@ -1992,14 +1789,15 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
         self.check.status.persist("splunk_topology")
 
-        def _mocked_is_token_expired(*args):
-            return True
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
+            '_token_auth_session': _mocked_token_auth_session
         })
 
         msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
@@ -2043,22 +1841,14 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         # initial flag should be True
         self.assertEqual(self.check.initial_token_flag, True)
 
-        def _mocked_is_token_expired(*args):
+        def _mocked_token_auth_session(*args):
             return False
-
-        def _mocked_need_renewal(*args):
-            return True
-
-        def _mocked_create_token(*args):
-            return "dsvljbfovjsdvkj"
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
             '_search': _mocked_search,
             '_saved_searches': _mocked_saved_searches,
-            'is_token_expired': _mocked_is_token_expired,
-            '_create_auth_token': _mocked_create_token,
-            'need_renewal': _mocked_need_renewal
+            '_token_auth_session': _mocked_token_auth_session
         })
 
         # initial_token_flag should be false after the creation

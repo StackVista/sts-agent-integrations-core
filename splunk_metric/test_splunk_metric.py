@@ -1603,6 +1603,117 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
 
         self.assertEqual(len(self.metrics), 0)
 
+    def test_checks_backward_compatibility(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': 'admin',
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "metrics_identification_fields_all",
+                        "parameters": {},
+                        "unique_key_fields": []
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=1,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=2,
+            tags=[])
+
+
+        # shouldn't resend the metrics
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        self.assertEqual(len(self.metrics), 0)
+
+    def test_checks_backward_compatibility_with_new_conf(self):
+        """
+           Test will override the username and password from basic_auth section over the deprecated one
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': 'admin',
+                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "metrics_identification_fields_all",
+                        "parameters": {},
+                        "unique_key_fields": []
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=1,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=2,
+            tags=[])
+
+
+        # shouldn't resend the metrics
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        self.assertEqual(len(self.metrics), 0)
+
 
 class TestSplunkDefaults(AgentCheckTest):
     CHECK_NAME = 'splunk_metric'
@@ -1961,7 +2072,6 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
         self.check.status.data.clear()
         self.check.status.persist("splunk_metric")
 
-
     def test_checks_with_invalid_token(self):
         """
             Splunk metric check should not work with invalid initial token and stop the check
@@ -2086,7 +2196,6 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                         'token_auth': {
                             'name': "admin",
                             'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
-                            'audience': "search",
                             'renewal_days': 10
                         }
                     },
@@ -2098,6 +2207,9 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                 }
             ]
         }
+
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
 
         check = False
 
@@ -2124,7 +2236,6 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                     'url': 'http://localhost:13001',
                     'authentication': {
                         'token_auth': {
-                            'name': "admin",
                             'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
                             'audience': "search",
                             'renewal_days': 10
@@ -2138,18 +2249,20 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
                 }
             ]
         }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
 
         check = False
         try:
             self.run_check(config, mocks={
                 '_dispatch_saved_search': _mocked_dispatch_saved_search,
                 '_search': _mocked_search,
-                '_saved_searches': _mocked_saved_searches,
+                '_saved_searches': _mocked_saved_searches
             })
         except CheckException:
             check = True
 
-        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.name" value')
+        self.assertTrue(check, msg='Splunk metric instance missing "authentication.token_auth.name" value')
 
     def test_check_token_auth_preferred_over_basic_auth(self):
         """
@@ -2340,6 +2453,91 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
               " the Agent"
         # Invalid token should throw a service check with proper message
         self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_initial_token_flag_false_after_creation(self):
+        """
+            Initial token flag should become false after first refresh
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+        # initial flag should be True
+        self.assertEqual(self.check.initial_token_flag, True)
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            'is_token_expired': _mocked_is_token_expired,
+            'need_renewal': _mocked_need_renewal,
+            '_create_auth_token': _mocked_create_token
+        })
+
+        # initial_token_flag should be false after the first run
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+        def _mocked_need_renewal(*args):
+            return False
+
+        # Doing a second run without need of renewal of token which will tell if initial_token_flag is already False
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+        # make sure the flag is still False from first run and didn't initialize with True again
+        self.assertFalse(self.check.initial_token_flag)
         # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_metric")

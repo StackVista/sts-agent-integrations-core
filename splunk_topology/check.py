@@ -9,7 +9,9 @@ import time
 
 from checks import AgentCheck, CheckException, FinalizeException, TokenExpiredException
 from checks.check_status import CheckData
-from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
+from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, \
+    take_optional_field, update_token_memory
+
 from utils.splunk.splunk_helper import SplunkHelper
 
 
@@ -143,7 +145,8 @@ class SplunkTopology(AgentCheck):
                     raise TokenExpiredException(msg)
                 if self.need_renewal(instance, token, self.initial_token_flag):
                     new_token = self._create_auth_token(instance, token)
-                    self.update_token_memory(instance.instance_config.base_url, new_token)
+                    update_token_memory(instance.instance_config.base_url, new_token, self.status,
+                                        self.persistence_check_name)
                     self.initial_token_flag = False
             else:
                 self.log.debug("Using basic authentication mechanism")
@@ -372,12 +375,6 @@ class SplunkTopology(AgentCheck):
         self.status = CheckData.load_latest_status(self.persistence_check_name)
         if self.status is None:
             self.status = CheckData()
-
-    def update_token_memory(self, base_url, token):
-        self.log.debug("Updating the token in the memory")
-        key = base_url + "token"
-        self.status.data[key] = token
-        self.status.persist(self.persistence_check_name)
 
     def update_persistent_status(self, base_url, qualifier, data, action):
         """

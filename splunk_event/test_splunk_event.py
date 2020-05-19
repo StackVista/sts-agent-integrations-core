@@ -158,6 +158,101 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'source_type_name': None
         })
 
+    def test_checks_backward_compatibility(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+    def test_checks_backward_compatibility_with_new_conf(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+
     def test_not_dispatch_sids_checks(self):
         self.maxDiff = None
 
@@ -1807,5 +1902,372 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             'source_type_name': None
         })
         # clear the in memory token and persist
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk event check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk event instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk event check should fail and raise exception when audience param is not set
+        """
+        self.maxDiff = None
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk event instance missing "authentication.token_auth.audience" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk event check should prefer Token based authentication over Basic auth mechanism
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        initial_token = config['instances'][0].get('authentication').get('token')
+        memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(initial_token, memory_token)
+        self.assertEqual(memory_token, "dsvljbfovjsdvkj")
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_token_renewed_when_almost_expired(self):
+        """
+            Token should be renewed when it's almost about to expire or say 10 days before.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_event")
+        initial_memory_token = "dsvljbfovjsdvkj"
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "new.token.generated.when.memory.token.about.to.expire"
+
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        new_memory_token = self.check.status.data.get('http://localhost:13001token')
+        self.assertNotEqual(new_memory_token, initial_memory_token)
+        self.assertEqual(new_memory_token, "new.token.generated.when.memory.token.about.to.expire")
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk event check should fail when memory token is expired itself.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_event")
+
+        def _mocked_is_token_expired(*args):
+            return True
+
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_initial_token_flag_false_after_creation(self):
+        """
+            Initial token flag should become false after first refresh
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+        # initial flag should be True
+        self.assertEqual(self.check.initial_token_flag, True)
+
+        def _mocked_is_token_expired(*args):
+            return False
+
+        def _mocked_need_renewal(*args):
+            return True
+
+        def _mocked_create_token(*args):
+            return "dsvljbfovjsdvkj"
+
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        # initial_token_flag should be false after the first run
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+        def _mocked_need_renewal(*args):
+            return False
+
+
+        # Dooing a second run without need of renewal of token which will tell if initial_token_flag is already False
+        self.run_check(config, mocks={
+            'is_token_expired': _mocked_is_token_expired,
+            '_create_auth_token': _mocked_create_token,
+            'need_renewal': _mocked_need_renewal,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+        # make sure the flag is still False from first run and didn't initialize with True again
+        self.assertFalse(self.check.initial_token_flag)
+        # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_event")

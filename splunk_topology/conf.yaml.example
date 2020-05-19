@@ -51,7 +51,7 @@ instances:
         ## Token for the user who will be using it
         # name: "api-user"
 
-        ## it's first initial valid token which will be exchanged with new generated token as soon as the check starts
+        ## The initial valid token which will be exchanged with new generated token as soon as the check starts
         ## first time and in case of restart, this token will not be used anymore
         # initial_token: "my-initial-token-hash"
 

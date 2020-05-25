@@ -2353,9 +2353,6 @@ class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
             value=2,
             tags=[])
 
-        def _mocked_token_auth_session(*args):
-            return False
-
         # Doing a second run without need of renewal of token which will tell if initial_token_flag is already False
         self.run_check(config, mocks={
             '_token_auth_session': _mocked_token_auth_session,

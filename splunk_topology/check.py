@@ -9,8 +9,7 @@ import time
 
 from checks import AgentCheck, CheckException, FinalizeException, TokenExpiredException
 from checks.check_status import CheckData
-from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, \
-    take_optional_field, update_token_memory
+from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
 
 from utils.splunk.splunk_helper import SplunkHelper
 

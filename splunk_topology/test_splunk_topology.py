@@ -2,7 +2,7 @@
 import json
 import os
 
-from checks import CheckException, FinalizeException
+from checks import CheckException, FinalizeException, TokenExpiredException
 from tests.checks.common import AgentCheckTest, Fixtures
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
@@ -14,6 +14,7 @@ def _mocked_saved_searches(*args, **kwargs):
 
 def _mocked_auth_session(instance_key):
     return "sessionKey1"
+
 
 def _mocked_dispatch(*args, **kwargs):
     return args[1].name
@@ -33,8 +34,12 @@ class TestSplunkNoTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [],
                     'relation_saved_searches': []
                 }
@@ -79,8 +84,164 @@ class TestSplunkTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "relations",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                u"description": u"Some relation",
+                u"_time": u"2017-03-06T15:10:57.000+00:00",
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_checks_backward_compatibility(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': 'admin',
+                    'password': 'admin',
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [{
+                        "name": "relations",
+                        "parameters": {}
+                    }],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_auth_session': _mocked_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]['relations'][0], {
+            "externalId": u"vm_2_1-HOSTED_ON-server_2",
+            "type": {"name": u"HOSTED_ON"},
+            "sourceId": u"vm_2_1",
+            "targetId": u"server_2",
+            "data": {
+                u"description": u"Some relation",
+                u"_time": u"2017-03-06T15:10:57.000+00:00",
+                "tags": ['mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_checks_backward_compatibility_with_new_conf(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'username': 'admin',
+                    'password': 'admin',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -152,8 +313,12 @@ class TestSplunkTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {}
@@ -231,8 +396,12 @@ class TestSplunkNoSnapshot(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'snapshot': False,
                     'component_saved_searches': [{
                         "name": "components",
@@ -282,8 +451,12 @@ class TestSplunkMinimalTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "minimal_components",
                         "element_type": "component",
@@ -353,8 +526,12 @@ class TestSplunkIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "incomplete_components",
                         "element_type": "component",
@@ -406,8 +583,12 @@ class TestSplunkPartiallyIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "partially_incomplete_components",
                         "element_type": "component",
@@ -484,8 +665,12 @@ class TestSplunkPartiallyIncompleteAndIncompleteTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "element_type": "component",
@@ -555,8 +740,12 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components_fast",
                         "element_type": "component",
@@ -571,8 +760,12 @@ class TestSplunkTopologyPollingInterval(AgentCheckTest):
                 },
                 {
                     'url': 'http://remotehost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'polling_interval_seconds': 30,
                     'component_saved_searches': [{
                         "name": "components_slow",
@@ -670,8 +863,12 @@ class TestSplunkTopologyErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "error",
                         "element_type": "component",
@@ -712,8 +909,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "error",
                         "element_type": "component",
@@ -753,8 +954,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [{
                         "name": "error",
@@ -796,8 +1001,12 @@ class TestTopologyDataIsClearedOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': 1,
                     'component_saved_searches': [{
                         "name": "components",
@@ -856,8 +1065,12 @@ class TestSplunkWildcardTopology(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'polling_interval_seconds': 0,
                     'component_saved_searches': [{
                         "match": "comp.*",
@@ -924,8 +1137,12 @@ class TestSplunkTopologyRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'component_saved_searches': [
                         {"name": "savedsearch1", "element_type": "component", "parameters": {}},
@@ -972,8 +1189,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components"
                     }],
@@ -1012,8 +1233,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components"
                     }],
@@ -1052,8 +1277,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'component_saved_searches': [{
                         "name": "components",
                         "parameters": {
@@ -1098,8 +1327,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},
@@ -1148,8 +1381,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': False,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},
@@ -1195,8 +1432,12 @@ class TestSplunkContinue(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'component_saved_searches': [
                         {"name": "components", "search_max_retry_count": 0, "parameters": {}},
@@ -1237,3 +1478,397 @@ class TestSplunkContinue(AgentCheckTest):
         # check if the check continued and finished
         self.assertEqual(instance[0]["stop_snapshot"], True)
         self.assertEqual(instance[0]["start_snapshot"], True)
+
+
+class TestSplunkTokenBasedAuth(AgentCheckTest):
+
+    CHECK_NAME = 'splunk_topology'
+
+    def test_check_valid_initial_token(self):
+        """
+            Splunk topology check should work with valid initial token
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+
+    def test_check_invalid_initial_token(self):
+        """
+            Splunk check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        # there should be no topology as the check stopped while validating token
+        self.assertEqual(len(instances[0]['components']), 0)
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk topology check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        },
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk topology check should fail and raise exception when name param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'audience': "admin",
+                            'token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx"
+                        },
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        check = False
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk topology instance missing "authentication.token_auth.name" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk topology check should prefer Token based authentication over Basic auth mechanism
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEqual(instances[0]['components'][1], {
+            "externalId": u"server_2",
+            "type": {"name": u"server"},
+            "data": {
+                u"description": u"My important server 2",
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label2Key": "label2Value",
+                "tags": ['result_tag2', 'mytag', 'mytag2']
+            }
+        })
+
+        self.assertEquals(instances[0]["start_snapshot"], True)
+        self.assertEquals(instances[0]["stop_snapshot"], True)
+
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk topology check should fail when memory token is expired itself.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data['http://localhost:8089token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_topology")
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")
+
+    def test_check_initial_token_flag_false_after_creation(self):
+        """
+            Initial token flag should become false after first refresh
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:8089',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'component_saved_searches': [{
+                        "name": "components",
+                        "parameters": {}
+                    }],
+                    'relation_saved_searches': [],
+                    'tags': ['mytag', 'mytag2']
+                }
+            ]
+        }
+
+        self.load_check(config)
+        # initial flag should be True
+        self.assertEqual(self.check.initial_token_flag, True)
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        # initial_token_flag should be false after the creation
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        instances = self.check.get_topology_instances()
+        self.assertEqual(len(instances), 1)
+        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
+
+        self.assertEqual(instances[0]['components'][0], {
+            "externalId": u"vm_2_1",
+            "type": {"name": u"vm"},
+            "data": {
+                u"running": True,
+                u"_time": u"2017-03-06T14:55:54.000+00:00",
+                "label.label1Key": "label1Value",
+                "tags": ['result_tag1', 'mytag', 'mytag2']
+            }
+        })
+        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_topology")

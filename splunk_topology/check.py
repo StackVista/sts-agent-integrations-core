@@ -7,9 +7,10 @@
 import sys
 import time
 
-from checks import AgentCheck, CheckException, FinalizeException
+from checks import AgentCheck, CheckException, FinalizeException, TokenExpiredException
 from checks.check_status import CheckData
 from utils.splunk.splunk import SplunkSavedSearch, SplunkInstanceConfig, SavedSearches, chunks, take_optional_field
+
 from utils.splunk.splunk_helper import SplunkHelper
 
 
@@ -85,11 +86,36 @@ class SplunkTopology(AgentCheck):
         self.instance_data = dict()
         self.persistence_check_name = "splunk_topology"
         self.status = None
+        self.initial_token_flag = True
         self.load_status()
 
     def check(self, instance):
+        authentication = None
         if 'url' not in instance:
             raise CheckException('Splunk topology instance missing "url" value.')
+        if 'username' in instance and 'password' in instance and 'authentication' not in instance:
+            self.log.warning("This username and password configuration will be deprecated soon. Please use the new "
+                             "updated configuration from the conf")
+        if 'authentication' in instance:
+            authentication = instance["authentication"]
+            if 'basic_auth' not in authentication and 'token_auth' not in authentication:
+                raise CheckException('Splunk topology instance missing "authentication.basic_auth" or '
+                                     '"authentication.token_auth" value')
+            if 'basic_auth' in authentication:
+                basic_auth = authentication["basic_auth"]
+                if 'username' not in basic_auth:
+                    raise CheckException('Splunk topology instance missing "authentication.basic_auth.username" value')
+                if 'password' not in basic_auth:
+                    raise CheckException('Splunk topology instance missing "authentication.basic_auth.password" value')
+            if 'token_auth' in authentication:
+                token_auth = authentication["token_auth"]
+                if 'name' not in token_auth:
+                    raise CheckException('Splunk topology instance missing "authentication.token_auth.name" value')
+                if 'initial_token' not in token_auth:
+                    raise CheckException('Splunk topology instance missing "authentication.token_auth.initial_token" '
+                                         'value')
+                if 'audience' not in token_auth:
+                    raise CheckException('Splunk topology instance missing "authentication.token_auth.audience" value')
 
         if instance["url"] not in self.instance_data:
             self.instance_data[instance["url"]] = Instance(instance, self.init_config)
@@ -105,7 +131,15 @@ class SplunkTopology(AgentCheck):
             self.start_snapshot(instance_key)
 
         try:
-            self._auth_session(instance)
+            if authentication and 'token_auth' in authentication:
+                self.log.debug("Using token based authentication mechanism")
+                base_url = instance.instance_config.base_url
+                token_flag = self._token_auth_session(instance, authentication, base_url, self.status,
+                                                      self.initial_token_flag, self.persistence_check_name)
+                self.initial_token_flag = token_flag
+            else:
+                self.log.debug("Using basic authentication mechanism")
+                self._auth_session(instance)
 
             saved_searches = self._saved_searches(instance)
             instance.saved_searches.update_searches(self.log, saved_searches)
@@ -122,6 +156,9 @@ class SplunkTopology(AgentCheck):
 
             if instance.snapshot:
                 self.stop_snapshot(instance_key)
+        except TokenExpiredException as e:
+            self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e.message))
+            self.log.exception("Splunk topology exception: %s" % str(e.message))
         except Exception as e:
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, tags=instance.tags, message=str(e))
             self.log.exception("Splunk topology exception: %s" % str(e))
@@ -302,6 +339,10 @@ class SplunkTopology(AgentCheck):
     def _auth_session(self, instance):
         """ This method is mocked for testing. Do not change its behavior """
         instance.splunkHelper.auth_session()
+
+    def _token_auth_session(self, instance, authentication, base_url, status, initial_token_flag, persistence_check_name):
+        """ This method is mocked for testing. Do not change its behavior """
+        return instance.splunkHelper.token_auth_session(authentication, base_url, status, initial_token_flag, persistence_check_name)
 
     def _dispatch(self, instance, saved_search, splunk_user, splunk_app, _ignore_saved_search, parameters):
         """ This method is mocked for testing. Do not change its behavior """

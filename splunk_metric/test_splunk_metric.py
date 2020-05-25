@@ -4,7 +4,7 @@ import os
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
-from checks import CheckException, FinalizeException
+from checks import CheckException, FinalizeException, TokenExpiredException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
@@ -46,8 +46,12 @@ class TestSplunkErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "error",
                         "parameters": {}
@@ -92,8 +96,12 @@ class TestSplunkMetric(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -166,8 +174,12 @@ class TestSplunkEmptyMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {}
@@ -199,8 +211,12 @@ class TestSplunkMinimalMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -244,8 +260,12 @@ class TestSplunkPartiallyIncompleteMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "partially_incomplete_metrics",
                         "parameters": {}
@@ -288,8 +308,12 @@ class TestSplunkFullMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "full_metrics",
                         "parameters": {}
@@ -342,8 +366,12 @@ class TestSplunkAlternativeFieldsMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "alternative_fields_metrics",
                         "metric_name_field": "mymetric",
@@ -389,8 +417,12 @@ class TestSplunkFixedMetricNAme(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "alternative_fields_metrics",
                         "metric_name": "custommetric",
@@ -436,8 +468,12 @@ class TestSplunkWarningOnMissingFields(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "incomplete_metrics",
                         "parameters": {}
@@ -471,8 +507,12 @@ class TestSplunkSameDataMetrics(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "duplicate_metrics",
                         "parameters": {}
@@ -516,8 +556,12 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "poll",
                         "parameters": {},
@@ -607,8 +651,12 @@ class TestSplunkDelayFirstTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {}
@@ -666,8 +714,12 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -755,8 +807,12 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -833,8 +889,12 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -899,8 +959,12 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {},
@@ -962,8 +1026,12 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {},
@@ -1023,8 +1091,12 @@ class TestSplunkWildcardSearches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "minimal_*",
                         "parameters": {}
@@ -1077,8 +1149,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "metric*",
                         "parameters": {}
@@ -1116,8 +1192,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'saved_searches': [{
                         "match": "metric*",
@@ -1157,8 +1237,12 @@ class TestSplunkMetricIndividualDispatchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*metrics",
                         "parameters": {}
@@ -1228,8 +1312,12 @@ class TestSplunkMetricIndividualSearchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*metrics",
                         "parameters": {}
@@ -1301,8 +1389,12 @@ class TestSplunkMetricSearchFullFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "full_metrics",
                         "parameters": {}
@@ -1351,8 +1443,12 @@ class TestSplunkMetricRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'saved_searches': [
                         {"name": "savedsearch1", "parameters": {}},
@@ -1399,8 +1495,12 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics_identification_fields_selective",
                         "parameters": {},
@@ -1456,8 +1556,123 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "metrics_identification_fields_all",
+                        "parameters": {},
+                        "unique_key_fields": []
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=1,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=2,
+            tags=[])
+
+
+        # shouldn't resend the metrics
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        self.assertEqual(len(self.metrics), 0)
+
+    def test_checks_backward_compatibility(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': 'admin',
                     'password': "admin",
+                    'saved_searches': [{
+                        "name": "metrics_identification_fields_all",
+                        "parameters": {},
+                        "unique_key_fields": []
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=1,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1923825600,
+            value=2,
+            tags=[])
+
+
+        # shouldn't resend the metrics
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+
+        self.assertEqual(len(self.metrics), 0)
+
+    def test_checks_backward_compatibility_with_new_conf(self):
+        """
+           Test will override the username and password from basic_auth section over the deprecated one
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': 'admin',
+                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics_identification_fields_all",
                         "parameters": {},
@@ -1512,8 +1727,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics"
                     }],
@@ -1552,8 +1771,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics"
                     }],
@@ -1592,8 +1815,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_metrics",
                         "parameters": {
@@ -1641,8 +1868,12 @@ class TestSplunkConfigMaxQueryChunkSecHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics",
                         "parameters": {},
@@ -1719,8 +1950,12 @@ class TestSplunkConfigMaxQueryChunkSecLive(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "metrics",
                         "parameters": {},
@@ -1765,3 +2000,369 @@ class TestSplunkConfigMaxQueryChunkSecLive(AgentCheckTest):
         last_observed_timestamp = self.check.status.data.get('http://localhost:13001').get('metrics')
         # make sure the last_observed_time_stamp is metrics last observed timestamp in live mode
         self.assertEqual(last_observed_timestamp, time_to_seconds('2017-03-08T12:00:00.000000+0000'))
+
+
+class TestSplunkMetricsWithTokenAuth(AgentCheckTest):
+
+    CHECK_NAME = 'splunk_metric'
+
+    def test_checks_with_valid_token(self):
+        """
+            Splunk metric check should work with valid initial token
+        """
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_checks_with_invalid_token(self):
+        """
+            Splunk metric check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk metric check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk metric instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk metric check should fail and raise exception when name param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk metric instance missing "authentication.token_auth.name" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk metric check should prefer Token based authentication over Basic auth mechanism
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        },
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk metric check should fail when memory token is expired itself.
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_metric")
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+
+    def test_check_initial_token_flag_false_after_creation(self):
+        """
+            Initial token flag should become false after first refresh
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "api-admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "admin",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "minimal_metrics",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")
+        # initial flag should be True
+        self.assertEqual(self.check.initial_token_flag, True)
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        # initial_token_flag should be false after the first run
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.metrics), 2)
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=1.0,
+            tags=[])
+        self.assertMetric(
+            'metric_name',
+            time=1488974400.0,
+            value=2,
+            tags=[])
+
+        # Doing a second run without need of renewal of token which will tell if initial_token_flag is already False
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+        # make sure the flag is still False from first run and didn't initialize with True again
+        self.assertFalse(self.check.initial_token_flag)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_metric")

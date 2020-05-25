@@ -4,7 +4,7 @@ import os
 
 from utils.splunk.splunk import time_to_seconds
 from tests.checks.common import AgentCheckTest, Fixtures
-from checks import CheckException, FinalizeException
+from checks import CheckException, FinalizeException, TokenExpiredException
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'ci')
 
@@ -31,8 +31,12 @@ class TestSplunkErrorResponse(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:8089',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "error",
                         "parameters": {}
@@ -72,8 +76,12 @@ class TestSplunkEmptyEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -103,6 +111,54 @@ class TestSplunkMinimalEvents(AgentCheckTest):
         self.check.update_persistent_status(url, qualifier, None, 'clear')
 
     def test_checks(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+    def test_checks_backward_compatibility(self):
         self.maxDiff = None
 
         config = {
@@ -146,6 +202,57 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'source_type_name': None
         })
 
+    def test_checks_backward_compatibility_with_new_conf(self):
+        self.maxDiff = None
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'username': "admin",
+                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.run_check(config, mocks={
+            '_auth_session': _mocked_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+
     def test_not_dispatch_sids_checks(self):
         self.maxDiff = None
 
@@ -154,8 +261,12 @@ class TestSplunkMinimalEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001/',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "minimal_events",
                         "parameters": {}
@@ -229,8 +340,12 @@ class TestSplunkPartiallyIncompleteEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -278,8 +393,12 @@ class TestSplunkFullEvents(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -348,8 +467,12 @@ class TestSplunkEarliestTimeAndDuplicates(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "poll",
                         "parameters": {},
@@ -438,8 +561,12 @@ class TestSplunkDelayFirstTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {}
@@ -494,8 +621,12 @@ class TestSplunkDeduplicateEventsInTheSameRun(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "duplicates",
                         "parameters": {}
@@ -556,8 +687,12 @@ class TestSplunkContinueAfterRestart(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -645,8 +780,12 @@ class TestSplunkQueryInitialHistory(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -723,8 +862,12 @@ class TestSplunkMaxRestartTime(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "empty",
                         "parameters": {},
@@ -789,8 +932,12 @@ class TestSplunkKeepTimeOnFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {},
@@ -852,8 +999,12 @@ class TestSplunkAdvanceTimeOnSuccess(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {},
@@ -913,8 +1064,12 @@ class TestSplunkWildcardSearches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "even*",
                         "parameters": {}
@@ -967,8 +1122,12 @@ class TestSplunkSavedSearchesError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": "even*",
                         "parameters": {}
@@ -1007,8 +1166,12 @@ class TestSplunkSavedSearchesIgnoreError(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'ignore_saved_search_errors': True,
                     'saved_searches': [{
                         "match": "metric*",
@@ -1075,8 +1238,12 @@ class TestSplunkEventRespectParallelDispatches(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches_parallel': saved_searches_parallel,
                     'saved_searches': [
                         {"name": "savedsearch1", "parameters": {}},
@@ -1123,8 +1290,12 @@ class TestSplunkSelectiveFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "selective_events",
                         "parameters": {},
@@ -1185,8 +1356,12 @@ class TestSplunkAllFieldsForIdentification(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "all_events",
                         "parameters": {},
@@ -1247,8 +1422,12 @@ class TestSplunkEventIndividualDispatchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1302,8 +1481,12 @@ class TestSplunkEventIndividualSearchFailures(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1358,8 +1541,12 @@ class TestSplunkEventSearchFullFailure(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "match": ".*events",
                         "parameters": {}
@@ -1407,8 +1594,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events"
                     }],
@@ -1446,8 +1637,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events"
                     }],
@@ -1486,8 +1681,12 @@ class TestSplunkDefaults(AgentCheckTest):
             'instances': [
                 {
                     'url': 'http://localhost:13001',
-                    'username': "admin",
-                    'password': "admin",
+                    'authentication': {
+                        'basic_auth': {
+                            'username': "admin",
+                            'password': "admin"
+                        }
+                    },
                     'saved_searches': [{
                         "name": "events",
                         "parameters": {
@@ -1513,3 +1712,380 @@ class TestSplunkDefaults(AgentCheckTest):
             '_saved_searches': _mocked_saved_searches
         })
         self.assertEqual(len(self.events), 2)
+
+
+class TestSplunkEventsWithTokenAuth(AgentCheckTest):
+    """
+    Splunk event check should process minimal response correctly
+    """
+    CHECK_NAME = 'splunk_event'
+
+    def test_checks_with_valid_token(self):
+        """
+            Splunk event check should work with valid initial token
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_checks_with_invalid_token(self):
+        """
+            Splunk check should not work with invalid initial token and stop the check
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_token_auth_session': _mocked_token_auth_session
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart " \
+              "the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_audience_param_not_set(self):
+        """
+            Splunk event check should fail and raise exception when audience param is not set
+        """
+
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk event instance missing "authentication.token_auth.audience" value')
+
+    def test_check_name_param_not_set(self):
+        """
+            Splunk event check should fail and raise exception when audience param is not set
+        """
+        self.maxDiff = None
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+        # This is done to avoid going in the commit_succeeded call after the check runs
+        self.collect_ok = False
+
+        check = False
+
+        try:
+            self.run_check(config, mocks={
+                '_dispatch_saved_search': _mocked_dispatch_saved_search,
+                '_search': _mocked_search,
+                '_saved_searches': _mocked_saved_searches,
+            })
+        except CheckException:
+            check = True
+
+        self.assertTrue(check, msg='Splunk event instance missing "authentication.token_auth.audience" value')
+
+    def test_check_token_auth_preferred_over_basic_auth(self):
+        """
+            Splunk event check should prefer Token based authentication over Basic auth mechanism
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_memory_token_expired(self):
+        """
+            Splunk event check should fail when memory token is expired itself.
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.data['http://localhost:13001token'] = "dsvljbfovjsdvkj"
+        self.check.status.persist("splunk_event")
+
+        def _mocked_token_auth_session(*args):
+            raise TokenExpiredException("Current in use authentication token is expired. Please provide a valid "
+                                        "token in the YAML and restart the Agent")
+
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        msg = "Current in use authentication token is expired. Please provide a valid token in the YAML and restart" \
+              " the Agent"
+        # Invalid token should throw a service check with proper message
+        self.assertEquals(self.service_checks[0]['status'], 2, msg)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+
+    def test_check_initial_token_flag_false_after_creation(self):
+        """
+            Initial token flag should become false after first refresh
+        """
+        config = {
+            'init_config': {},
+            'instances': [
+                {
+                    'url': 'http://localhost:13001',
+                    'authentication': {
+                        'token_auth': {
+                            'name': "admin",
+                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
+                            'audience': "search",
+                            'renewal_days': 10
+                        }
+                    },
+                    'saved_searches': [{
+                        "name": "events",
+                        "parameters": {}
+                    }],
+                    'tags': []
+                }
+            ]
+        }
+
+        self.load_check(config)
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")
+        # initial flag should be True
+        self.assertEqual(self.check.initial_token_flag, True)
+
+        def _mocked_token_auth_session(*args):
+            return False
+
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches
+        })
+
+        # initial_token_flag should be false after the first run
+        self.assertEqual(self.check.initial_token_flag, False)
+
+        self.assertEqual(len(self.events), 2)
+        self.assertEqual(self.events[0], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+        self.assertEqual(self.events[1], {
+            'event_type': None,
+            'tags': [],
+            'timestamp': 1488974400.0,
+            'msg_title': None,
+            'msg_text': None,
+            'source_type_name': None
+        })
+
+        # Doing a second run without need of renewal of token which will tell if initial_token_flag is already False
+        self.run_check(config, mocks={
+            '_token_auth_session': _mocked_token_auth_session,
+            '_dispatch_saved_search': _mocked_dispatch_saved_search,
+            '_search': _mocked_minimal_search,
+            '_saved_searches': _mocked_saved_searches,
+            '_finalize_sid': _mocked_finalize_sid_none
+        })
+        # make sure the flag is still False from first run and didn't initialize with True again
+        self.assertFalse(self.check.initial_token_flag)
+        # clear the in memory token
+        self.check.status.data.clear()
+        self.check.status.persist("splunk_event")

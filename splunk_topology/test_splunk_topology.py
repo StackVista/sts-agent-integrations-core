@@ -1710,7 +1710,7 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         }
 
         def _mocked_token_auth_session(*args):
-            return False
+            return None
 
         self.run_check(config, mocks={
             '_dispatch_saved_search': _mocked_dispatch_saved_search,
@@ -1805,70 +1805,6 @@ class TestSplunkTokenBasedAuth(AgentCheckTest):
         # Invalid token should throw a service check with proper message
         self.assertEquals(self.service_checks[0]['status'], 2, msg)
 
-        # clear the in memory token
-        self.check.status.data.clear()
-        self.check.status.persist("splunk_topology")
-
-    def test_check_initial_token_flag_false_after_creation(self):
-        """
-            Initial token flag should become false after first refresh
-        """
-
-        config = {
-            'init_config': {},
-            'instances': [
-                {
-                    'url': 'http://localhost:8089',
-                    'authentication': {
-                        'token_auth': {
-                            'name': "admin",
-                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
-                            'audience': "search",
-                            'renewal_days': 10
-                        }
-                    },
-                    'component_saved_searches': [{
-                        "name": "components",
-                        "parameters": {}
-                    }],
-                    'relation_saved_searches': [],
-                    'tags': ['mytag', 'mytag2']
-                }
-            ]
-        }
-
-        self.load_check(config)
-        # initial flag should be True
-        self.assertEqual(self.check.initial_token_flag, True)
-
-        def _mocked_token_auth_session(*args):
-            return False
-
-        self.run_check(config, mocks={
-            '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_search,
-            '_saved_searches': _mocked_saved_searches,
-            '_token_auth_session': _mocked_token_auth_session
-        })
-
-        # initial_token_flag should be false after the creation
-        self.assertEqual(self.check.initial_token_flag, False)
-
-        instances = self.check.get_topology_instances()
-        self.assertEqual(len(instances), 1)
-        self.assertEqual(instances[0]['instance'], {"type":"splunk","url":"http://localhost:8089"})
-
-        self.assertEqual(instances[0]['components'][0], {
-            "externalId": u"vm_2_1",
-            "type": {"name": u"vm"},
-            "data": {
-                u"running": True,
-                u"_time": u"2017-03-06T14:55:54.000+00:00",
-                "label.label1Key": "label1Value",
-                "tags": ['result_tag1', 'mytag', 'mytag2']
-            }
-        })
-        self.assertEquals(self.service_checks[0]['status'], 0, "service check should have status AgentCheck.OK")
         # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_topology")

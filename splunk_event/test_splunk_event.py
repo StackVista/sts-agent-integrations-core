@@ -1747,7 +1747,7 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
         }
 
         def _mocked_token_auth_session(*args):
-            return False
+            return None
 
         self.run_check(config, mocks={
             '_token_auth_session': _mocked_token_auth_session,
@@ -1755,8 +1755,6 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
             '_search': _mocked_minimal_search,
             '_saved_searches': _mocked_saved_searches
         })
-
-        self.assertEqual(self.check.initial_token_flag, False)
 
         self.assertEqual(len(self.events), 2)
         self.assertEqual(self.events[0], {
@@ -1933,7 +1931,7 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
         }
 
         def _mocked_token_auth_session(*args):
-            return False
+            return None
 
         self.run_check(config, mocks={
             '_token_auth_session': _mocked_token_auth_session,
@@ -2009,83 +2007,6 @@ class TestSplunkEventsWithTokenAuth(AgentCheckTest):
               " the Agent"
         # Invalid token should throw a service check with proper message
         self.assertEquals(self.service_checks[0]['status'], 2, msg)
-        # clear the in memory token
-        self.check.status.data.clear()
-        self.check.status.persist("splunk_event")
-
-    def test_check_initial_token_flag_false_after_creation(self):
-        """
-            Initial token flag should become false after first refresh
-        """
-        config = {
-            'init_config': {},
-            'instances': [
-                {
-                    'url': 'http://localhost:13001',
-                    'authentication': {
-                        'token_auth': {
-                            'name': "admin",
-                            'initial_token': "dsfdgfhgjhkjuyr567uhfe345ythu7y6tre456sdx",
-                            'audience': "search",
-                            'renewal_days': 10
-                        }
-                    },
-                    'saved_searches': [{
-                        "name": "events",
-                        "parameters": {}
-                    }],
-                    'tags': []
-                }
-            ]
-        }
-
-        self.load_check(config)
-        self.check.status.data.clear()
-        self.check.status.persist("splunk_event")
-        # initial flag should be True
-        self.assertEqual(self.check.initial_token_flag, True)
-
-        def _mocked_token_auth_session(*args):
-            return False
-
-        self.run_check(config, mocks={
-            '_token_auth_session': _mocked_token_auth_session,
-            '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_minimal_search,
-            '_saved_searches': _mocked_saved_searches
-        })
-
-        # initial_token_flag should be false after the first run
-        self.assertEqual(self.check.initial_token_flag, False)
-
-        self.assertEqual(len(self.events), 2)
-        self.assertEqual(self.events[0], {
-            'event_type': None,
-            'tags': [],
-            'timestamp': 1488974400.0,
-            'msg_title': None,
-            'msg_text': None,
-            'source_type_name': None
-        })
-        self.assertEqual(self.events[1], {
-            'event_type': None,
-            'tags': [],
-            'timestamp': 1488974400.0,
-            'msg_title': None,
-            'msg_text': None,
-            'source_type_name': None
-        })
-
-        # Doing a second run without need of renewal of token which will tell if initial_token_flag is already False
-        self.run_check(config, mocks={
-            '_token_auth_session': _mocked_token_auth_session,
-            '_dispatch_saved_search': _mocked_dispatch_saved_search,
-            '_search': _mocked_minimal_search,
-            '_saved_searches': _mocked_saved_searches,
-            '_finalize_sid': _mocked_finalize_sid_none
-        })
-        # make sure the flag is still False from first run and didn't initialize with True again
-        self.assertFalse(self.check.initial_token_flag)
         # clear the in memory token
         self.check.status.data.clear()
         self.check.status.persist("splunk_event")

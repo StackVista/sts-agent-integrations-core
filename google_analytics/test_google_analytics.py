@@ -88,7 +88,7 @@ class TestRealtimeGoogleAnalytics(GoogleAnalytics):
             'get_rt_results': lambda profile_id, metric, dimensions, filters: self._get_json("realtime_one_metric_one_dimension_no_filter_no_minute_value"),
             'get_ga_results': lambda profile_id, metrics, dimensions, filters, start_time, end_time: None
         })
-        self.assertEqual(len(self.metrics), 0, "No metrics should have been collected.")
+        self.assertMetric(metric_name="googleanalytics.rt.pageviews", value=0, tags=['profile:ga:12345678', 'rt.minutesAgo:01'], count=1)
 
     def test_one_metric_empty_results(self):
         self.run_check(self._config([{
@@ -100,7 +100,7 @@ class TestRealtimeGoogleAnalytics(GoogleAnalytics):
             'get_rt_results': lambda profile_id, metric, dimensions, filters: self._get_json("realtime_one_metric_one_dimension_no_filter_no_result"),
             'get_ga_results': lambda profile_id, metrics, dimensions, filters, start_time, end_time: None
         })
-        self.assertEqual(len(self.metrics), 0, "No metrics should have been collected.")
+        self.assertMetric(metric_name="googleanalytics.rt.pageviews", value=0,tags=['profile:ga:12345678', 'rt.minutesAgo:01'], count=1)
 
     def test_one_metric_no_dimension_no_filter(self):
         self.run_check(self._config([{

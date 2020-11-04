@@ -72,6 +72,11 @@ class GoogleAnalyticsCheck(AgentCheck):
             # In order to have a consistent metric, we look for the value of one minute ago and not during the last minute.
             rows = result.get('rows', [])
             filtered_rows = filter(lambda row: int(row[minutes_ago_idx]) == 1, rows)
+
+            # The API omits the last minute when no value is available, defaulting to zero value.
+            if not filtered_rows:
+                filtered_rows = [['01', '0']]
+
             result['rows'] = filtered_rows
 
         self.process_response(instance_tags, result)

@@ -1,5 +1,3 @@
-# Splunk event intake uses basic authentication
-
 init_config:
   # time before a HTTP request times out
   default_request_timeout_seconds: 10

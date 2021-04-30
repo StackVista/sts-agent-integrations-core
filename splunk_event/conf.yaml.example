@@ -1,5 +1,3 @@
-# Splunk event intake uses basic authentication
-
 init_config:
   # time before a HTTP request times out
   default_request_timeout_seconds: 10
@@ -31,7 +29,7 @@ init_config:
   # Delay before starting polling events after starting
   # default_initial_delay_seconds: 600
 
-  # Fields to uniquely identify a record. Use unique_key_fields: None to use the whole record.
+  # Fields to uniquely identify a record. Use unique_key_fields: [] to use the whole record.
   # default_unique_key_fields:
   #   - "_bkt"
   #   - "_cd"
